@@ -174,4 +174,4 @@ We thank the security research community for their responsible disclosure of vul
 ---
 
 *This security policy is reviewed quarterly and updated as needed.*
-*Last updated: 2024-01-15*
+*Last updated: 2025-09-06*

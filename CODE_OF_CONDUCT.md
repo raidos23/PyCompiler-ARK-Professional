@@ -86,4 +86,4 @@ Pour toute question concernant ce Code de Conduite :
 
 ---
 
-*Ce Code de Conduite est en vigueur depuis le 15 janvier 2024.*
+*Ce Code de Conduite est en vigueur depuis le 6 septembre 2025.*

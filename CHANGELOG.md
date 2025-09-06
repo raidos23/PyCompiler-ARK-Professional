@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented dependency vulnerability checking
 - Added bandit security linting for Python code
 
-## [3.2.3] - 2024-01-15
+## [3.2.3] - 2025-09-06
 
 ### Added
 - Modular architecture with BCASL and ACASL plugin systems

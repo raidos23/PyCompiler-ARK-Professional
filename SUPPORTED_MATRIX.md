@@ -97,5 +97,5 @@ Platforms not listed above may work but are not officially tested. Community con
 
 ---
 
-*Last updated: 2024-01-15*
-*Next review: 2024-04-15*
+*Last updated: 2025-09-06*
+*Next review: 2025-12-06*
