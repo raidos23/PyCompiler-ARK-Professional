@@ -1,0 +1,48 @@
+# PyCompiler Pro++ (ARK++) — Version constraints for reproducible builds
+# This file pins exact versions for all dependencies to ensure reproducible builds
+# Update these versions regularly and test compatibility
+
+# Core GUI framework
+PySide6==6.7.2
+shiboken6==6.7.2
+
+# System utilities
+psutil==5.9.6
+
+# Configuration and data formats
+PyYAML==6.0.1
+tomli==2.0.1; python_version < "3.11"
+jsonschema==4.20.0
+
+# Image processing
+Pillow==10.1.0
+
+# Development and testing dependencies
+pytest==7.4.3
+pytest-qt==4.2.0
+pytest-asyncio==0.23.2
+pytest-cov==4.1.0
+
+# Code quality tools
+black==23.12.1
+ruff==0.1.9
+mypy==1.8.0
+
+# Security tools
+bandit==1.7.5
+pip-audit==2.6.1
+safety==2.3.5
+
+# SBOM generation
+cyclonedx-py==4.0.4
+
+# Build tools
+build==1.0.3
+wheel==0.42.0
+setuptools==69.0.3
+
+# Code signing and packaging (optional, install as needed)
+# signtool (Windows) - system tool
+# codesign (macOS) - system tool
+# PyInstaller==6.3.0
+# Nuitka==1.9.7

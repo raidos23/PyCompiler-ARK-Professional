@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/pycompiler/mapping.schema.json",
+  "title": "PyCompiler engine auto-plugins mapping",
+  "type": "object",
+  "description": "Top-level keys are package names; values are per-engine configurations. Special top-level key '__aliases__' can provide alias tables.",
+
+  "$defs": {
+    "engineId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,64}$",
+      "description": "Engine identifier (e.g., 'pyinstaller', 'nuitka' or custom)."
+    },
+    "cliArgString": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A single CLI argument. Placeholders like '{import_name}' are allowed."
+    },
+    "cliArgs": {
+      "oneOf": [
+        { "$ref": "#/$defs/cliArgString" },
+        { "type": "array", "items": { "$ref": "#/$defs/cliArgString" }, "minItems": 1 }
+      ],
+      "description": "One or multiple CLI arguments."
+    },
+    "structuredArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "args": { "$ref": "#/$defs/cliArgs" },
+        "flags": { "$ref": "#/$defs/cliArgs" }
+      },
+      "minProperties": 1,
+      "description": "Structured form for CLI arguments (strings or arrays)."
+    },
+    "engineValue": {
+      "oneOf": [
+        { "$ref": "#/$defs/cliArgString" },
+        { "type": "array", "items": { "$ref": "#/$defs/cliArgString" }, "minItems": 1 },
+        { "$ref": "#/$defs/structuredArgs" },
+        { "type": "boolean", "description": "Engine-defined semantics; True may be interpreted by the engine's auto builder." }
+      ]
+    },
+    "enginesObject": {
+      "type": "object",
+      "description": "Per-engine entries: engine id -> engineValue",
+      "patternProperties": {
+        "^[A-Za-z0-9._-]{1,64}$": { "$ref": "#/$defs/engineValue" }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "packageEntryDirect": {
+      "type": "object",
+      "description": "Direct form: engine ids as keys at the same level.",
+      "patternProperties": {
+        "^[A-Za-z0-9._-]{1,64}$": { "$ref": "#/$defs/engineValue" }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "packageEntryNested": {
+      "type": "object",
+      "description": "Nested form: { engines: {...}, ... } allowing additional metadata.",
+      "properties": {
+        "engines": { "$ref": "#/$defs/enginesObject" },
+        "notes": { "type": "string" },
+        "links": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      },
+      "required": ["engines"],
+      "additionalProperties": true
+    },
+    "packageEntry": {
+      "oneOf": [
+        { "$ref": "#/$defs/packageEntryDirect" },
+        { "$ref": "#/$defs/packageEntryNested" }
+      ]
+    }
+  },
+
+  "properties": {
+    "__aliases__": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "import_to_package": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 },
+          "description": "Map import name (e.g. 'pil', 'cv2') -> canonical package name (e.g. 'Pillow', 'opencv-python')."
+        },
+        "import2package": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 },
+          "description": "Alias of import_to_package."
+        },
+        "package_to_import_name": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 },
+          "description": "Map package name -> canonical import name to use in CLI generation (e.g. 'Pillow' -> 'PIL')."
+        },
+        "package2import": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 },
+          "description": "Alias of package_to_import_name."
+        }
+      }
+    },
+    "__meta__": {
+      "type": "object",
+      "description": "Optional metadata for the mapping file (title, version, description).",
+      "additionalProperties": true
+    }
+  },
+
+  "additionalProperties": {
+    "$ref": "#/$defs/packageEntry"
+  },
+
+  "examples": [
+    {
+      "__aliases__": {
+        "import_to_package": { "cv2": "opencv-python", "pil": "Pillow" },
+        "package_to_import_name": { "Pillow": "PIL" }
+      },
+      "Pillow": {
+        "pyinstaller": ["--collect-all {import_name}"],
+        "nuitka": { "args": ["--include-package-data={import_name}"] }
+      },
+      "opencv-python": {
+        "engines": {
+          "pyinstaller": "--collect-all {import_name}",
+          "nuitka": true
+        },
+        "notes": "OpenCV data files are large; prefer collect-all on PyInstaller."
+      }
+    }
+  ]
+}

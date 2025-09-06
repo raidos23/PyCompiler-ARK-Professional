@@ -1,0 +1,766 @@
+"""
+BCASL - Before-Compilation Actions System & Loader
+
+Système modulaire de plugins pour exécuter des actions AVANT la compilation.
+
+Caractéristiques principales:
+- Détection et chargement automatiques des plugins depuis le dossier "API" à la racine du projet
+- Enregistrement des plugins avec identifiant unique et métadonnées
+- Hook d'exécution avant compilation (on_pre_compile)
+- Isolation des erreurs (un plugin défaillant ne bloque pas les autres)
+- Gestion des dépendances et ordre d'exécution (topologie + priorité)
+- API publique pour ajouter, supprimer, lister, activer, désactiver des plugins
+- Optimisé pour environnements à ressources limitées (stdlib uniquement, I/O minimisées)
+
+Convention de plugin:
+- Chaque package plugin dans API/ doit exposer une fonction: bcasl_register(manager: BCASL) -> None
+  Cette fonction doit instancier le plugin (sous-classe de PluginBase) et l'enregistrer via manager.add_plugin(...).
+
+
+
+    from pathlib import Path
+    from bcasl import BCASL, PreCompileContext
+
+    project_root = Path(__file__).resolve().parent
+    bcasl = BCASL(project_root)
+    bcasl.load_plugins_from_directory(project_root / "API")
+    ctx = PreCompileContext(project_root)
+    results = bcasl.run_pre_compile(ctx)
+    for r in results:
+        print(r)
+
+"""
+from __future__ import annotations
+
+import fnmatch
+import importlib.util
+import inspect
+import logging
+import sys
+import os
+import time
+import multiprocessing as mp
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
+
+__all__ = [
+    "PluginBase",
+    "PluginMeta",
+    "PreCompileContext",
+    "ExecutionReport",
+    "BCASL",
+]
+
+
+# Configuration logger par défaut (faible verbosité pour embarqué)
+_logger = logging.getLogger("bcasl")
+if not _logger.handlers:
+    _handler = logging.StreamHandler()
+    _formatter = logging.Formatter("[%(levelname)s] %(message)s")
+    _handler.setFormatter(_formatter)
+    _logger.addHandler(_handler)
+    _logger.setLevel(logging.INFO)
+
+
+BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
+
+
+@dataclass(frozen=True)
+class PluginMeta:
+    """Métadonnées d'un plugin.
+
+    id: identifiant unique (stable)
+    name: nom humain
+    version: chaîne de version
+    description: courte description
+    author: optionnel
+    """
+
+    id: str
+    name: str
+    version: str
+    description: str = ""
+    author: str = ""
+
+
+class PluginBase:
+    """Classe de base minimale que doivent étendre les plugins BCASL.
+
+    Un plugin doit fournir:
+    - meta: PluginMeta (avec id unique)
+    - requires: dépendances (liste d'ids d'autres plugins)
+    - priority: entier pour l'ordonnancement (plus petit => plus tôt)
+    - on_pre_compile(ctx): hook principal exécuté avant compilation
+
+    Remarques:
+    - Les opérations doivent être idempotentes et robustes (embarqués)
+    - Éviter les dépendances externes; stdlib uniquement
+    """
+
+    meta: PluginMeta
+    requires: Tuple[str, ...]
+    priority: int
+
+    def __init__(self, meta: PluginMeta, requires: Iterable[str] = (), priority: int = 100) -> None:
+        if not meta or not meta.id:
+            raise ValueError("PluginMeta invalide: 'id' requis")
+        # Normaliser l'id pour éviter erreurs de casse/espaces accidentelles
+        norm_id = meta.id.strip()
+        if not norm_id:
+            raise ValueError("PluginMeta invalide: 'id' vide")
+        object.__setattr__(meta, "id", norm_id)  # type: ignore[misc]
+        self.meta = meta
+        self.requires = tuple(str(r).strip() for r in requires if str(r).strip())
+        self.priority = int(priority)
+
+    # Hook principal
+    def on_pre_compile(self, ctx: "PreCompileContext") -> None:  # pragma: no cover - à surcharger
+        raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority}>"
+
+
+@dataclass
+class PreCompileContext:
+    """Contexte passé aux plugins.
+
+    Fournit utilitaires peu coûteux pour la découverte des fichiers et la config.
+    """
+
+    project_root: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    _iter_cache: Dict[Tuple[Tuple[str, ...], Tuple[str, ...]], List[Path]] = field(default_factory=dict, repr=False, compare=False)
+
+    def iter_files(self, include: Iterable[str], exclude: Iterable[str] = ()) -> Iterable[Path]:
+        """Itère sur les fichiers du projet en appliquant des motifs glob d'inclusion/exclusion.
+
+        - include: motifs type glob (ex: "**/*.py", "src/**/*.c")
+        - exclude: motifs à exclure (ex: "venv/**", "**/__pycache__/**")
+        Optimisé: évite la création de grosses listes; yield au fil de l'eau.
+        """
+        root = self.project_root
+        inc = tuple(include) if include else ("**/*",)
+        exc = tuple(exclude) if exclude else tuple()
+        # Optional caching to avoid repeated globbing across plugins
+        try:
+            opt = dict(self.config or {}).get("options", {}) if isinstance(self.config, dict) else {}
+            enable_cache = bool(opt.get("iter_files_cache", True))
+        except Exception:
+            enable_cache = True
+        key = None
+        if enable_cache:
+            try:
+                key = (tuple(sorted(inc)), tuple(sorted(exc)))
+                cached = self._iter_cache.get(key)
+                if cached is not None:
+                    for p in cached:
+                        yield p
+                    return
+            except Exception:
+                pass
+        # Pré-calcul des chemins exclus sous forme posix pour fnmatch
+        def is_excluded(p: Path) -> bool:
+            s = p.as_posix()
+            for pat in exc:
+                if fnmatch.fnmatch(s, pat):
+                    return True
+            return False
+        collected: List[Path] = []
+        for pat in inc:
+            for path in root.glob(pat):
+                if path.is_file() and not is_excluded(path):
+                    collected.append(path)
+        for p in collected:
+            yield p
+        if enable_cache and key is not None:
+            try:
+                self._iter_cache[key] = collected
+            except Exception:
+                pass
+
+
+@dataclass
+class ExecutionItem:
+    plugin_id: str
+    name: str
+    success: bool
+    duration_ms: float
+    error: str = ""
+
+
+@dataclass
+class ExecutionReport:
+    """Rapport d'exécution agrégé après run_pre_compile."""
+
+    items: List[ExecutionItem] = field(default_factory=list)
+
+    def add(self, item: ExecutionItem) -> None:
+        self.items.append(item)
+
+    @property
+    def ok(self) -> bool:
+        return all(i.success for i in self.items)
+
+    def summary(self) -> str:
+        total = len(self.items)
+        ok = sum(1 for i in self.items if i.success)
+        ko = total - ok
+        dur = sum(i.duration_ms for i in self.items)
+        return f"Plugins: {ok}/{total} ok, {ko} échec(s), temps total {dur:.1f} ms"
+
+    def __iter__(self):
+        return iter(self.items)
+
+
+# Worker d'exécution sandboxé (processus séparé)
+
+def _plugin_worker(module_path: str, plugin_id: str, project_root: str, config: Dict[str, Any], q) -> None:
+    """Charge un module de plugin depuis son chemin et exécute on_pre_compile dans un processus isolé.
+
+    Renvoie un dict via la queue: {ok: bool, error: str, duration_ms: float}
+    """
+    import importlib.util as _ilu
+    import sys as _sys
+    import time as _time
+    import traceback as _tb
+    from pathlib import Path as _Path
+    import os as _os
+    # Configure interactivity and Qt platform for sandbox worker based on config/env
+    try:
+        _opts = dict(config or {}).get("options", {}) if isinstance(config, dict) else {}
+        _env_nonint = _os.environ.get("PYCOMPILER_NONINTERACTIVE_PLUGINS")
+        _env_offscreen = _os.environ.get("PYCOMPILER_OFFSCREEN_PLUGINS")
+        _noninteractive = (str(_env_nonint).strip().lower() in ("1", "true", "yes")) if (_env_nonint is not None) else bool(_opts.get("noninteractive_plugins", False))
+        _offscreen = (str(_env_offscreen).strip().lower() in ("1", "true", "yes")) if (_env_offscreen is not None) else bool(_opts.get("offscreen_plugins", False))
+        # Headless auto-detect (Linux/macOS only): if no DISPLAY and no WAYLAND_DISPLAY, force non-interactive (no Qt)
+        try:
+            import platform as _plat
+            _is_windows = _plat.system().lower().startswith("win")
+        except Exception:
+            _is_windows = False
+        if not _is_windows and (not _os.environ.get("DISPLAY") and not _os.environ.get("WAYLAND_DISPLAY")):
+            _noninteractive = True
+        if _noninteractive:
+            _os.environ["PYCOMPILER_NONINTERACTIVE"] = "1"
+        # Offscreen is opt-in only (config/env). No auto-offscreen by default.
+        if _offscreen and "QT_QPA_PLATFORM" not in _os.environ:
+            _os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    except Exception:
+        pass
+    # Optionally initialize a minimal Qt application so plugins can show message boxes in sandbox
+    try:
+        _opts2 = dict(config or {}).get("options", {}) if isinstance(config, dict) else {}
+        _env_allow = _os.environ.get("PYCOMPILER_SANDBOX_DIALOGS")
+        _allow_dialogs = (str(_env_allow).strip().lower() in ("1","true","yes")) if (_env_allow is not None) else bool(_opts2.get("allow_sandbox_dialogs", True))
+        # Respect non-interactive/headless
+        if _allow_dialogs and not (str(_os.environ.get("PYCOMPILER_NONINTERACTIVE",""))).strip().lower() in ("1","true","yes"):
+            # Wayland fractional scaling safety
+            _os.environ.setdefault("QT_WAYLAND_DISABLE_FRACTIONAL_SCALE", "1")
+            try:
+                from PySide6.QtWidgets import QApplication as _QApp  # type: ignore
+            except Exception:
+                try:
+                    from PyQt5.QtWidgets import QApplication as _QApp  # type: ignore
+                except Exception:
+                    _QApp = None  # type: ignore
+            if _QApp is not None:
+                try:
+                    if _QApp.instance() is None:
+                        _sandbox_qapp = _QApp([])  # noqa: F841 - keep reference alive during worker
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    # Enforce API_SDK.progress usage: block direct Qt QProgressDialog in plugins
+    try:
+        _os.environ["PYCOMPILER_ENFORCE_SDK_PROGRESS"] = "1"
+    except Exception:
+        pass
+    try:
+        from PySide6 import QtWidgets as _QtW2  # type: ignore
+        class _NoDirectProgressDialog:  # type: ignore
+            def __init__(self, *args, **kwargs) -> None:
+                raise RuntimeError("Plugins must use API_SDK.progress(...) instead of PySide6.QProgressDialog")
+        try:
+            _QtW2.QProgressDialog = _NoDirectProgressDialog  # type: ignore[attr-defined]
+        except Exception:
+            pass
+    except Exception:
+        try:
+            from PyQt5 import QtWidgets as _QtW2  # type: ignore
+            class _NoDirectProgressDialog:  # type: ignore
+                def __init__(self, *args, **kwargs) -> None:
+                    raise RuntimeError("Plugins must use API_SDK.progress(...) instead of PyQt.QProgressDialog")
+            try:
+                _QtW2.QProgressDialog = _NoDirectProgressDialog  # type: ignore[attr-defined]
+            except Exception:
+                pass
+        except Exception:
+            pass
+    # Apply resource limits (POSIX) if configured
+    try:
+        _opts3 = dict(config or {}).get("options", {}) if isinstance(config, dict) else {}
+        _limits = _opts3.get("plugin_limits", {}) if isinstance(_opts3, dict) else {}
+        _mem_mb = int(_limits.get("mem_mb", 0))
+        _cpu_s = int(_limits.get("cpu_time_s", 0))
+        _nofile = int(_limits.get("nofile", 0))
+        _fsize_mb = int(_limits.get("fsize_mb", 0))
+        try:
+            import resource as _res  # POSIX only
+            def _set(limit, soft, hard):
+                try:
+                    _res.setrlimit(limit, (soft, hard))
+                except Exception:
+                    pass
+            if _mem_mb > 0:
+                _set(_res.RLIMIT_AS, _mem_mb * 1024 * 1024, _mem_mb * 1024 * 1024)
+            if _cpu_s > 0:
+                _set(_res.RLIMIT_CPU, _cpu_s, _cpu_s)
+            if _nofile > 0:
+                _set(_res.RLIMIT_NOFILE, _nofile, _nofile)
+            if _fsize_mb > 0:
+                _set(_res.RIMIT_FSIZE if hasattr(_res, 'RLIMIT_FSIZE') else _res.RLIMIT_FSIZE, _fsize_mb * 1024 * 1024, _fsize_mb * 1024 * 1024)
+        except Exception:
+            pass
+    except Exception:
+        pass
+    try:
+        spec = _ilu.spec_from_file_location("bcasl_sandbox_module", module_path, submodule_search_locations=[str(_Path(module_path).parent)])
+        if spec is None or spec.loader is None:
+            raise ImportError("spec invalide")
+        module = _ilu.module_from_spec(spec)
+        _sys.modules[spec.name] = module
+        spec.loader.exec_module(module)  # type: ignore[attr-defined]
+        # Récupérer PLUGIN ou fallback via bcasl_register
+        plg = getattr(module, "PLUGIN", None)
+        if plg is None or getattr(getattr(plg, "meta", None), "id", None) != plugin_id:
+            try:
+                # Fallback: ré-enregistrer dans un gestionnaire temporaire
+                from bcasl import BCASL as _BCASL, PreCompileContext as _PCC
+                mgr = _BCASL(_Path(project_root), config=config, sandbox=False)  # pas de sandbox récursif
+                if hasattr(module, "bcasl_register") and callable(getattr(module, "bcasl_register")):
+                    module.bcasl_register(mgr)
+                rec = getattr(mgr, "_registry", {}).get(plugin_id)
+                if rec is None:
+                    raise RuntimeError(f"Plugin '{plugin_id}' introuvable dans le module")
+                plg = rec.plugin
+            except Exception as ex:
+                raise RuntimeError(f"Impossible d'instancier le plugin: {ex}")
+        # Exécution
+        from bcasl import PreCompileContext as _PCC
+        ctx = _PCC(_Path(project_root), config=dict(config or {}))
+        t0 = _time.perf_counter()
+        plg.on_pre_compile(ctx)
+        dur = (_time.perf_counter() - t0) * 1000.0
+        q.put({"ok": True, "error": "", "duration_ms": dur})
+    except Exception:
+        q.put({"ok": False, "error": _tb.format_exc(), "duration_ms": 0.0})
+
+class _PluginRecord:
+    __slots__ = ("plugin", "active", "requires", "priority", "order", "insert_idx", "module_path", "module_name")
+
+    def __init__(self, plugin: PluginBase, insert_idx: int) -> None:
+        self.plugin = plugin
+        self.active = True
+        self.requires = tuple(plugin.requires)
+        self.priority = plugin.priority
+        self.order = 0  # calculé
+        self.insert_idx = insert_idx
+        self.module_path: Optional[Path] = None
+        self.module_name: Optional[str] = None
+
+
+class BCASL:
+    """Gestionnaire principal des plugins et de leur exécution avant compilation."""
+
+    def __init__(self, project_root: Path, config: Optional[Dict[str, Any]] = None, *, sandbox: bool = True, plugin_timeout_s: float = 3.0) -> None:
+        self.project_root = Path(project_root).resolve()
+        self.config = dict(config or {})
+        self._registry: Dict[str, _PluginRecord] = {}
+        self._insert_counter = 0
+        # Sandbox settings
+        self.sandbox = bool(sandbox)
+        self.plugin_timeout_s = float(plugin_timeout_s)
+
+    # API publique
+    def add_plugin(self, plugin: PluginBase) -> None:
+        pid = plugin.meta.id
+        if pid in self._registry:
+            raise ValueError(f"Plugin id déjà enregistré: {pid}")
+        rec = _PluginRecord(plugin, self._insert_counter)
+        self._registry[pid] = rec
+        self._insert_counter += 1
+        _logger.debug("Plugin ajouté: %s", plugin)
+
+    def remove_plugin(self, plugin_id: str) -> bool:
+        return self._registry.pop(plugin_id, None) is not None
+
+    def list_plugins(self, include_inactive: bool = True) -> List[Tuple[str, PluginMeta, bool, int]]:
+        out = []
+        for pid, rec in self._registry.items():
+            if include_inactive or rec.active:
+                out.append((pid, rec.plugin.meta, rec.active, rec.priority))
+        out.sort(key=lambda x: (x[3], x[0]))
+        return out
+
+    def enable_plugin(self, plugin_id: str) -> bool:
+        rec = self._registry.get(plugin_id)
+        if not rec:
+            return False
+        rec.active = True
+        return True
+
+    def disable_plugin(self, plugin_id: str) -> bool:
+        rec = self._registry.get(plugin_id)
+        if not rec:
+            return False
+        rec.active = False
+        return True
+
+    def set_priority(self, plugin_id: str, priority: int) -> bool:
+        rec = self._registry.get(plugin_id)
+        if not rec:
+            return False
+        rec.priority = int(priority)
+        rec.plugin.priority = int(priority)
+        return True
+
+    # Chargement automatique
+    def load_plugins_from_directory(self, directory: Path) -> Tuple[int, List[Tuple[str, str]]]:
+        """Charge automatiquement tous les plugins depuis un dossier.
+
+        Retourne (nombre_plugins_enregistrés, liste_erreurs[(module, message)]).
+        """
+        directory = Path(directory)
+        if not directory.exists() or not directory.is_dir():
+            _logger.warning("Dossier plugins introuvable: %s", directory)
+            return 0, [(str(directory), "non trouvé ou non répertoire")]
+
+        count = 0
+        errors: List[Tuple[str, str]] = []
+        # Parcourt uniquement les packages Python (dossiers contenant __init__.py)
+        try:
+            pkg_dirs = sorted([p for p in directory.iterdir() if p.is_dir()], key=lambda p: p.name)
+        except Exception:
+            pkg_dirs = []
+        for pkg_dir in pkg_dirs:
+            if pkg_dir.name.startswith("__"):
+                continue
+            init_file = pkg_dir / "__init__.py"
+            if not init_file.exists():
+                continue
+            mod_name = f"bcasl_api_{pkg_dir.name}"
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    mod_name, str(init_file), submodule_search_locations=[str(pkg_dir)]
+                )
+                if spec is None or spec.loader is None:
+                    raise ImportError("spec invalide")
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[mod_name] = module
+                spec.loader.exec_module(module)  # type: ignore[attr-defined]
+
+                # Enforce explicit BCASL package signature (similar to ACASL)
+                sig_ok = bool(getattr(module, 'BCASL_PLUGIN', False))
+                sig_id = getattr(module, 'BCASL_ID', '') or ''
+                sig_desc = getattr(module, 'BCASL_DESCRIPTION', '') or ''
+                if not sig_ok or not isinstance(sig_id, str) or not sig_id.strip() or not isinstance(sig_desc, str) or not sig_desc.strip():
+                    raise AttributeError(
+                        f"Le package '{pkg_dir.name}' doit définir BCASL_PLUGIN=True, BCASL_ID et BCASL_DESCRIPTION"
+                    )
+                # Rechercher la fonction d'enregistrement
+                reg = getattr(module, BCASL_PLUGIN_REGISTER_FUNC, None)
+                if not callable(reg):
+                    raise AttributeError(
+                        f"Le package '{pkg_dir.name}' ne définit pas {BCASL_PLUGIN_REGISTER_FUNC}(manager)"
+                    )
+                # Appeler l'enregistrement
+                before_ids = set(self._registry.keys())
+                reg(self)  # le package appelle self.add_plugin(...)
+                new_ids = [k for k in self._registry.keys() if k not in before_ids]
+                for pid in new_ids:
+                    rec = self._registry.get(pid)
+                    if rec is not None:
+                        rec.module_path = init_file
+                        rec.module_name = mod_name
+                # Validation: l'id enregistré devrait correspondre à BCASL_ID
+                try:
+                    if new_ids and sig_id.strip() and new_ids[0] != sig_id.strip():
+                        _logger.warning("BCASL_ID ('%s') ne correspond pas à l'id enregistré ('%s') pour le package %s", sig_id.strip(), new_ids[0], pkg_dir.name)
+                except Exception:
+                    pass
+                added = len(new_ids)
+                if added <= 0:
+                    _logger.warning("Aucun plugin enregistré par package %s", pkg_dir.name)
+                else:
+                    count += added
+                    _logger.info("Plugin chargé depuis package %s", pkg_dir.name)
+            except Exception as exc:  # isolation
+                msg = f"échec chargement: {exc}"
+                errors.append((pkg_dir.name, msg))
+                _logger.error("%s: %s", pkg_dir.name, msg)
+        return count, errors
+
+    # Ordonnancement et exécution
+    def _resolve_order(self) -> List[str]:
+        """Résout l'ordre d'exécution en respectant dépendances et priorités.
+
+        - Filtre les plugins inactifs
+        - Ignore les dépendances inconnues (log warning)
+        - Kahn + file de priorité (priority, insert_idx) pour stabilité
+        - En cas de cycle, journalise et insère les restants par priorité
+        """
+        active_items = {pid: rec for pid, rec in self._registry.items() if rec.active}
+        if not active_items:
+            return []
+
+        # Construire graphe
+        indeg: Dict[str, int] = {pid: 0 for pid in active_items}
+        children: Dict[str, List[str]] = {pid: [] for pid in active_items}
+
+        for pid, rec in active_items.items():
+            for dep in rec.requires:
+                if dep not in active_items:
+                    _logger.warning(
+                        "Dépendance manquante pour %s: '%s' (ignorée)", pid, dep
+                    )
+                    continue
+                indeg[pid] += 1
+                children[dep].append(pid)
+
+        # File de départ (indeg=0) triée par priorité puis ordre d'insertion
+        roots = sorted(
+            [pid for pid, d in indeg.items() if d == 0],
+            key=lambda x: (active_items[x].priority, active_items[x].insert_idx, x),
+        )
+        order: List[str] = []
+        import heapq
+
+        heap: List[Tuple[int, int, str]] = []
+        for pid in roots:
+            rec = active_items[pid]
+            heapq.heappush(heap, (rec.priority, rec.insert_idx, pid))
+
+        while heap:
+            _, _, pid = heapq.heappop(heap)
+            order.append(pid)
+            for ch in children[pid]:
+                indeg[ch] -= 1
+                if indeg[ch] == 0:
+                    rch = active_items[ch]
+                    heapq.heappush(heap, (rch.priority, rch.insert_idx, ch))
+
+        if len(order) != len(active_items):
+            # Cycle détecté; insérer les restants par priorité pour ne pas bloquer
+            remaining = [pid for pid in active_items if pid not in order]
+            _logger.error("Cycle de dépendances détecté: %s", ", ".join(remaining))
+            remaining.sort(
+                key=lambda x: (active_items[x].priority, active_items[x].insert_idx, x)
+            )
+            order.extend(remaining)
+        return order
+
+    def run_pre_compile(self, ctx: Optional[PreCompileContext] = None) -> ExecutionReport:
+        """Exécute le hook 'on_pre_compile' de tous les plugins actifs.
+
+        Optimisations de performance:
+        - Exécution parallèle des plugins sandboxés en respectant dépendances/priorités
+        - Cache optionnel des itérations de fichiers (voir PreCompileContext.iter_files)
+        - Paramètres via options.sandbox, options.plugin_parallelism et env PYCOMPILER_BCASL_PARALLELISM
+        """
+        if ctx is None:
+            ctx = PreCompileContext(self.project_root, self.config)
+        else:
+            ctx.project_root = Path(ctx.project_root).resolve()
+            ctx.config = dict(self.config) | dict(ctx.config or {})
+
+        report = ExecutionReport()
+        # Options d'exécution
+        try:
+            opts = dict(self.config or {}).get("options", {}) if isinstance(self.config, dict) else {}
+        except Exception:
+            opts = {}
+        eff_sandbox = bool(opts.get("sandbox", self.sandbox))
+        # Déterminer le parallélisme cible
+        try:
+            par_env = int(os.environ.get("PYCOMPILER_BCASL_PARALLELISM", "0"))
+        except Exception:
+            par_env = 0
+        try:
+            par_opt = int(opts.get("plugin_parallelism", 0))
+        except Exception:
+            par_opt = 0
+        try:
+            cpu_def = max(1, (mp.cpu_count() or 2) - 1)
+        except Exception:
+            cpu_def = 2
+        parallelism = par_env or par_opt or cpu_def
+        if parallelism < 1:
+            parallelism = 1
+
+        # Construire graphe des dépendances des plugins actifs
+        active_items = {pid: rec for pid, rec in self._registry.items() if rec.active}
+        if not active_items:
+            _logger.info("Aucun plugin actif")
+            return report
+        indeg: Dict[str, int] = {pid: 0 for pid in active_items}
+        children: Dict[str, List[str]] = {pid: [] for pid in active_items}
+        for pid, rec in active_items.items():
+            for dep in rec.requires:
+                if dep not in active_items:
+                    _logger.warning("Dépendance manquante pour %s: '%s' (ignorée)", pid, dep)
+                    continue
+                indeg[pid] += 1
+                children[dep].append(pid)
+
+        # File d'attente initiale (indeg=0) triée par (priority, insert_idx, pid)
+        import heapq
+        ready: List[Tuple[int, int, str]] = []
+        for pid, rec in active_items.items():
+            if indeg[pid] == 0:
+                heapq.heappush(ready, (rec.priority, rec.insert_idx, pid))
+
+        # Fallback: si pas de sandbox ou parallélisme=1, revient au mode séquentiel
+        if not eff_sandbox or parallelism <= 1:
+            order: List[str] = []
+            tmp_ready = list(ready)
+            heapq.heapify(tmp_ready)
+            while tmp_ready:
+                _, _, pid = heapq.heappop(tmp_ready)
+                order.append(pid)
+                for ch in children[pid]:
+                    indeg[ch] -= 1
+                    if indeg[ch] == 0:
+                        rch = active_items[ch]
+                        heapq.heappush(tmp_ready, (rch.priority, rch.insert_idx, ch))
+            # Séquentiel sandbox/non-sandbox
+            for pid in order:
+                rec = active_items[pid]
+                plg = rec.plugin
+                start = time.perf_counter()
+                if eff_sandbox and getattr(rec, "module_path", None):
+                    _ctx = mp.get_context("spawn")
+                    q = _ctx.Queue()
+                    p = _ctx.Process(target=_plugin_worker, args=(str(rec.module_path), pid, str(self.project_root), ctx.config, q))
+                    p.start()
+                    timeout = self.plugin_timeout_s
+                    if timeout and timeout > 0:
+                        p.join(timeout)
+                    else:
+                        p.join()
+                    if p.is_alive():
+                        try:
+                            p.terminate()
+                        except Exception:
+                            pass
+                        try:
+                            p.join(1.0)
+                        except Exception:
+                            pass
+                        duration_ms = (time.perf_counter() - start) * 1000.0
+                        report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=False, duration_ms=duration_ms, error=f"timeout après {self.plugin_timeout_s:.1f}s"))
+                        _logger.error("Plugin %s timeout après %.1fs", pid, self.plugin_timeout_s)
+                    else:
+                        try:
+                            res = q.get_nowait()
+                        except Exception:
+                            res = {"ok": False, "error": "aucun résultat renvoyé (crash du processus enfant ?)", "duration_ms": (time.perf_counter() - start) * 1000.0}
+                        duration_ms = float(res.get("duration_ms", (time.perf_counter() - start) * 1000.0))
+                        if res.get("ok"):
+                            report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=True, duration_ms=duration_ms))
+                        else:
+                            report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=False, duration_ms=duration_ms, error=str(res.get("error", ""))))
+                else:
+                    try:
+                        plg.on_pre_compile(ctx)
+                        duration_ms = (time.perf_counter() - start) * 1000.0
+                        report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=True, duration_ms=duration_ms))
+                    except Exception as exc:
+                        duration_ms = (time.perf_counter() - start) * 1000.0
+                        report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=False, duration_ms=duration_ms, error=str(exc)))
+            _logger.info(report.summary())
+            return report
+
+        # Exécution parallèle (sandbox True)
+        _ctx = mp.get_context("spawn")
+        running: Dict[str, Tuple[mp.Process, mp.Queue, float]] = {}
+        # Scheduler principal
+        while ready or running:
+            # Lancer tant que possible
+            while ready and len(running) < parallelism:
+                _, _, pid = heapq.heappop(ready)
+                rec = active_items[pid]
+                q = _ctx.Queue()
+                p = _ctx.Process(target=_plugin_worker, args=(str(rec.module_path), pid, str(self.project_root), ctx.config, q))
+                p.start()
+                running[pid] = (p, q, time.perf_counter())
+            # Collecte non bloquante et gestion timeouts
+            to_remove: List[str] = []
+            for pid, (proc, q, start_t) in list(running.items()):
+                timeout = self.plugin_timeout_s
+                alive = proc.is_alive()
+                timed_out = False
+                if timeout and timeout > 0 and alive:
+                    if (time.perf_counter() - start_t) >= timeout:
+                        timed_out = True
+                        try:
+                            proc.terminate()
+                        except Exception:
+                            pass
+                        try:
+                            proc.join(1.0)
+                        except Exception:
+                            pass
+                if not alive or timed_out:
+                    rec = active_items[pid]
+                    plg = rec.plugin
+                    if not timed_out:
+                        try:
+                            res = q.get_nowait()
+                        except Exception:
+                            res = {"ok": False, "error": "aucun résultat renvoyé (crash du processus enfant ?)", "duration_ms": (time.perf_counter() - start_t) * 1000.0}
+                        duration_ms = float(res.get("duration_ms", (time.perf_counter() - start_t) * 1000.0))
+                        if res.get("ok"):
+                            report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=True, duration_ms=duration_ms))
+                        else:
+                            report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=False, duration_ms=duration_ms, error=str(res.get("error", ""))))
+                    else:
+                        duration_ms = (time.perf_counter() - start_t) * 1000.0
+                        report.add(ExecutionItem(plugin_id=pid, name=plg.meta.name, success=False, duration_ms=duration_ms, error=f"timeout après {self.plugin_timeout_s:.1f}s"))
+                        _logger.error("Plugin %s timeout après %.1fs", pid, self.plugin_timeout_s)
+                    # Débloquer les enfants
+                    for ch in children[pid]:
+                        indeg[ch] -= 1
+                        if indeg[ch] == 0:
+                            rch = active_items[ch]
+                            heapq.heappush(ready, (rch.priority, rch.insert_idx, ch))
+                    to_remove.append(pid)
+            for pid in to_remove:
+                try:
+                    proc, _q, _t = running.pop(pid)
+                    if proc.is_alive():
+                        try:
+                            proc.join(0.1)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+            if running and not ready:
+                # Attendre un court instant avant prochain tour pour éviter busy-wait
+                time.sleep(0.01)
+        _logger.info(report.summary())
+        return report
+
+
+# Petit utilitaire: décorateur d'enregistrement (optionnel pour les plugins)
+# Usage dans un plugin:
+#   @register_plugin
+#   class MyPlugin(PluginBase): ...
+# Puis dans bcasl_register(manager): manager.add_plugin(MyPlugin(...))
+# (Ce décorateur ne fait que marquer la classe; utile si l'auteur veut introspecter)
+
+def register_plugin(cls: Any) -> Any:
+    setattr(cls, "__bcasl_plugin__", True)
+    return cls
