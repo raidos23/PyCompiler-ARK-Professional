@@ -647,42 +647,42 @@ def apply_i18n(self, gui, tr: Dict[str, str]) -> None:
 
         # 5) Apply texts/tooltips/placeholders on engine widgets
         if getattr(self, '_title_label', None):
-            self._title_label.setText(g('engine_title', 'Options MyEngine', 'MyEngine Options'))
+            self._title_label.setText(g('engine_title', 'MyEngine Options', 'MyEngine Options'))
         if getattr(self, '_output_dir_input', None):
-            ph = g('output_dir_ph', 'Dossier de sortie (--output-dir)', 'Output directory (--output-dir)')
+            ph = g('output_dir_ph', 'Output directory (--output-dir)', 'Output directory (--output-dir)')
             if ph:
                 try: self._output_dir_input.setPlaceholderText(ph)
                 except Exception: pass
         if getattr(self, '_browse_btn', None):
-            self._browse_btn.setText(g('browse', 'Parcourir…', 'Browse…') or 'Browse…')
+            self._browse_btn.setText(g('browse', 'Browse…', 'Browse…') or 'Browse…')
         if getattr(self, '_cb_gui', None):
-            self._cb_gui.setText(g('gui_windows', 'Application GUI (sans console) [Windows]', 'GUI application (no console) [Windows]') or 'GUI application (no console) [Windows]')
+            self._cb_gui.setText(g('gui_windows', 'GUI application (no console) [Windows]', 'GUI application (no console) [Windows]') or 'GUI application (no console) [Windows]')
         if getattr(self, '_cb_enc', None):
-            self._cb_enc.setText(g('include_encodings', 'Inclure encodings', 'Include encodings') or 'Include encodings')
+            self._cb_enc.setText(g('include_encodings', 'Include encodings', 'Include encodings') or 'Include encodings')
         if getattr(self, '_icon_title', None):
-            self._icon_title.setText(g('icon', 'Icône', 'Icon') or 'Icon')
+            self._icon_title.setText(g('icon', 'Icon', 'Icon') or 'Icon')
         if getattr(self, '_packages_title', None):
-            self._packages_title.setText(g('packages_title', 'Paquets à inclure', 'Packages to include') or 'Packages to include')
+            self._packages_title.setText(g('packages_title', 'Packages to include', 'Packages to include') or 'Packages to include')
         if getattr(self, '_pkg_add_btn', None):
-            self._pkg_add_btn.setText(g('add', 'Ajouter', 'Add') or 'Add')
+            self._pkg_add_btn.setText(g('add', 'Add', 'Add') or 'Add')
         if getattr(self, '_pkg_rm_btn', None):
-            self._pkg_rm_btn.setText(g('remove', 'Supprimer', 'Remove') or 'Remove')
+            self._pkg_rm_btn.setText(g('remove', 'Remove', 'Remove') or 'Remove')
         if getattr(self, '_modules_title', None):
-            self._modules_title.setText(g('modules_title', 'Modules à inclure', 'Modules to include') or 'Modules to include')
+            self._modules_title.setText(g('modules_title', 'Modules to include', 'Modules to include') or 'Modules to include')
         if getattr(self, '_mod_add_btn', None):
-            self._mod_add_btn.setText(g('add', 'Ajouter', 'Add') or 'Add')
+            self._mod_add_btn.setText(g('add', 'Add', 'Add') or 'Add')
         if getattr(self, '_mod_rm_btn', None):
-            self._mod_rm_btn.setText(g('remove', 'Supprimer', 'Remove') or 'Remove')
+            self._mod_rm_btn.setText(g('remove', 'Remove', 'Remove') or 'Remove')
         if getattr(self, '_data_title', None):
-            self._data_title.setText(g('data_title', 'Fichiers/Dossiers à inclure (données)', 'Data files/directories to include') or 'Data files/directories to include')
+            self._data_title.setText(g('data_title', 'Data files/directories to include', 'Data files/directories to include') or 'Data files/directories to include')
         if getattr(self, '_data_add_file_btn', None):
-            self._data_add_file_btn.setText(g('add_file', 'Ajouter fichier', 'Add file') or 'Add file')
+            self._data_add_file_btn.setText(g('add_file', 'Add file', 'Add file') or 'Add file')
         if getattr(self, '_data_add_dir_btn', None):
-            self._data_add_dir_btn.setText(g('add_directory', 'Ajouter dossier', 'Add directory') or 'Add directory')
+            self._data_add_dir_btn.setText(g('add_directory', 'Add directory', 'Add directory') or 'Add directory')
         if getattr(self, '_data_rm_btn', None):
-            self._data_rm_btn.setText(g('remove', 'Supprimer', 'Remove') or 'Remove')
+            self._data_rm_btn.setText(g('remove', 'Remove', 'Remove') or 'Remove')
         if getattr(self, '_optimize_title', None):
-            self._optimize_title.setText(g('optimize', 'Optimisation', 'Optimize') or 'Optimize')
+            self._optimize_title.setText(g('optimize', 'Optimize', 'Optimize') or 'Optimize')
     except Exception:
         # Never raise from i18n; keep UI responsive
         pass

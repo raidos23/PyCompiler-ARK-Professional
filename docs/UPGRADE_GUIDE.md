@@ -1,81 +1,81 @@
-# Guide de Mise à Niveau - PyCompiler ARK++ 3.2.3
+# Upgrade Guide - PyCompiler ARK++ 3.2.3
 
-Ce guide vous aide à mettre à niveau votre environnement de développement et vos projets pour tirer parti des nouvelles fonctionnalités de qualité et de sécurité.
+This guide helps you upgrade your development environment and projects to benefit from the new quality and security features.
 
-## Résumé des Améliorations
+## Summary of Improvements
 
-### 🔧 CI/CD et Qualité
-- Pipeline CI/CD restructuré avec jobs séparés (lint, format, types, tests)
-- Pre-commit hooks avec black, ruff, mypy, bandit
-- Couverture de code améliorée avec Codecov
-- Scanning de sécurité automatisé
+### 🔧 CI/CD and Quality
+- Restructured CI/CD pipeline with separate jobs (lint, format, types, tests)
+- Pre-commit hooks with black, ruff, mypy, bandit
+- Improved coverage reporting (e.g., Codecov)
+- Automated security scanning
 
-### 🔒 Sécurité et Dépendances
-- Gestion des dépendances avec constraints.txt
-- Génération SBOM (Software Bill of Materials)
-- Audit de sécurité avec pip-audit, safety, bandit
-- Plugins ACASL pour signature de code
+### 🔒 Security and Dependencies
+- Dependency management with constraints.txt
+- SBOM (Software Bill of Materials) generation
+- Security auditing with pip-audit, safety, bandit
+- ACASL plugins for code signing
 
-### 📋 Gouvernance
-- Documentation de sécurité (SECURITY.md)
-- Code de conduite (CODE_OF_CONDUCT.md)
-- Guide de contribution (CONTRIBUTING.md)
-- Matrice de support officielle
+### 📋 Governance
+- Security policy (SECURITY.md)
+- Code of Conduct (CODE_OF_CONDUCT.md)
+- Contribution guide (CONTRIBUTING.md)
+- Official support matrix
 
-## Migration Étape par Étape
+## Step-by-Step Migration
 
-### 1. Mise à Jour de l'Environnement de Développement
+### 1. Update Your Development Environment
 
-#### Installation des Nouveaux Outils
+#### Install New Tools
 ```bash
-# Mettre à jour pip
+# Upgrade pip
 python -m pip install --upgrade pip
 
-# Installer les nouveaux outils de qualité
+# Install new quality tools
 pip install black ruff mypy bandit pip-audit safety cyclonedx-py pre-commit
 
-# Configurer pre-commit
+# Configure pre-commit
 pre-commit install
 ```
 
-#### Mise à Jour des Dépendances
+#### Update Dependencies
 ```bash
-# Installer avec les nouvelles contraintes
+# Install with new constraints
 pip install -r requirements.txt -c constraints.txt
 
-# Vérifier les vulnérabilités
+# Check vulnerabilities
 pip-audit -r requirements.txt
 safety check -r requirements.txt
 ```
 
-### 2. Configuration des Outils de Qualité
+### 2. Configure Quality Tools
 
 #### Pre-commit Hooks
-Les hooks pre-commit sont maintenant configurés automatiquement. Pour les exécuter manuellement :
+Pre-commit hooks are now configured automatically. To run them manually:
 ```bash
-# Exécuter tous les hooks
+# Run all hooks
 pre-commit run --all-files
 
-# Exécuter un hook spécifique
+# Run specific hooks
 pre-commit run black --all-files
 pre-commit run ruff --all-files
 ```
 
-#### Formatage du Code
+#### Code Formatting
 ```bash
-# Formater tout le code
+# Format all code
 black .
 ruff format .
 
-# Vérifier le style
+# Style checks
 ruff check .
 mypy utils API_SDK engine_sdk bcasl acasl
 ```
 
-### 3. Mise à Jour des Projets Existants
+### 3. Update Existing Projects
 
-#### Configuration pyproject.toml
-Si vous avez un projet existant, ajoutez ces sections à votre `pyproject.toml` :
+#### pyproject.toml Configuration
+If you have an existing project, add these sections to your `pyproject.toml`:
 
 ```toml
 [tool.black]
@@ -96,11 +96,11 @@ warn_unused_ignores = true
 exclude_dirs = ["tests", "venv", ".venv"]
 ```
 
-#### Mise à Jour des Workflows GitHub Actions
-Si vous utilisez GitHub Actions, mettez à jour vos workflows pour utiliser la nouvelle structure :
+#### GitHub Actions Workflows
+If you use GitHub Actions, update your workflows to the new structure:
 
 ```yaml
-# Exemple de job de qualité
+# Quality job example
 quality:
   runs-on: ubuntu-latest
   steps:
@@ -115,46 +115,46 @@ quality:
     - run: mypy .
 ```
 
-### 4. Sécurité et Conformité
+### 4. Security and Compliance
 
-#### Audit de Sécurité
-Exécutez régulièrement ces commandes :
+#### Security Audit
+Run these commands regularly:
 ```bash
-# Audit des dépendances
+# Dependency audit
 pip-audit -r requirements.txt
 
-# Vérification de sécurité du code
+# Source code security checks
 bandit -r utils API_SDK engine_sdk bcasl acasl
 
-# Vérification des vulnérabilités
+# Vulnerability check
 safety check -r requirements.txt
 ```
 
-#### Génération SBOM
-Pour générer un SBOM de votre projet :
+#### SBOM Generation
+To generate an SBOM for your project:
 ```bash
-# SBOM CycloneDX
+# CycloneDX SBOM
 cyclonedx-py -r requirements.txt -o sbom.json
 
-# Ou utiliser le plugin ACASL
-# Configurez le plugin sbom_generator dans votre configuration
+# Or use the ACASL plugin
+# Configure the sbom_generator plugin in your workspace configuration
 ```
 
-### 5. Développement de Plugins
+### 5. Plugin Development
 
-#### Nouveaux Plugins ACASL
-Deux nouveaux plugins sont disponibles :
+#### New ACASL Plugins
+Two new plugins are available:
 
-1. **Code Signing** (`acasl/code_signing`)
-   - Signature multi-plateforme (Windows, macOS, Linux)
-   - Support pour Authenticode, codesign, GPG
+1. **Code Signing** (`API/code_signing`)
+   - Cross-platform signing (Windows, macOS, Linux)
+   - Supports Authenticode, codesign, GPG
 
-2. **SBOM Generator** (`acasl/sbom_generator`)
-   - Génération automatique de SBOM
-   - Formats CycloneDX, SPDX, et personnalisé
+2. **SBOM Generator** (`API/sbom_generator`)
+   - Automatic SBOM generation
+   - CycloneDX, SPDX, and custom formats
 
-#### Configuration des Plugins
-Ajoutez à votre configuration :
+#### Plugin Configuration
+Add to your configuration:
 ```yaml
 acasl:
   plugins:
@@ -176,121 +176,121 @@ acasl:
     custom: true
 ```
 
-### 6. Tests et Validation
+### 6. Tests and Validation
 
-#### Nouveaux Tests de Sécurité
-Ajoutez des tests de sécurité à votre suite :
+#### New Security Tests
+Add security tests to your suite:
 ```python
 # tests/test_security.py
 def test_no_hardcoded_secrets():
-    """Vérifier qu'il n'y a pas de secrets en dur."""
-    # Utiliser bandit ou des regex personnalisées
+    """Ensure there are no hardcoded secrets."""
+    # Use bandit or custom regex checks
     pass
 
 def test_input_validation():
-    """Tester la validation des entrées."""
+    """Validate input sanitization."""
     pass
 ```
 
-#### Tests de Conformité
+#### Compliance Tests
 ```bash
-# Exécuter tous les tests avec couverture
+# Run all tests with coverage
 pytest --cov=utils --cov=API_SDK --cov=engine_sdk --cov=bcasl --cov=acasl
 
-# Tests de sécurité spécifiques
+# Security-specific tests
 pytest tests/security/
 ```
 
-## Résolution des Problèmes Courants
+## Troubleshooting
 
-### Erreurs de Formatage
+### Formatting Errors
 ```bash
-# Si black ou ruff échouent
-black --diff .  # Voir les changements
-ruff check --fix .  # Corriger automatiquement
+# If black or ruff fail
+black --diff .    # Preview changes
+ruff check --fix .  # Autofix
 ```
 
-### Erreurs de Type MyPy
+### MyPy Type Errors
 ```bash
-# Ignorer temporairement des erreurs
+# Temporarily ignore specific errors
 # type: ignore
 
-# Ou configurer dans pyproject.toml
+# Or configure in pyproject.toml
 [tool.mypy]
 ignore_missing_imports = true
 ```
 
-### Problèmes de Pre-commit
+### Pre-commit Issues
 ```bash
-# Réinstaller les hooks
+# Reinstall hooks
 pre-commit uninstall
 pre-commit install
 
-# Mettre à jour les hooks
+# Update hooks
 pre-commit autoupdate
 ```
 
-### Erreurs de Sécurité Bandit
+### Bandit Security Errors
 ```bash
-# Voir les détails
+# See details
 bandit -r . -f json
 
-# Ignorer des règles spécifiques
+# Ignore specific rules
 # nosec B101
 ```
 
-## Bonnes Pratiques
+## Best Practices
 
-### Développement Quotidien
-1. **Avant chaque commit** : Les hooks pre-commit s'exécutent automatiquement
-2. **Tests réguliers** : `pytest` avant de pousser
-3. **Audit de sécurité** : Hebdomadaire avec `pip-audit` et `safety`
-4. **Mise à jour des dépendances** : Mensuelle avec vérification de sécurité
+### Daily Development
+1. Before each commit: pre-commit hooks run automatically
+2. Run tests regularly: `pytest` before pushing
+3. Weekly security audit with `pip-audit` and `safety`
+4. Monthly dependency updates with security checks
 
-### Gestion des Dépendances
-1. **Utilisez constraints.txt** pour des builds reproductibles
-2. **Auditez régulièrement** les nouvelles dépendances
-3. **Documentez les changements** dans CHANGELOG.md
-4. **Testez sur toutes les plateformes** supportées
+### Dependency Management
+1. Use constraints.txt for reproducible builds
+2. Audit new dependencies regularly
+3. Document changes in CHANGELOG.md
+4. Test on all supported platforms
 
-### Sécurité
-1. **Ne jamais committer de secrets** (utilisez .gitignore)
-2. **Signer le code** en production
-3. **Générer des SBOM** pour la traçabilité
-4. **Suivre les alertes de sécurité** GitHub
+### Security
+1. Never commit secrets (use .gitignore)
+2. Sign production code
+3. Generate SBOMs for traceability
+4. Monitor GitHub security alerts
 
-## Ressources Supplémentaires
+## Additional Resources
 
 ### Documentation
-- [SECURITY.md](../SECURITY.md) - Politique de sécurité
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Guide de contribution
-- [SUPPORTED_MATRIX.md](../SUPPORTED_MATRIX.md) - Plateformes supportées
+- [SECURITY.md](../SECURITY.md) - Security Policy
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution Guide
+- [SUPPORTED_MATRIX.md](../SUPPORTED_MATRIX.md) - Supported Platforms
 
-### Outils
-- [Black](https://black.readthedocs.io/) - Formatage de code
-- [Ruff](https://docs.astral.sh/ruff/) - Linting rapide
-- [MyPy](https://mypy.readthedocs.io/) - Vérification de types
-- [Bandit](https://bandit.readthedocs.io/) - Sécurité Python
-- [Pre-commit](https://pre-commit.com/) - Hooks Git
+### Tools
+- [Black](https://black.readthedocs.io/) - Code formatter
+- [Ruff](https://docs.astral.sh/ruff/) - Fast linter
+- [MyPy](https://mypy.readthedocs.io/) - Type checker
+- [Bandit](https://bandit.readthedocs.io/) - Python security
+- [Pre-commit](https://pre-commit.com/) - Git hooks
 
 ### Support
-- **Issues GitHub** : Pour les bugs et demandes de fonctionnalités
-- **Discussions** : Pour les questions générales
-- **Security** : ague.samuel27@gmail.com pour les vulnérabilités
+- GitHub Issues: for bugs and feature requests
+- Discussions: for general questions
+- Security: ague.samuel27@gmail.com for vulnerabilities
 
-## Checklist de Migration
+## Migration Checklist
 
-- [ ] Environnement de développement mis à jour
-- [ ] Pre-commit hooks installés et configurés
-- [ ] Code formaté avec black et ruff
-- [ ] Types vérifiés avec mypy
-- [ ] Tests de sécurité ajoutés
-- [ ] SBOM généré et vérifié
-- [ ] Documentation mise à jour
-- [ ] CI/CD configuré avec nouveaux jobs
-- [ ] Formation réalisée aux nouveaux outils
-- [ ] Processus de release mis à jour
+- [ ] Development environment updated
+- [ ] Pre-commit hooks installed and configured
+- [ ] Code formatted with black and ruff
+- [ ] Types validated with mypy
+- [ ] Security tests added
+- [ ] SBOM generated and reviewed
+- [ ] Documentation updated
+- [ ] CI/CD updated with new jobs
+- [ ] Training completed on new tools
+- [ ] Release process updated
 
 ---
 
-*Ce guide sera mis à jour avec chaque version majeure. Pour des questions spécifiques, consultez la documentation ou créez une issue.*
+This guide will be updated with each major release. For specific questions, see the documentation or open an issue.
