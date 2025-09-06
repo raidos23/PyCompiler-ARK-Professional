@@ -213,11 +213,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 This project is licensed under the **GNU General Public License v3.0 only (GPL-3.0-only)**.
 
-### **Commercial Use**
-For commercial licensing options or enterprise support, please contact:
-- Email: enterprise@pycompiler-ark.org
-- Website: https://pycompiler-ark.org/enterprise
-
 ## 🆘 **Support**
 
 ### **Community Support**
