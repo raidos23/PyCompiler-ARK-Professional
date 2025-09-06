@@ -11,12 +11,12 @@ PyCompiler Pro++ — Cross-platform hardened bootstrap
 - macOS PATH augmentation for GUI-launched app (Homebrew paths)
 """
 
-import os
-import sys
-import signal
 import faulthandler
-import traceback
+import os
 import platform
+import signal
+import sys
+import traceback
 from pathlib import Path
 
 # Ensure project root has priority on sys.path
@@ -105,9 +105,9 @@ except Exception:
         pass
 
 # Import Qt after environment tuning
-from PySide6.QtCore import qInstallMessageHandler, QtMsgType, Qt, QCoreApplication, QTimer
+from PySide6.QtCore import QCoreApplication, Qt, QTimer, QtMsgType, qInstallMessageHandler
+from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import QApplication, QSplashScreen
-from PySide6.QtGui import QPixmap, QColor
 
 # Application metadata and high-DPI attributes BEFORE QApplication
 try:
@@ -121,7 +121,6 @@ except Exception:
     pass
 
 # Trigger dynamic discovery of engine plugins at startup (after env/Qt attributes)
-import utils.engines_loader  # discovers engines from ENGINES/ at project root
 
 
 def _qt_message_handler(mode, context, message):
@@ -279,7 +278,7 @@ def main(argv: list[str]) -> int:
                     w.show()
                     # Resserrement auto pour très petits écrans
                     try:
-                        from PySide6.QtWidgets import QLayout, QLabel
+                        from PySide6.QtWidgets import QLabel, QLayout
 
                         screen2 = app.primaryScreen()
                         geo2 = screen2.availableGeometry() if screen2 is not None else None
@@ -326,7 +325,7 @@ def main(argv: list[str]) -> int:
             w.show()
             # Resserrement auto pour très petits écrans
             try:
-                from PySide6.QtWidgets import QLayout, QLabel
+                from PySide6.QtWidgets import QLabel, QLayout
 
                 screen3 = app.primaryScreen()
                 geo3 = screen3.availableGeometry() if screen3 is not None else None

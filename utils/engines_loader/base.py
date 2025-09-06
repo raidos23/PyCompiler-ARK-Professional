@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 
-from typing import Optional, Tuple, List, Dict
+from typing import Optional
+
 
 class CompilerEngine:
     """
@@ -25,11 +26,11 @@ class CompilerEngine:
         """Perform preflight checks and setup. Return True if OK, False to abort."""
         return True
 
-    def build_command(self, gui, file: str) -> List[str]:
+    def build_command(self, gui, file: str) -> list[str]:
         """Return the full command list including the program at index 0."""
         raise NotImplementedError
 
-    def program_and_args(self, gui, file: str) -> Optional[Tuple[str, List[str]]]:
+    def program_and_args(self, gui, file: str) -> Optional[tuple[str, list[str]]]:
         """
         Resolve the program (executable path) and its arguments for QProcess.
         Default implementation splits build_command into program and args.
@@ -52,7 +53,7 @@ class CompilerEngine:
         """
         return None
 
-    def environment(self, gui, file: str) -> Optional[Dict[str, str]]:
+    def environment(self, gui, file: str) -> Optional[dict[str, str]]:
         """
         Optionally return a mapping of environment variables to inject for the engine process.
         Values here will override the current process environment. Return None for no changes.

@@ -6,13 +6,13 @@
 
 from __future__ import annotations
 
-import os
-import sys
-import pkgutil
 import importlib
+import os
+import pkgutil
+import sys
 
-from .base import CompilerEngine  # re-export base type
 from . import registry as registry  # re-export registry module
+from .base import CompilerEngine  # re-export base type
 
 
 def _discover_external_plugins(base_path: str) -> None:

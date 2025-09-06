@@ -3,7 +3,7 @@
 # Author: Samuel Amen Ague
 from __future__ import annotations
 
-from API_SDK import PluginBase, PreCompileContext, wrap_context, plugin, PluginMeta
+from API_SDK import PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
 
 # BCASL package signature (required)
 BCASL_PLUGIN = True
@@ -13,14 +13,15 @@ BCASL_NAME = "License Injector"
 BCASL_VERSION = "1.1.0"
 BCASL_AUTHOR = "Samuel Amen Ague"
 BCASL_CREATED = "2025-09-06"
-BCASL_COMPATIBILITY = ['PyCompiler ARK++ v3.2+', 'Python 3.10+']
+BCASL_COMPATIBILITY = ["PyCompiler ARK++ v3.2+", "Python 3.10+"]
 BCASL_LICENSE = "GPL-3.0-only"
-BCASL_TAGS = ['pre-compilation', 'license', 'SPDX']
+BCASL_TAGS = ["pre-compilation", "license", "SPDX"]
+
+import re
+from pathlib import Path
+from typing import Optional
 
 import API_SDK
-from pathlib import Path
-from typing import List, Optional, Tuple
-import re
 
 # Détection et normalisation de la licence du workspace
 try:
@@ -32,7 +33,7 @@ except Exception:
         _tomllib = None
 
 
-def _normalize_spdx(lic: str) -> Tuple[str, str]:
+def _normalize_spdx(lic: str) -> tuple[str, str]:
     s = (lic or "").strip()
     if not s:
         return "", ""
@@ -115,9 +116,13 @@ def _detect_license_from_pyproject(root: Path) -> Optional[str]:
 def _detect_license_from_files(root: Path) -> Optional[str]:
     try:
         candidates = [
-            "LICENSE", "LICENSE.txt", "LICENSE.md",
-            "LICENCE", "LICENCE.txt",
-            "COPYING", "COPYING.txt",
+            "LICENSE",
+            "LICENSE.txt",
+            "LICENSE.md",
+            "LICENCE",
+            "LICENCE.txt",
+            "COPYING",
+            "COPYING.txt",
         ]
         for name in candidates:
             p = root / name
@@ -131,7 +136,7 @@ def _detect_license_from_files(root: Path) -> Optional[str]:
     return None
 
 
-def _detect_workspace_license(root: Path) -> Tuple[str, str]:
+def _detect_workspace_license(root: Path) -> tuple[str, str]:
     lic = _detect_license_from_pyproject(root) or _detect_license_from_files(root)
     if not lic:
         return "", ""
@@ -141,11 +146,13 @@ def _detect_workspace_license(root: Path) -> Tuple[str, str]:
 
 # Détection SPDX déjà présente
 
+
 def _has_spdx(text: str) -> bool:
     return "SPDX-License-Identifier:" in text
 
 
 # Injection d'une ligne SPDX minimale selon le type de fichier
+
 
 def _inject_license_for_file(path: Path, text: str, spdx_id: str) -> str:
     """Injecte une ligne SPDX minimale selon le type de fichier, sans en-tête additionnel.
@@ -183,7 +190,11 @@ def _inject_license_for_file(path: Path, text: str, spdx_id: str) -> str:
         return text
 
 
-@plugin(id="license_injector", version="1.1.0", description="Injecte une ligne de licence (SPDX) en tête des fichiers ciblés")
+@plugin(
+    id="license_injector",
+    version="1.1.0",
+    description="Injecte une ligne de licence (SPDX) en tête des fichiers ciblés",
+)
 class LicenseInjector(PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -193,31 +204,37 @@ class LicenseInjector(PluginBase):
             return
 
         cfg = sctx.config_view
-        subcfg = cfg.for_plugin(getattr(self, 'id', 'license_injector'))
+        subcfg = cfg.for_plugin(getattr(self, "id", "license_injector"))
 
         # Déterminer la licence du workspace
         spdx_id, lic_name = _detect_workspace_license(sctx.workspace_root)
         if not spdx_id:
-            sctx.log_info("license_injector: aucune licence détectée dans le workspace (pyproject/LICEN[SC]E/COPYING). Aucune injection.")
+            sctx.log_info(
+                "license_injector: aucune licence détectée dans le workspace (pyproject/LICEN[SC]E/COPYING). Aucune injection."
+            )
             return
 
         # Cibles et exclusions
-        patterns: List[str] = subcfg.get("file_patterns", []) or cfg.file_patterns or ["**/*.py", "**/*.md"]
-        exclude: List[str] = list(cfg.exclude_patterns) + list(subcfg.get("exclude_patterns", []))
+        patterns: list[str] = subcfg.get("file_patterns", []) or cfg.file_patterns or ["**/*.py", "**/*.md"]
+        exclude: list[str] = list(cfg.exclude_patterns) + list(subcfg.get("exclude_patterns", []))
         # Exclusions communes
         for pat in ("venv/**", ".git/**", "main.build/**"):
             if pat not in exclude:
                 exclude.append(pat)
 
         # Demande confirmation
-        if not sctx.msg_question("License Injector", f"Injecter la licence (SPDX: {spdx_id}) dans les fichiers correspondant aux motifs: {patterns}?", default_yes=False):
+        if not sctx.msg_question(
+            "License Injector",
+            f"Injecter la licence (SPDX: {spdx_id}) dans les fichiers correspondant aux motifs: {patterns}?",
+            default_yes=False,
+        ):
             sctx.log_warn("license_injector: opération annulée par l'utilisateur")
             return
 
         # Phase 1: analyse des cibles
         ph = API_SDK.progress("Injection de licence", "Analyse des fichiers cibles...", maximum=0, cancelable=True)
         try:
-            to_modify: List[Path] = []
+            to_modify: list[Path] = []
             found = 0
             skipped_dup = 0
             for p in sctx.iter_files(patterns, exclude=exclude, enforce_workspace=True):
@@ -228,7 +245,9 @@ class LicenseInjector(PluginBase):
                 try:
                     text = p.read_text(encoding="utf-8", errors="ignore")
                 except Exception as e:
-                    sctx.log_warn(f"Lecture échouée pour {p.relative_to(sctx.workspace_root) if p.exists() else p}: {e}")
+                    sctx.log_warn(
+                        f"Lecture échouée pour {p.relative_to(sctx.workspace_root) if p.exists() else p}: {e}"
+                    )
                     continue
                 if _has_spdx(text):
                     skipped_dup += 1
@@ -245,7 +264,9 @@ class LicenseInjector(PluginBase):
                 if found == 0:
                     sctx.log_info("license_injector: aucun fichier cible")
                 else:
-                    sctx.log_info(f"license_injector: aucun fichier à modifier (déj�� avec SPDX={skipped_dup}, total scannés={found})")
+                    sctx.log_info(
+                        f"license_injector: aucun fichier à modifier (déj�� avec SPDX={skipped_dup}, total scannés={found})"
+                    )
                 return
 
             # Phase 2: injection
@@ -270,7 +291,9 @@ class LicenseInjector(PluginBase):
                 except Exception as e:
                     sctx.log_warn(f"Écriture échouée pour {rel}: {e}")
 
-            sctx.log_info(f"license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped_dup}, total scannés={found}")
+            sctx.log_info(
+                f"license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped_dup}, total scannés={found}"
+            )
         finally:
             ph.close()
 

@@ -23,41 +23,44 @@ Exports include:
 - Subprocess: run_command
 """
 from __future__ import annotations
-from typing import Sequence, Optional
+
 import platform
 import shutil
+from collections.abc import Sequence
+from typing import Optional
 
 # Re-export from the main API_SDK to keep a single source of truth
 from API_SDK import (
-    __version__,
-    ensure_min_sdk,
-    sdk_info,
-    get_capabilities,
-    # Progress
-    ProgressHandle,
-    create_progress,
-    progress,
-    show_msgbox,
-    sys_msgbox_for_installing,
     # Config
     ConfigView,
-    load_workspace_config,
-    ensure_settings_file,
+    PostCompileContext,
+    # Progress
+    ProgressHandle,
     # Context
     SDKContext,
-    PostCompileContext,
-    wrap_post_context,
-    # i18n
-    normalize_lang_pref,
+    __version__,
     available_languages,
-    resolve_system_language,
+    create_progress,
+    ensure_min_sdk,
+    ensure_settings_file,
+    get_capabilities,
     get_translations,
     load_plugin_translations,
+    load_workspace_config,
+    # i18n
+    normalize_lang_pref,
+    progress,
+    resolve_system_language,
     # Subprocess
     run_command,
+    sdk_info,
+    show_msgbox,
+    sys_msgbox_for_installing,
+    wrap_post_context,
 )
 
 # --- System installation helpers for ACASL plugins ---
+
 
 def _is_noninteractive(sctx) -> bool:
     try:
@@ -88,7 +91,7 @@ def ensure_system_pip_install(
         return True
     if _is_noninteractive(sctx):
         try:
-            if hasattr(sctx, 'log_warn'):
+            if hasattr(sctx, "log_warn"):
                 sctx.log_warn("System installation skipped (non-interactive mode)")
         except Exception:
             pass
@@ -100,12 +103,12 @@ def ensure_system_pip_install(
         if callable(fn):
             consent = bool(fn(", ".join(pkgs), msg))
         else:
-            consent = bool(getattr(sctx, 'msg_question', lambda *_args, **_kw: False)(title, msg, default_yes=False))
+            consent = bool(getattr(sctx, "msg_question", lambda *_args, **_kw: False)(title, msg, default_yes=False))
     except Exception:
         consent = False
     if not consent:
         try:
-            if hasattr(sctx, 'log_warn'):
+            if hasattr(sctx, "log_warn"):
                 sctx.log_warn("System installation canceled by user")
         except Exception:
             pass
@@ -114,12 +117,16 @@ def ensure_system_pip_install(
     last_err = ""
     for py in candidates:
         try:
-            rc, _out, err = getattr(sctx, 'run_command', run_command)([py, "-m", "pip", "install", *pkgs], timeout_s=timeout_s)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(
+                [py, "-m", "pip", "install", *pkgs], timeout_s=timeout_s
+            )
             if rc == 0:
                 return True
             last_err = err or last_err
             # Debian/Ubuntu fallback when system pip refuses to write
-            rc2, _out2, err2 = getattr(sctx, 'run_command', run_command)([py, "-m", "pip", "install", "--break-system-packages", *pkgs], timeout_s=timeout_s)
+            rc2, _out2, err2 = getattr(sctx, "run_command", run_command)(
+                [py, "-m", "pip", "install", "--break-system-packages", *pkgs], timeout_s=timeout_s
+            )
             if rc2 == 0:
                 return True
             last_err = err2 or err or last_err
@@ -127,7 +134,7 @@ def ensure_system_pip_install(
             last_err = str(e) or last_err
             continue
     try:
-        if hasattr(sctx, 'log_error'):
+        if hasattr(sctx, "log_error"):
             sctx.log_error(f"System pip install failed: {last_err}")
     except Exception:
         pass
@@ -164,7 +171,7 @@ def ensure_system_packages(
     # Consent (skip if non-interactive)
     if _is_noninteractive(sctx):
         try:
-            if hasattr(sctx, 'log_warn'):
+            if hasattr(sctx, "log_warn"):
                 sctx.log_warn("System packages install skipped (non-interactive mode)")
         except Exception:
             pass
@@ -176,12 +183,12 @@ def ensure_system_packages(
         if callable(fn):
             consent = bool(fn(", ".join(pkgs), msg))
         else:
-            consent = bool(getattr(sctx, 'msg_question', lambda *_args, **_kw: False)(title, msg, default_yes=False))
+            consent = bool(getattr(sctx, "msg_question", lambda *_args, **_kw: False)(title, msg, default_yes=False))
     except Exception:
         consent = False
     if not consent:
         try:
-            if hasattr(sctx, 'log_warn'):
+            if hasattr(sctx, "log_warn"):
                 sctx.log_warn("System packages install canceled by user")
         except Exception:
             pass
@@ -196,7 +203,7 @@ def ensure_system_packages(
                 break
         if not pm:
             try:
-                if hasattr(sctx, 'log_error'):
+                if hasattr(sctx, "log_error"):
                     sctx.log_error("No supported package manager detected (apt/dnf/pacman/zypper)")
             except Exception:
                 pass
@@ -211,74 +218,82 @@ def ensure_system_packages(
             cmd_core = "zypper install -y " + " ".join(pkgs)
         if _has_cmd("pkexec"):
             full = ["pkexec", "bash", "-lc", cmd_core]
-            rc, _out, err = getattr(sctx, 'run_command', run_command)(full, timeout_s=timeout_s)
-            ok_all = (rc == 0)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(full, timeout_s=timeout_s)
+            ok_all = rc == 0
         else:
             full = ["bash", "-lc", f"sudo -S {cmd_core}"]
-            rc, _out, err = getattr(sctx, 'run_command', run_command)(full, timeout_s=timeout_s)
-            ok_all = (rc == 0)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(full, timeout_s=timeout_s)
+            ok_all = rc == 0
         if not ok_all:
             try:
-                if hasattr(sctx, 'log_error'):
+                if hasattr(sctx, "log_error"):
                     sctx.log_error(f"System packages install failed: {err}")
             except Exception:
                 pass
     elif sysname == "Windows":
         if _has_cmd("winget"):
             for pkg in pkgs:
-                args = ["winget", "install", "--silent", "--accept-package-agreements", "--accept-source-agreements", pkg]
-                rc, _out, err = getattr(sctx, 'run_command', run_command)(args, timeout_s=timeout_s)
+                args = [
+                    "winget",
+                    "install",
+                    "--silent",
+                    "--accept-package-agreements",
+                    "--accept-source-agreements",
+                    pkg,
+                ]
+                rc, _out, err = getattr(sctx, "run_command", run_command)(args, timeout_s=timeout_s)
                 if rc != 0:
                     ok_all = False
                     try:
-                        if hasattr(sctx, 'log_error'):
+                        if hasattr(sctx, "log_error"):
                             sctx.log_error(f"winget failed for {pkg}: {err}")
                     except Exception:
                         pass
         elif _has_cmd("choco"):
             for pkg in pkgs:
                 args = ["choco", "install", "-y", pkg]
-                rc, _out, err = getattr(sctx, 'run_command', run_command)(args, timeout_s=timeout_s)
+                rc, _out, err = getattr(sctx, "run_command", run_command)(args, timeout_s=timeout_s)
                 if rc != 0:
                     ok_all = False
                     try:
-                        if hasattr(sctx, 'log_error'):
+                        if hasattr(sctx, "log_error"):
                             sctx.log_error(f"choco failed for {pkg}: {err}")
                     except Exception:
                         pass
         else:
             ok_all = False
             try:
-                if hasattr(sctx, 'log_error'):
+                if hasattr(sctx, "log_error"):
                     sctx.log_error("No supported Windows package manager detected (winget/choco)")
             except Exception:
                 pass
     elif sysname == "Darwin":
         if not _has_cmd("brew"):
             try:
-                if hasattr(sctx, 'log_error'):
+                if hasattr(sctx, "log_error"):
                     sctx.log_error("Homebrew not detected; install from https://brew.sh/")
             except Exception:
                 pass
             return False
         for pkg in pkgs:
             args = ["brew", "install", pkg]
-            rc, _out, err = getattr(sctx, 'run_command', run_command)(args, timeout_s=timeout_s)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(args, timeout_s=timeout_s)
             if rc != 0:
                 ok_all = False
                 try:
-                    if hasattr(sctx, 'log_error'):
+                    if hasattr(sctx, "log_error"):
                         sctx.log_error(f"brew failed for {pkg}: {err}")
                 except Exception:
                     pass
     else:
         ok_all = False
         try:
-            if hasattr(sctx, 'log_error'):
+            if hasattr(sctx, "log_error"):
                 sctx.log_error(f"Unsupported OS for system packages: {sysname}")
         except Exception:
             pass
     return bool(ok_all)
+
 
 __all__ = [
     # Version & caps

@@ -3,16 +3,16 @@
 
 from __future__ import annotations
 
-from typing import Dict, Type, List, Optional
+from typing import Optional
 
 from .base import CompilerEngine
 
-_REGISTRY: Dict[str, Type[CompilerEngine]] = {}
-_ORDER: List[str] = []
+_REGISTRY: dict[str, type[CompilerEngine]] = {}
+_ORDER: list[str] = []
 # UI mapping: engine id -> tab index
-_TAB_INDEX: Dict[str, int] = {}
+_TAB_INDEX: dict[str, int] = {}
 # Keep live engine instances to support dynamic interactions (e.g., i18n refresh)
-_INSTANCES: Dict[str, CompilerEngine] = {}
+_INSTANCES: dict[str, CompilerEngine] = {}
 
 
 def unregister(eid: str) -> None:
@@ -28,13 +28,13 @@ def unregister(eid: str) -> None:
         pass
 
 
-def register(engine_cls: Type[CompilerEngine]):
+def register(engine_cls: type[CompilerEngine]):
     """Register an engine class. Enforces a non-empty unique id.
 
     If the same id is registered again with the same class object, this is a no-op.
     If a different class attempts to register the same id, the new registration is ignored.
     """
-    eid = getattr(engine_cls, 'id', None)
+    eid = getattr(engine_cls, "id", None)
     if not eid or not isinstance(eid, str):
         raise ValueError("Engine class must define an 'id' attribute (str)")
     try:
@@ -51,14 +51,14 @@ def register(engine_cls: Type[CompilerEngine]):
         return engine_cls
 
 
-def get_engine(eid: str) -> Optional[Type[CompilerEngine]]:
+def get_engine(eid: str) -> Optional[type[CompilerEngine]]:
     try:
         return _REGISTRY.get(eid)
     except Exception:
         return None
 
 
-def available_engines() -> List[str]:
+def available_engines() -> list[str]:
     try:
         return list(_ORDER)
     except Exception:
@@ -70,7 +70,7 @@ def bind_tabs(gui) -> None:
     Robust to individual engine failures and avoids raising to the UI layer.
     """
     try:
-        tabs = getattr(gui, 'compiler_tabs', None)
+        tabs = getattr(gui, "compiler_tabs", None)
         if not tabs:
             return
         for eid in list(_ORDER):
@@ -78,7 +78,7 @@ def bind_tabs(gui) -> None:
                 engine = create(eid)
                 # Keep instance for later interactions (i18n, etc.)
                 _INSTANCES[eid] = engine
-                res = getattr(engine, 'create_tab', None)
+                res = getattr(engine, "create_tab", None)
                 if not callable(res):
                     continue
                 pair = res(gui)
@@ -97,7 +97,7 @@ def bind_tabs(gui) -> None:
                 # Apply engine i18n immediately if GUI already has active translations
                 try:
                     tr = getattr(gui, "_tr", None)
-                    fn = getattr(engine, 'apply_i18n', None)
+                    fn = getattr(engine, "apply_i18n", None)
                     if callable(fn) and isinstance(tr, dict):
                         fn(gui, tr)
                 except Exception:
@@ -115,7 +115,7 @@ def apply_translations(gui, tr: dict) -> None:
     try:
         for eid, inst in list(_INSTANCES.items()):
             try:
-                fn = getattr(inst, 'apply_i18n', None)
+                fn = getattr(inst, "apply_i18n", None)
                 if callable(fn):
                     fn(gui, tr)
             except Exception:

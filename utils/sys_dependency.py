@@ -18,15 +18,16 @@ Provided helpers:
 - open_urls(urls): open URLs in default browser
 """
 
+import platform
+import shutil
 import subprocess
 import webbrowser
-import shutil
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Union
 
-from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from PySide6.QtCore import QProcess
+from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
+
 from .dialogs import ProgressDialog
-import os, platform
 
 
 class SysDependencyManager:
@@ -47,12 +48,14 @@ class SysDependencyManager:
             if tasks is None:
                 tasks = []
                 setattr(self.parent_widget, "_sysdep_tasks", tasks)
-            tasks.append({
-                "process": proc,
-                "dialog": dlg,
-                "label_fr": label_fr,
-                "label_en": label_en,
-            })
+            tasks.append(
+                {
+                    "process": proc,
+                    "dialog": dlg,
+                    "label_fr": label_fr,
+                    "label_en": label_en,
+                }
+            )
         except Exception:
             pass
 
@@ -144,7 +147,9 @@ class SysDependencyManager:
         except Exception:
             return False
 
-    def prompt_text(self, title_fr: str, title_en: str, label_fr: str, label_en: str, default: str = "", password: bool = False) -> tuple[Optional[str], bool]:
+    def prompt_text(
+        self, title_fr: str, title_en: str, label_fr: str, label_en: str, default: str = "", password: bool = False
+    ) -> tuple[Optional[str], bool]:
         """Prompt a text input. If password=True, mask input. Return (value|None, ok)."""
         try:
             echo = QLineEdit.Password if password else QLineEdit.Normal
@@ -163,7 +168,7 @@ class SysDependencyManager:
         """Wrapper around shutil.which."""
         return shutil.which(cmd)
 
-    def shell_run(self, cmd: Union[str, List[str]], cwd: Optional[str] = None) -> Tuple[int, str, str]:
+    def shell_run(self, cmd: Union[str, list[str]], cwd: Optional[str] = None) -> tuple[int, str, str]:
         """Run a command (no sudo). Returns (rc, stdout, stderr)."""
         try:
             if isinstance(cmd, list):
@@ -174,7 +179,7 @@ class SysDependencyManager:
         except Exception as e:
             return 1, "", str(e)
 
-    def run_sudo_shell(self, cmd_str: str, password: str) -> Tuple[int, str, str]:
+    def run_sudo_shell(self, cmd_str: str, password: str) -> tuple[int, str, str]:
         """
         Run a shell command string that expects sudo -S on stdin. Linux only.
         Returns (rc, stdout, stderr).
@@ -191,7 +196,7 @@ class SysDependencyManager:
         except Exception as e:
             return 1, "", str(e)
 
-    def open_urls(self, urls: List[str]) -> None:
+    def open_urls(self, urls: list[str]) -> None:
         for u in urls or []:
             try:
                 webbrowser.open(u)
@@ -212,7 +217,7 @@ class SysDependencyManager:
             return None
         return None
 
-    def install_packages_windows(self, packages: List[dict]) -> Optional[QProcess]:
+    def install_packages_windows(self, packages: list[dict]) -> Optional[QProcess]:
         """
         Install Windows packages via winget with a progress dialog.
         packages: list of dicts with keys:
@@ -252,7 +257,9 @@ class SysDependencyManager:
             ):
                 return None
             # Progress dialog
-            dlg = ProgressDialog(self.tr("Installation des dépendances Windows", "Installing Windows dependencies"), self.parent_widget)
+            dlg = ProgressDialog(
+                self.tr("Installation des dépendances Windows", "Installing Windows dependencies"), self.parent_widget
+            )
             dlg.set_message(self.tr("Préparation…", "Preparing…"))
             dlg.progress.setRange(0, 0)
             dlg.show()
@@ -271,7 +278,8 @@ class SysDependencyManager:
                 pkg_id = str(pkg.get("id", "")).strip()
                 override = str(pkg.get("override", "")).strip()
                 if not pkg_id:
-                    _start_next(); return
+                    _start_next()
+                    return
                 args = ["install", "--id", pkg_id, "-e", "--source", "winget", "--silent"]
                 if override:
                     args += ["--override", override]
@@ -285,7 +293,9 @@ class SysDependencyManager:
 
             def _on_output(p: QProcess, error: bool = False):
                 try:
-                    data = p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                    data = (
+                        p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                    )
                     lines = [ln for ln in data.strip().splitlines() if ln.strip()]
                     if lines:
                         dlg.set_message(lines[-1][:200])
@@ -311,7 +321,7 @@ class SysDependencyManager:
     def start_process_with_progress(
         self,
         program: str,
-        args: List[str] | None = None,
+        args: list[str] | None = None,
         cwd: Optional[str] = None,
         title_fr: str = "Installation des dépendances système",
         title_en: str = "Installing system dependencies",
@@ -333,17 +343,22 @@ class SysDependencyManager:
                 proc.setWorkingDirectory(cwd)
             proc.setProgram(program)
             proc.setArguments(list(args or []))
+
             # Mise à jour du message avec la dernière ligne reçue
             def _on_output(p: QProcess, error: bool = False):
                 try:
-                    data = p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                    data = (
+                        p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                    )
                     lines = [ln for ln in data.strip().splitlines() if ln.strip()]
                     if lines:
                         dlg.set_message(lines[-1])
                 except Exception:
                     pass
+
             proc.readyReadStandardOutput.connect(lambda p=proc: _on_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _on_output(p, True))
+
             def _on_finished_wrapper(_ec, _es):
                 try:
                     dlg.close()
@@ -351,6 +366,7 @@ class SysDependencyManager:
                     pass
                 finally:
                     self._unregister_task(proc)
+
             proc.finished.connect(_on_finished_wrapper)
             # Register task for global coordination (quit handling)
             self._register_task(proc, dlg, "installation des dépendances", "dependencies installation")
@@ -401,24 +417,30 @@ class SysDependencyManager:
             # Utiliser bash -lc pour exécuter la chaîne
             proc.setProgram("/bin/bash")
             proc.setArguments(["-lc", cmd_str])
+
             # maj message sur sortie
             def _on_output(p: QProcess, error: bool = False):
                 try:
-                    data = p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                    data = (
+                        p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                    )
                     lines = [ln for ln in data.strip().splitlines() if ln.strip()]
                     if lines:
                         dlg.set_message(lines[-1])
                 except Exception:
                     pass
+
             def _on_started():
                 try:
                     if password:
                         proc.write((password + "\n").encode("utf-8"))
                 except Exception:
                     pass
+
             proc.started.connect(_on_started)
             proc.readyReadStandardOutput.connect(lambda p=proc: _on_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _on_output(p, True))
+
             def _on_finished_wrapper(_ec, _es):
                 try:
                     dlg.close()
@@ -426,6 +448,7 @@ class SysDependencyManager:
                     pass
                 finally:
                     self._unregister_task(proc)
+
             proc.finished.connect(_on_finished_wrapper)
             # Register task for global coordination (quit handling)
             self._register_task(proc, dlg, "installation des dépendances", "dependencies installation")
@@ -441,7 +464,9 @@ class SysDependencyManager:
                 pass
             return None
 
-    def install_packages_linux(self, packages: List[str], pm: Optional[str] = None, password: Optional[str] = None) -> Optional[QProcess]:
+    def install_packages_linux(
+        self, packages: list[str], pm: Optional[str] = None, password: Optional[str] = None
+    ) -> Optional[QProcess]:
         """
         Helper haut-niveau: demande consentement + mot de passe (si absent),
         construit la commande selon le gestionnaire et lance l'installation avec une
@@ -467,13 +492,11 @@ class SysDependencyManager:
                     "Unable to detect apt/dnf/pacman/zypper.",
                 )
                 return None
-            text_fr = "Le moteur requiert l'installation de: {}. Continuer ?".format(
-                ", ".join(packages)
-            )
-            text_en = "The engine requires installing: {}. Proceed?".format(
-                ", ".join(packages)
-            )
-            if not self.ask_yes_no("Installer dépendances système", "Install system dependencies", text_fr, text_en, True):
+            text_fr = "Le moteur requiert l'installation de: {}. Continuer ?".format(", ".join(packages))
+            text_en = "The engine requires installing: {}. Proceed?".format(", ".join(packages))
+            if not self.ask_yes_no(
+                "Installer dépendances système", "Install system dependencies", text_fr, text_en, True
+            ):
                 return None
             if password is None:
                 password = self.ask_sudo_password() or ""

@@ -10,11 +10,10 @@ API plugins:
 - load_workspace_config: read bcasl.* or .bcasl.* (json/yaml/toml/ini/cfg)
 - ensure_settings_file: create a plugin-level settings file with safe defaults
 """
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import io
 import json
+from pathlib import Path
+from typing import Any, Optional, Union
 
 # Optional parsers
 try:
@@ -39,8 +38,8 @@ class ConfigView:
     Typical usage: sub = cfg.for_plugin("my_plugin"); v = sub.get("key", default)
     """
 
-    def __init__(self, data: Optional[Dict[str, Any]] = None) -> None:
-        self._data: Dict[str, Any] = data or {}
+    def __init__(self, data: Optional[dict[str, Any]] = None) -> None:
+        self._data: dict[str, Any] = data or {}
 
     def get(self, key: str, default: Any = None) -> Any:
         return self._data.get(key, default)
@@ -48,7 +47,7 @@ class ConfigView:
     def set(self, key: str, value: Any) -> None:
         self._data[key] = value
 
-    def for_plugin(self, plugin_id: str) -> "ConfigView":
+    def for_plugin(self, plugin_id: str) -> ConfigView:
         plugins = self._data.setdefault("plugins", {})
         plugin_cfg = plugins.setdefault(plugin_id, {})
         if not isinstance(plugin_cfg, dict):
@@ -58,17 +57,17 @@ class ConfigView:
 
     # Common helpers
     @property
-    def required_files(self) -> List[str]:
+    def required_files(self) -> list[str]:
         rf = self._data.get("required_files", [])
         return list(rf) if isinstance(rf, (list, tuple)) else []
 
     @property
-    def file_patterns(self) -> List[str]:
+    def file_patterns(self) -> list[str]:
         fp = self._data.get("file_patterns", [])
         return list(fp) if isinstance(fp, (list, tuple)) else []
 
     @property
-    def exclude_patterns(self) -> List[str]:
+    def exclude_patterns(self) -> list[str]:
         ep = self._data.get("exclude_patterns", [])
         return list(ep) if isinstance(ep, (list, tuple)) else []
 
@@ -78,10 +77,10 @@ class ConfigView:
         return str(v) if isinstance(v, (str, bytes)) else None
 
 
-def load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
+def load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     """Read bcasl.* or .bcasl.* at the workspace root, supporting JSON/YAML/TOML/INI/CFG."""
 
-    def _parse_text_config(p: Path) -> Dict[str, Any]:
+    def _parse_text_config(p: Path) -> dict[str, Any]:
         try:
             text = p.read_text(encoding="utf-8")
         except Exception:
@@ -97,9 +96,10 @@ def load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                 return _toml.loads(text)
             if suffix in ("ini", "cfg"):
                 import configparser as _cp
+
                 cp = _cp.ConfigParser()
                 cp.read_string(text)
-                cfg: Dict[str, Any] = {}
+                cfg: dict[str, Any] = {}
                 for sect in cp.sections():
                     cfg[sect] = {k: v for k, v in cp.items(sect)}
                 if cp.defaults():
@@ -120,9 +120,10 @@ def load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                     return _toml.loads(text)
                 if try_fmt == "ini":
                     import configparser as _cp
+
                     cp = _cp.ConfigParser()
                     cp.read_string(text)
-                    cfg: Dict[str, Any] = {}
+                    cfg: dict[str, Any] = {}
                     for sect in cp.sections():
                         cfg[sect] = {k: v for k, v in cp.items(sect)}
                     if cp.defaults():
@@ -133,12 +134,18 @@ def load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
         return {}
 
     candidates = [
-        "bcasl.json", ".bcasl.json",
-        "bcasl.yaml", ".bcasl.yaml",
-        "bcasl.yml", ".bcasl.yml",
-        "bcasl.toml", ".bcasl.toml",
-        "bcasl.ini", ".bcasl.ini",
-        "bcasl.cfg", ".bcasl.cfg",
+        "bcasl.json",
+        ".bcasl.json",
+        "bcasl.yaml",
+        ".bcasl.yaml",
+        "bcasl.yml",
+        ".bcasl.yml",
+        "bcasl.toml",
+        ".bcasl.toml",
+        "bcasl.ini",
+        ".bcasl.ini",
+        "bcasl.cfg",
+        ".bcasl.cfg",
     ]
     for name in candidates:
         p = workspace_root / name
@@ -162,7 +169,7 @@ def ensure_settings_file(
     subdir: str = "config",
     basename: str = "settings",
     fmt: str = "yaml",
-    defaults: Optional[Dict[str, Any]] = None,
+    defaults: Optional[dict[str, Any]] = None,
     overwrite: bool = False,
 ) -> Path:
     """Ensure a workspace settings file exists and return its Path.
@@ -194,11 +201,14 @@ def ensure_settings_file(
     if target.exists() and not overwrite:
         return target
 
-    data: Dict[str, Any] = dict(defaults or {
-        "name": "World",
-        "install_subject": "my_tool",
-        "install_explanation": "Installation de dépendances nécessaires",
-    })
+    data: dict[str, Any] = dict(
+        defaults
+        or {
+            "name": "World",
+            "install_subject": "my_tool",
+            "install_explanation": "Installation de dépendances nécessaires",
+        }
+    )
 
     text: str
     try:
@@ -228,12 +238,13 @@ def ensure_settings_file(
                 elif isinstance(v, (int, float)):
                     vs = str(v)
                 else:
-                    s = str(v).replace("\"", "\\\"")
+                    s = str(v).replace('"', '\\"')
                     vs = f'"{s}"'
                 lines.append(f"{k} = {vs}")
             text = "\n".join(lines) + "\n"
         else:  # ini/cfg
             import configparser as _cp
+
             buf = io.StringIO()
             cp = _cp.ConfigParser()
             cp["DEFAULT"] = {k: str(v) for k, v in data.items()}

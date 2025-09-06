@@ -7,9 +7,9 @@ Inclut ProgressDialog, boîtes de message, et autres dialogues spécifiques.
 """
 
 # À compléter avec les classes de dialogues personnalisés
-from PySide6.QtWidgets import (
-    QVBoxLayout, QLabel, QProgressBar, QDialog, QApplication, QPushButton, QHBoxLayout
-)
+from PySide6.QtWidgets import QApplication, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QVBoxLayout
+
+
 class ProgressDialog(QDialog):
     def __init__(self, title="Progression", parent=None, cancelable=False):
         super().__init__(parent)

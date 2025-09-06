@@ -30,17 +30,17 @@ Notes
 
 from __future__ import annotations
 
-from importlib import import_module as _import_module
-from typing import Any, Dict, Tuple
-from types import ModuleType
-from threading import RLock
-from os.path import dirname as _dirname
 import sys as _sys
+from importlib import import_module as _import_module
+from os.path import dirname as _dirname
+from threading import RLock
+from types import ModuleType
+from typing import Any
 
 __version__ = "3.2.3"
 
 # Cache of resolved attributes to avoid repeated imports
-_RESOLVED: Dict[str, Any] = {}
+_RESOLVED: dict[str, Any] = {}
 # Bind common names once to avoid repeated global lookups
 _PKG: str = __package__ or __name__
 _NAME: str = __name__
@@ -49,12 +49,13 @@ _ROOT_ADDED: bool = False
 _PKG_DIR: str = _dirname(__file__)
 _ROOT_DIR: str = _dirname(_PKG_DIR)
 # Cache des modules et chemin préféré pour accélérer les résolutions ultérieures
-_MODULES: Dict[str, ModuleType] = {}
-_MODULE_TARGET: Dict[str, str] = {}
+_MODULES: dict[str, ModuleType] = {}
+_MODULE_TARGET: dict[str, str] = {}
 _LOCK = RLock()
 
 # Cache per-module candidate targets to avoid rebuilding lists on each access
-_CANDIDATES_CACHE: Dict[str, list[tuple[str, str | None]]] = {}
+_CANDIDATES_CACHE: dict[str, list[tuple[str, str | None]]] = {}
+
 
 def _get_candidates(mod_name: str) -> list[tuple[str, str | None]]:
     """Build and cache a prioritized list of import targets for a module name.
@@ -69,13 +70,15 @@ def _get_candidates(mod_name: str) -> list[tuple[str, str | None]]:
     tail = mod_name.lstrip(".")
     lst: list[tuple[str, str | None]] = []
     seen: set[tuple[str, str | None]] = set()
+
     def add(t: str, p: str | None) -> None:
         key = (t, p)
         if key not in seen:
             seen.add(key)
             lst.append((t, p))
+
     # 1) As declared
-    if mod_name.startswith('.'):
+    if mod_name.startswith("."):
         add(mod_name, _PKG)
     else:
         add(mod_name, None)
@@ -87,8 +90,9 @@ def _get_candidates(mod_name: str) -> list[tuple[str, str | None]]:
     _CANDIDATES_CACHE[mod_name] = lst
     return lst
 
+
 # Map public names to (module, attribute) pairs for lazy resolution
-_EXPORTS: Dict[str, Tuple[str, str]] = {
+_EXPORTS: dict[str, tuple[str, str]] = {
     # Preferences
     "MAX_PARALLEL": (".preferences", "MAX_PARALLEL"),
     "PREFS_FILE": (".preferences", "PREFS_FILE"),
@@ -97,7 +101,6 @@ _EXPORTS: Dict[str, Tuple[str, str]] = {
     "update_ui_state": (".preferences", "update_ui_state"),
     "preferences_system_info": (".preferences", "preferences_system_info"),
     "export_system_preferences_json": (".preferences", "export_system_preferences_json"),
-
     # Compiler
     "compile_all": (".compiler", "compile_all"),
     "try_start_processes": (".compiler", "try_start_processes"),
@@ -110,25 +113,19 @@ _EXPORTS: Dict[str, Tuple[str, str]] = {
     "cancel_all_compilations": (".compiler", "cancel_all_compilations"),
     "build_pyinstaller_command": (".compiler", "build_pyinstaller_command"),
     "build_nuitka_command": (".compiler", "build_nuitka_command"),
-
     # Dependency analysis (some internal helpers intentionally exported)
     "suggest_missing_dependencies": (".dependency_analysis", "suggest_missing_dependencies"),
     "_install_next_dependency": (".dependency_analysis", "_install_next_dependency"),
     "_on_dep_pip_output": (".dependency_analysis", "_on_dep_pip_output"),
     "_on_dep_pip_finished": (".dependency_analysis", "_on_dep_pip_finished"),
-
     # Dialogs
     "ProgressDialog": (".dialogs", "ProgressDialog"),
-
     # UI main entry point
     "PyInstallerWorkspaceGUI": (".worker", "PyInstallerWorkspaceGUI"),
-
     # BCASL integration
     "run_pre_compile": (".bcasl_loader", "run_pre_compile"),
-
     # Engines (external)
     "resolve_executable_path": (".engines.external", "resolve_executable_path"),
-
     # System dependency manager
     "SysDependencyManager": (".sys_dependency", "SysDependencyManager"),
 }
@@ -137,14 +134,8 @@ _EXPORTS: Dict[str, Tuple[str, str]] = {
 # Static import hints for bundlers (ensures collection without hidden imports)
 # These are not executed at runtime because the condition is constant False.
 if False:  # pragma: no cover
-    from . import worker as _worker
-    from . import compiler as _compiler
-    from . import preferences as _preferences
-    from . import dependency_analysis as _dependency_analysis
-    from . import dialogs as _dialogs
-    from . import i18n as _i18n
-    from . import sys_dependency as _sys_dependency
-    from . import bcasl_loader as _bcasl_loader
+    pass
+
 
 def _load_export(name: str) -> Any:
     """Resolve and cache a public symbol lazily.
@@ -184,7 +175,7 @@ def _load_export(name: str) -> Any:
         hinted = _MODULE_TARGET.get(mod_name)
     if hinted:
         try:
-            mod = _import_module(hinted) if not hinted.startswith('.') else _import_module(hinted, pkg)
+            mod = _import_module(hinted) if not hinted.startswith(".") else _import_module(hinted, pkg)
             value = getattr(mod, attr)
             with _LOCK:
                 _RESOLVED[name] = value
@@ -303,6 +294,7 @@ def __getattr__(name: str) -> Any:
 
 # Internal maintenance helper (not exported): clear lazy-load caches
 
+
 def _clear_lazy_caches() -> None:
     """Clear all lazy-load caches (for tests/debugging)."""
     with _LOCK:
@@ -315,8 +307,10 @@ def _clear_lazy_caches() -> None:
     except Exception:
         pass
 
+
 # Precompute directory listing and __all__ for faster introspection
 _DIR: list[str] = sorted(list(_EXPORTS.keys()) + ["api", "__version__"])
+
 
 def __dir__() -> list[str]:  # aid IDEs and dir(utils)
     return _DIR

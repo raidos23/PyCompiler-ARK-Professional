@@ -1,21 +1,18 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2025 Samuel Amen Ague
 
-import sys
+import asyncio
+import json
 import os
 import platform
-import subprocess
-import json
 import shutil
-import asyncio
+import sys
 import threading
 from typing import Optional
-from PySide6.QtWidgets import (
-    QWidget, QFileDialog,
-    QMessageBox, QApplication
-)
-from PySide6.QtCore import Qt, QProcess, QTimer, QObject, Signal
+
+from PySide6.QtCore import QObject, QProcess, Qt, QTimer, Signal
 from PySide6.QtGui import QDropEvent, QPixmap
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
 
 from .dialogs import ProgressDialog
 from .venv_manager import VenvManager
@@ -26,6 +23,7 @@ _latest_gui_instance = None
 # Non-blocking workspace cache for cross-thread access
 _workspace_dir_cache = None
 _workspace_dir_lock = threading.RLock()
+
 
 def get_selected_workspace() -> Optional[str]:
     """Retourne le workspace sélectionné d'une manière non bloquante et thread-safe."""
@@ -46,21 +44,26 @@ def get_selected_workspace() -> Optional[str]:
         pass
     return None
 
+
 class _UiInvoker(QObject):
     _sig = Signal(object)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._sig.connect(self._exec, Qt.QueuedConnection)
+
     def post(self, fn):
         try:
             self._sig.emit(fn)
         except Exception:
             pass
+
     def _exec(self, fn):
         try:
             fn()
         except Exception:
             pass
+
 
 def _run_coro_async(coro, on_result, ui_owner=None):
     invoker = None
@@ -72,6 +75,7 @@ def _run_coro_async(coro, on_result, ui_owner=None):
                 setattr(ui_owner, "_ui_invoker", invoker)
     except Exception:
         invoker = None
+
     def _runner():
         try:
             res = asyncio.run(coro)
@@ -84,11 +88,14 @@ def _run_coro_async(coro, on_result, ui_owner=None):
                 QTimer.singleShot(0, lambda: on_result(res))
         except Exception:
             pass
+
     threading.Thread(target=_runner, daemon=True).start()
+
 
 # Synchronous request from background threads to change workspace via GUI thread
 # Ensures confirmation dialog is shown and result returned to caller
 from PySide6.QtCore import QEventLoop as _QEventLoop
+
 
 def request_workspace_change_from_api(folder: str) -> bool:
     try:
@@ -97,7 +104,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
             # Try active window
             app = QApplication.instance()
             w = app.activeWindow() if app else None
-            if w and hasattr(w, 'apply_workspace_selection'):
+            if w and hasattr(w, "apply_workspace_selection"):
                 gui = w
         if gui is None:
             # No GUI instance: accept request by contract
@@ -108,6 +115,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
             setattr(gui, "_ui_invoker", invoker)
         result_holder = {"ok": False}
         loop = _QEventLoop()
+
         def _do():
             try:
                 result_holder["ok"] = bool(gui.apply_workspace_selection(str(folder), source="api"))
@@ -118,6 +126,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
                     loop.quit()
                 except Exception:
                     pass
+
         try:
             invoker.post(_do)
         except Exception:
@@ -131,6 +140,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
     except Exception:
         # Accept by contract even on unexpected errors
         return True
+
 
 class PyInstallerWorkspaceGUI(QWidget):
     def __init__(self):
@@ -160,6 +170,7 @@ class PyInstallerWorkspaceGUI(QWidget):
         self.init_ui()
         # Détection langue système si préférence = "System"
         import locale
+
         sys_lang = None
         try:
             loc = locale.getdefaultlocale()[0] or ""
@@ -176,15 +187,22 @@ class PyInstallerWorkspaceGUI(QWidget):
         try:
             if self.select_lang:
                 from .i18n import get_translations, resolve_system_language
+
                 async def _fetch_tr():
                     effective_code = await resolve_system_language() if pref_lang == "System" else pref_lang
                     return await get_translations(effective_code)
+
                 def _apply_label(tr):
                     try:
                         key = "choose_language_system_button" if pref_lang == "System" else "choose_language_button"
-                        self.select_lang.setText((tr.get(key) if isinstance(tr, dict) else "") or (tr.get("select_lang") if isinstance(tr, dict) else "") or "")
+                        self.select_lang.setText(
+                            (tr.get(key) if isinstance(tr, dict) else "")
+                            or (tr.get("select_lang") if isinstance(tr, dict) else "")
+                            or ""
+                        )
                     except Exception:
                         pass
+
                 _run_coro_async(_fetch_tr(), _apply_label, ui_owner=self)
         except Exception:
             pass
@@ -193,56 +211,100 @@ class PyInstallerWorkspaceGUI(QWidget):
     from .init_ui import init_ui
 
     def add_pyinstaller_data(self):
-        from PySide6.QtWidgets import QFileDialog, QInputDialog
         import os
+
         from PySide6.QtCore import QDir
-        choix, ok = QInputDialog.getItem(self, "Type d'inclusion", "Inclure un fichier ou un dossier ?", ["Fichier", "Dossier"], 0, False)
+        from PySide6.QtWidgets import QFileDialog, QInputDialog
+
+        choix, ok = QInputDialog.getItem(
+            self, "Type d'inclusion", "Inclure un fichier ou un dossier ?", ["Fichier", "Dossier"], 0, False
+        )
         if not ok:
             return
         if choix == "Fichier":
             file_path, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier à inclure avec PyInstaller")
             if file_path:
-                dest, ok = QInputDialog.getText(self, "Chemin de destination", "Chemin de destination dans l'exécutable :", text=os.path.basename(file_path))
+                dest, ok = QInputDialog.getText(
+                    self,
+                    "Chemin de destination",
+                    "Chemin de destination dans l'exécutable :",
+                    text=os.path.basename(file_path),
+                )
                 if ok and dest:
                     self.pyinstaller_data.append((file_path, dest))
-                    if hasattr(self, 'log'):
-                        self.log_i18n(f"Fichier ajouté à PyInstaller : {file_path} => {dest}", f"File added to PyInstaller: {file_path} => {dest}")
+                    if hasattr(self, "log"):
+                        self.log_i18n(
+                            f"Fichier ajouté à PyInstaller : {file_path} => {dest}",
+                            f"File added to PyInstaller: {file_path} => {dest}",
+                        )
         elif choix == "Dossier":
-            dir_path = QFileDialog.getExistingDirectory(self, "Sélectionner un dossier à inclure avec PyInstaller", QDir.homePath())
+            dir_path = QFileDialog.getExistingDirectory(
+                self, "Sélectionner un dossier à inclure avec PyInstaller", QDir.homePath()
+            )
             if dir_path:
-                dest, ok = QInputDialog.getText(self, "Chemin de destination", "Chemin de destination dans l'exécutable :", text=os.path.basename(dir_path))
+                dest, ok = QInputDialog.getText(
+                    self,
+                    "Chemin de destination",
+                    "Chemin de destination dans l'exécutable :",
+                    text=os.path.basename(dir_path),
+                )
                 if ok and dest:
                     self.pyinstaller_data.append((dir_path, dest))
-                    if hasattr(self, 'log'):
-                        self.log_i18n(f"Dossier ajouté à PyInstaller : {dir_path} => {dest}", f"Folder added to PyInstaller: {dir_path} => {dest}")
+                    if hasattr(self, "log"):
+                        self.log_i18n(
+                            f"Dossier ajouté à PyInstaller : {dir_path} => {dest}",
+                            f"Folder added to PyInstaller: {dir_path} => {dest}",
+                        )
 
     def add_nuitka_data_file(self):
-        from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
         import os
+
         from PySide6.QtCore import QDir
-        choix, ok = QInputDialog.getItem(self, "Type d'inclusion", "Inclure un fichier ou un dossier ?", ["Fichier", "Dossier"], 0, False)
+        from PySide6.QtWidgets import QFileDialog, QInputDialog
+
+        choix, ok = QInputDialog.getItem(
+            self, "Type d'inclusion", "Inclure un fichier ou un dossier ?", ["Fichier", "Dossier"], 0, False
+        )
         if not ok:
             return
-        if not hasattr(self, 'nuitka_data_files'):
+        if not hasattr(self, "nuitka_data_files"):
             self.nuitka_data_files = []
-        if not hasattr(self, 'nuitka_data_dirs'):
+        if not hasattr(self, "nuitka_data_dirs"):
             self.nuitka_data_dirs = []
         if choix == "Fichier":
             file_path, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier à inclure avec Nuitka")
             if file_path:
-                dest, ok = QInputDialog.getText(self, "Chemin de destination", "Chemin de destination dans l'exécutable :", text=os.path.basename(file_path))
+                dest, ok = QInputDialog.getText(
+                    self,
+                    "Chemin de destination",
+                    "Chemin de destination dans l'exécutable :",
+                    text=os.path.basename(file_path),
+                )
                 if ok and dest:
                     self.nuitka_data_files.append((file_path, dest))
-                    if hasattr(self, 'log'):
-                        self.log_i18n(f"Fichier ajouté à Nuitka : {file_path} => {dest}", f"File added to Nuitka: {file_path} => {dest}")
+                    if hasattr(self, "log"):
+                        self.log_i18n(
+                            f"Fichier ajouté à Nuitka : {file_path} => {dest}",
+                            f"File added to Nuitka: {file_path} => {dest}",
+                        )
         elif choix == "Dossier":
-            dir_path = QFileDialog.getExistingDirectory(self, "Sélectionner un dossier à inclure avec Nuitka", QDir.homePath())
+            dir_path = QFileDialog.getExistingDirectory(
+                self, "Sélectionner un dossier à inclure avec Nuitka", QDir.homePath()
+            )
             if dir_path:
-                dest, ok = QInputDialog.getText(self, "Chemin de destination", "Chemin de destination dans l'exécutable :", text=os.path.basename(dir_path))
+                dest, ok = QInputDialog.getText(
+                    self,
+                    "Chemin de destination",
+                    "Chemin de destination dans l'exécutable :",
+                    text=os.path.basename(dir_path),
+                )
                 if ok and dest:
                     self.nuitka_data_dirs.append((dir_path, dest))
-                    if hasattr(self, 'log'):
-                        self.log_i18n(f"Dossier ajouté à Nuitka : {dir_path} => {dest}", f"Folder added to Nuitka: {dir_path} => {dest}")
+                    if hasattr(self, "log"):
+                        self.log_i18n(
+                            f"Dossier ajouté à Nuitka : {dir_path} => {dest}",
+                            f"Folder added to Nuitka: {dir_path} => {dest}",
+                        )
 
     def dragEnterEvent(self, event: QDropEvent):
         if event.mimeData().hasUrls():
@@ -276,11 +338,16 @@ class PyInstallerWorkspaceGUI(QWidget):
             for f in files:
                 if f.endswith(".py"):
                     full_path = os.path.join(root, f)
-                    if self.workspace_dir and not os.path.commonpath([full_path, self.workspace_dir]) == self.workspace_dir:
+                    if (
+                        self.workspace_dir
+                        and not os.path.commonpath([full_path, self.workspace_dir]) == self.workspace_dir
+                    ):
                         continue
                     if full_path not in self.python_files:
                         self.python_files.append(full_path)
-                        relative_path = os.path.relpath(full_path, self.workspace_dir) if self.workspace_dir else full_path
+                        relative_path = (
+                            os.path.relpath(full_path, self.workspace_dir) if self.workspace_dir else full_path
+                        )
                         self.file_list.addItem(relative_path)
                         count += 1
         return count
@@ -295,7 +362,10 @@ class PyInstallerWorkspaceGUI(QWidget):
             # Ensure target folder exists; auto-create if missing; never refuse
             if not folder:
                 try:
-                    self.log_i18n("⚠️ Chemin de workspace vide fourni; aucune modification appliquée (accepté).", "⚠️ Empty workspace path provided; no changes applied (accepted).")
+                    self.log_i18n(
+                        "⚠️ Chemin de workspace vide fourni; aucune modification appliquée (accepté).",
+                        "⚠️ Empty workspace path provided; no changes applied (accepted).",
+                    )
                 except Exception:
                     pass
                 return True
@@ -303,21 +373,29 @@ class PyInstallerWorkspaceGUI(QWidget):
                 try:
                     os.makedirs(folder, exist_ok=True)
                     try:
-                        self.log_i18n(f"📁 Dossier créé automatiquement: {folder}", f"📁 Folder created automatically: {folder}")
+                        self.log_i18n(
+                            f"📁 Dossier créé automatiquement: {folder}", f"📁 Folder created automatically: {folder}"
+                        )
                     except Exception:
                         pass
                 except Exception:
                     try:
-                        self.log_i18n(f"⚠️ Impossible de créer le dossier, poursuite quand même: {folder}", f"⚠️ Unable to create folder, continuing anyway: {folder}")
+                        self.log_i18n(
+                            f"⚠️ Impossible de créer le dossier, poursuite quand même: {folder}",
+                            f"⚠️ Unable to create folder, continuing anyway: {folder}",
+                        )
                     except Exception:
                         pass
             # Confirmation when API requests workspace change
             if str(source).lower() == "api":
                 # Auto-approve API workspace switch; cancel running builds if any
                 try:
-                    if getattr(self, 'processes', None) and self.processes:
+                    if getattr(self, "processes", None) and self.processes:
                         try:
-                            self.log_i18n("⛔ Arrêt des compilations en cours pour changer de workspace (API).", "⛔ Stopping ongoing builds to switch workspace (API).")
+                            self.log_i18n(
+                                "⛔ Arrêt des compilations en cours pour changer de workspace (API).",
+                                "⛔ Stopping ongoing builds to switch workspace (API).",
+                            )
                         except Exception:
                             pass
                         try:
@@ -328,9 +406,12 @@ class PyInstallerWorkspaceGUI(QWidget):
                     pass
             else:
                 # Non-API requests: never refuse; cancel running builds if any
-                if getattr(self, 'processes', None) and self.processes:
+                if getattr(self, "processes", None) and self.processes:
                     try:
-                        self.log_i18n("⛔ Arrêt des compilations en cours pour changer de workspace (UI).", "⛔ Stopping ongoing builds to switch workspace (UI).")
+                        self.log_i18n(
+                            "⛔ Arrêt des compilations en cours pour changer de workspace (UI).",
+                            "⛔ Stopping ongoing builds to switch workspace (UI).",
+                        )
                     except Exception:
                         pass
                     try:
@@ -364,7 +445,9 @@ class PyInstallerWorkspaceGUI(QWidget):
                         venv_path = cand
                         break
                 if not venv_path:
-                    self.log_i18n("Aucun dossier venv détecté dans ce workspace.", "No venv folder detected in this workspace.")
+                    self.log_i18n(
+                        "Aucun dossier venv détecté dans ce workspace.", "No venv folder detected in this workspace."
+                    )
                 else:
                     self.log_i18n("Dossier venv détecté.", "Venv folder detected.")
             except Exception:
@@ -399,11 +482,16 @@ class PyInstallerWorkspaceGUI(QWidget):
         if code == 0:
             self.log_i18n(f"✅ {pkg} déjà installé dans le venv.", f"✅ {pkg} already installed in venv.")
             self._venv_check_index += 1
-            self.venv_check_progress.set_message(f"Vérification de {self._venv_check_pkgs[self._venv_check_index] if self._venv_check_index < len(self._venv_check_pkgs) else ''}...")
+            self.venv_check_progress.set_message(
+                f"Vérification de {self._venv_check_pkgs[self._venv_check_index] if self._venv_check_index < len(self._venv_check_pkgs) else ''}..."
+            )
             self.venv_check_progress.set_progress(self._venv_check_index, 2)
             self._check_next_venv_pkg()
         else:
-            self.log_i18n(f"📦 Installation automatique de {pkg} dans le venv...", f"📦 Automatic installation of {pkg} in venv...")
+            self.log_i18n(
+                f"📦 Installation automatique de {pkg} dans le venv...",
+                f"📦 Automatic installation of {pkg} in venv...",
+            )
             self.venv_check_progress.set_message(f"Installation de {pkg}...")
             self.venv_check_progress.progress.setRange(0, 0)
             process2 = QProcess(self)
@@ -419,8 +507,10 @@ class PyInstallerWorkspaceGUI(QWidget):
     def _on_venv_check_output(self, process, error=False):
         if getattr(self, "_closing", False):
             return
-        data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
-        if hasattr(self, 'venv_check_progress') and self.venv_check_progress:
+        data = (
+            process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        )
+        if hasattr(self, "venv_check_progress") and self.venv_check_progress:
             lines = data.strip().splitlines()
             if lines:
                 self.venv_check_progress.set_message(lines[-1])
@@ -438,12 +528,8 @@ class PyInstallerWorkspaceGUI(QWidget):
         self.venv_check_progress.set_progress(self._venv_check_index, 2)
         self._check_next_venv_pkg()
 
-
     def select_venv_manually(self):
         self.venv_manager.select_venv_manually()
-
-            
-
 
     def create_venv_if_needed(self, path):
         # Support both '.venv' and 'venv'
@@ -494,11 +580,20 @@ class PyInstallerWorkspaceGUI(QWidget):
                 # Journalisation du type d'interpréteur détecté
                 base = os.path.basename(python_candidate).lower()
                 if python_candidate.startswith(exe_dir) or "python_embedded" in python_candidate:
-                    self.log_i18n(f"➡️ Utilisation de l'interpréteur Python embarqué : {python_candidate}", f"➡️ Using embedded Python interpreter: {python_candidate}")
+                    self.log_i18n(
+                        f"➡️ Utilisation de l'interpréteur Python embarqué : {python_candidate}",
+                        f"➡️ Using embedded Python interpreter: {python_candidate}",
+                    )
                 elif base in ("py", "py.exe") or shutil.which(base):
-                    self.log_i18n(f"➡️ Utilisation de l'interpréteur système : {python_candidate}", f"➡️ Using system interpreter: {python_candidate}")
+                    self.log_i18n(
+                        f"➡️ Utilisation de l'interpréteur système : {python_candidate}",
+                        f"➡️ Using system interpreter: {python_candidate}",
+                    )
                 else:
-                    self.log_i18n(f"➡️ Utilisation de sys.executable : {python_candidate}", f"➡️ Using sys.executable: {python_candidate}")
+                    self.log_i18n(
+                        f"➡️ Utilisation de sys.executable : {python_candidate}",
+                        f"➡️ Using sys.executable: {python_candidate}",
+                    )
                 self.venv_progress_dialog = ProgressDialog("Création de l'environnement virtuel", self)
                 self.venv_progress_dialog.set_message("Création du venv...")
                 process = QProcess(self)
@@ -522,8 +617,10 @@ class PyInstallerWorkspaceGUI(QWidget):
     def _on_venv_output(self, process, error=False):
         if getattr(self, "_closing", False):
             return
-        data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
-        if hasattr(self, 'venv_progress_dialog') and self.venv_progress_dialog:
+        data = (
+            process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        )
+        if hasattr(self, "venv_progress_dialog") and self.venv_progress_dialog:
             lines = data.strip().splitlines()
             if lines:
                 self.venv_progress_dialog.set_message(lines[-1])
@@ -536,7 +633,7 @@ class PyInstallerWorkspaceGUI(QWidget):
             return
         if code == 0:
             self._safe_log("✅ Environnement virtuel créé avec succès.")
-            if hasattr(self, 'venv_progress_dialog') and self.venv_progress_dialog:
+            if hasattr(self, "venv_progress_dialog") and self.venv_progress_dialog:
                 self.venv_progress_dialog.set_message("Environnement prêt.")
                 self.venv_progress_dialog.set_progress(1, 1)
                 self.venv_progress_dialog.close()
@@ -544,13 +641,11 @@ class PyInstallerWorkspaceGUI(QWidget):
             self.install_requirements_if_needed(os.path.dirname(venv_path))
         else:
             self._safe_log(f"❌ Échec de création du venv (code {code})")
-            if hasattr(self, 'venv_progress_dialog') and self.venv_progress_dialog:
+            if hasattr(self, "venv_progress_dialog") and self.venv_progress_dialog:
                 self.venv_progress_dialog.set_message("Erreur lors de la création du venv.")
                 self.venv_progress_dialog.close()
         QApplication.processEvents()
 
-    
-    
     def install_requirements_if_needed(self, path):
         req_path = os.path.join(path, "requirements.txt")
         if os.path.exists(req_path):
@@ -582,13 +677,17 @@ class PyInstallerWorkspaceGUI(QWidget):
                 process.start()
                 # NE PAS bloquer ici, la fermeture se fait dans _on_pip_finished
             except Exception as e:
-                self.log_i18n(f"❌ Échec installation requirements.txt : {e}", f"❌ Failed to install requirements.txt: {e}")
+                self.log_i18n(
+                    f"❌ Échec installation requirements.txt : {e}", f"❌ Failed to install requirements.txt: {e}"
+                )
 
     def _on_pip_output(self, process, error=False):
         if getattr(self, "_closing", False):
             return
-        data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
-        if hasattr(self, 'progress_dialog') and self.progress_dialog:
+        data = (
+            process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        )
+        if hasattr(self, "progress_dialog") and self.progress_dialog:
             # Affiche la dernière ligne reçue
             lines = data.strip().splitlines()
             if lines:
@@ -603,40 +702,63 @@ class PyInstallerWorkspaceGUI(QWidget):
             return
         if code == 0:
             self._safe_log("✅ requirements.txt installé.")
-            if hasattr(self, 'progress_dialog') and self.progress_dialog:
+            if hasattr(self, "progress_dialog") and self.progress_dialog:
                 self.progress_dialog.set_message("Installation terminée.")
         else:
             self._safe_log(f"❌ Échec installation requirements.txt (code {code})")
-            if hasattr(self, 'progress_dialog') and self.progress_dialog:
+            if hasattr(self, "progress_dialog") and self.progress_dialog:
                 self.progress_dialog.set_message("Erreur lors de l'installation.")
-        if hasattr(self, 'progress_dialog') and self.progress_dialog:
+        if hasattr(self, "progress_dialog") and self.progress_dialog:
             self.progress_dialog.close()
         QApplication.processEvents()
 
-    
-    
     def select_files_manually(self):
         if not self.workspace_dir:
-            QMessageBox.warning(self, self.tr("Attention", "Warning"), self.tr("Veuillez d'abord sélectionner un dossier workspace.", "Please select a workspace folder first."))
+            QMessageBox.warning(
+                self,
+                self.tr("Attention", "Warning"),
+                self.tr(
+                    "Veuillez d'abord sélectionner un dossier workspace.", "Please select a workspace folder first."
+                ),
+            )
             return
-        files, _ = QFileDialog.getOpenFileNames(self, "Sélectionner des fichiers Python", self.workspace_dir, "Python Files (*.py)")
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Sélectionner des fichiers Python", self.workspace_dir, "Python Files (*.py)"
+        )
         if files:
             valid_files = []
             for f in files:
                 if os.path.commonpath([f, self.workspace_dir]) == self.workspace_dir:
                     valid_files.append(f)
                 else:
-                    QMessageBox.warning(self, self.tr("Fichier hors workspace", "File outside workspace"), self.tr(f"Le fichier {f} est en dehors du workspace et sera ignoré.", f"The file {f} is outside the workspace and will be ignored."))
+                    QMessageBox.warning(
+                        self,
+                        self.tr("Fichier hors workspace", "File outside workspace"),
+                        self.tr(
+                            f"Le fichier {f} est en dehors du workspace et sera ignoré.",
+                            f"The file {f} is outside the workspace and will be ignored.",
+                        ),
+                    )
             if valid_files:
                 self.selected_files = valid_files
-                self.log_i18n(f"✅ {len(valid_files)} fichier(s) sélectionné(s) manuellement.\n", f"✅ {len(valid_files)} file(s) selected manually.\n")
+                self.log_i18n(
+                    f"✅ {len(valid_files)} fichier(s) sélectionné(s) manuellement.\n",
+                    f"✅ {len(valid_files)} file(s) selected manually.\n",
+                )
                 self.update_command_preview()
 
     def on_main_only_changed(self):
         if self.opt_main_only.isChecked():
             mains = [f for f in self.python_files if os.path.basename(f) in ("main.py", "app.py")]
             if len(mains) > 1:
-                QMessageBox.information(self, self.tr("Info", "Info"), self.tr(f"{len(mains)} fichiers main.py ou app.py détectés dans le workspace.", f"{len(mains)} main.py or app.py files detected in the workspace."))
+                QMessageBox.information(
+                    self,
+                    self.tr("Info", "Info"),
+                    self.tr(
+                        f"{len(mains)} fichiers main.py ou app.py détectés dans le workspace.",
+                        f"{len(mains)} main.py or app.py files detected in the workspace.",
+                    ),
+                )
         self.update_command_preview()
 
     def select_icon(self):
@@ -646,7 +768,9 @@ class PyInstallerWorkspaceGUI(QWidget):
             self.log_i18n(f"🎨 Icône sélectionnée : {file}", f"🎨 Icon selected: {file}")
             pixmap = QPixmap(file)
             if not pixmap.isNull():
-                scaled_pixmap = pixmap.scaled(64,64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                scaled_pixmap = pixmap.scaled(
+                    64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                )
                 self.icon_preview.setPixmap(scaled_pixmap)
                 self.icon_preview.show()
             else:
@@ -665,8 +789,10 @@ class PyInstallerWorkspaceGUI(QWidget):
     from .compiler import build_nuitka_command, build_pyinstaller_command
 
     def select_nuitka_icon(self):
-        from PySide6.QtWidgets import QFileDialog
         import platform
+
+        from PySide6.QtWidgets import QFileDialog
+
         if platform.system() != "Windows":
             return
         file, _ = QFileDialog.getOpenFileName(self, "Choisir une icône .ico pour Nuitka", "", "Icon Files (*.ico)")
@@ -676,7 +802,7 @@ class PyInstallerWorkspaceGUI(QWidget):
         else:
             self.nuitka_icon_path = None
         self.update_command_preview()
-    
+
     def add_remove_file_button(self):
         # Cette méthode n'est plus nécessaire car le bouton est déjà dans le .ui
         pass
@@ -758,8 +884,13 @@ class PyInstallerWorkspaceGUI(QWidget):
             # Normaliser la préférence de langue pour qu'elle soit soit 'System' soit un code i18n (ex: 'fr','en')
             try:
                 from .i18n import normalize_lang_pref
-                base_lang_pref = getattr(self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System")))
-                lang_pref_out = base_lang_pref if base_lang_pref == "System" else asyncio.run(normalize_lang_pref(base_lang_pref))
+
+                base_lang_pref = getattr(
+                    self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))
+                )
+                lang_pref_out = (
+                    base_lang_pref if base_lang_pref == "System" else asyncio.run(normalize_lang_pref(base_lang_pref))
+                )
             except Exception:
                 lang_pref_out = getattr(self, "language_pref", "System")
             # Export minimal: uniquement les préférences globales pertinentes
@@ -778,28 +909,43 @@ class PyInstallerWorkspaceGUI(QWidget):
         file, _ = QFileDialog.getOpenFileName(self, "Importer la configuration", "", "JSON Files (*.json)")
         if file:
             try:
-                with open(file, "r", encoding="utf-8") as f:
+                with open(file, encoding="utf-8") as f:
                     prefs = json.load(f)
                 # Appliquer la préférence de langue si présente
                 try:
                     lang_pref_in = prefs.get("language_pref", prefs.get("language", None))
                     if lang_pref_in is not None:
                         from .i18n import get_translations, normalize_lang_pref, resolve_system_language
+
                         if lang_pref_in == "System":
                             self.language_pref = "System"
                             # Applique la langue système pour les chaînes
                             self.apply_language("System")
                             if getattr(self, "select_lang", None):
+
                                 async def _fetch_sys():
                                     code = await resolve_system_language()
                                     return await get_translations(code)
-                                _run_coro_async(_fetch_sys(), lambda tr: self.select_lang.setText((tr.get("choose_language_system_button") or tr.get("select_lang") or "")), ui_owner=self)
+
+                                _run_coro_async(
+                                    _fetch_sys(),
+                                    lambda tr: self.select_lang.setText(
+                                        tr.get("choose_language_system_button") or tr.get("select_lang") or ""
+                                    ),
+                                    ui_owner=self,
+                                )
                         else:
                             code = asyncio.run(normalize_lang_pref(lang_pref_in))
                             self.language_pref = code
                             self.apply_language(code)
                             if getattr(self, "select_lang", None):
-                                _run_coro_async(get_translations(code), lambda tr2: self.select_lang.setText((tr2.get("choose_language_button") or tr2.get("select_lang") or "")), ui_owner=self)
+                                _run_coro_async(
+                                    get_translations(code),
+                                    lambda tr2: self.select_lang.setText(
+                                        tr2.get("choose_language_button") or tr2.get("select_lang") or ""
+                                    ),
+                                    ui_owner=self,
+                                )
                 except Exception:
                     pass
                 # Appliquer la préférence de thème si présente
@@ -807,6 +953,7 @@ class PyInstallerWorkspaceGUI(QWidget):
                     theme_pref = prefs.get("theme", None)
                     if theme_pref is not None:
                         from .init_ui import apply_theme
+
                         self.theme = theme_pref
                         apply_theme(self, theme_pref)
                 except Exception:
@@ -821,28 +968,47 @@ class PyInstallerWorkspaceGUI(QWidget):
             except Exception as e:
                 self.log_i18n(f"❌ Erreur import configuration : {e}", f"❌ Error importing configuration: {e}")
 
-    
     def update_command_preview(self):
         # Aperçu de commande désactivé: widget label_cmd retiré
         # Résumé des options
         summary = []
-        if self.opt_onefile.isChecked(): summary.append("Onefile")
-        if self.opt_windowed.isChecked(): summary.append("Windowed")
-        if self.opt_noconfirm.isChecked(): summary.append("Noconfirm")
-        if self.opt_clean.isChecked(): summary.append("Clean")
-        if self.opt_noupx.isChecked(): summary.append("NoUPX")
-        if self.opt_debug.isChecked(): summary.append("Debug")
-        if self.opt_auto_install.isChecked(): summary.append("Auto-install modules")
-        if self.icon_path: summary.append("Icone")
-        if self.output_dir_input.text().strip(): summary.append(f"Sortie: {self.output_dir_input.text().strip()}")
+        if self.opt_onefile.isChecked():
+            summary.append("Onefile")
+        if self.opt_windowed.isChecked():
+            summary.append("Windowed")
+        if self.opt_noconfirm.isChecked():
+            summary.append("Noconfirm")
+        if self.opt_clean.isChecked():
+            summary.append("Clean")
+        if self.opt_noupx.isChecked():
+            summary.append("NoUPX")
+        if self.opt_debug.isChecked():
+            summary.append("Debug")
+        if self.opt_auto_install.isChecked():
+            summary.append("Auto-install modules")
+        if self.icon_path:
+            summary.append("Icone")
+        if self.output_dir_input.text().strip():
+            summary.append(f"Sortie: {self.output_dir_input.text().strip()}")
         # Widget options_summary supprimé; plus de mise à jour de résumé visuel
 
-    from .compiler import compile_all, try_start_processes, try_install_missing_modules, handle_finished, handle_stderr, handle_stdout, show_error_dialog, start_compilation_process, cancel_all_compilations
+    from .compiler import (
+        cancel_all_compilations,
+        compile_all,
+        handle_finished,
+        handle_stderr,
+        handle_stdout,
+        show_error_dialog,
+        start_compilation_process,
+        try_install_missing_modules,
+        try_start_processes,
+    )
+
     def set_controls_enabled(self, enabled):
         self.btn_build_all.setEnabled(enabled)
         # Forcer une mise à jour visuelle pour refléter l'état grisé avec certains thèmes
         try:
-            if self.btn_build_all and hasattr(self.btn_build_all, 'style'):
+            if self.btn_build_all and hasattr(self.btn_build_all, "style"):
                 self.btn_build_all.style().unpolish(self.btn_build_all)
                 self.btn_build_all.style().polish(self.btn_build_all)
                 self.btn_build_all.update()
@@ -857,73 +1023,81 @@ class PyInstallerWorkspaceGUI(QWidget):
         self.btn_import_config.setEnabled(enabled)
         # Désactiver aussi le bouton d'analyse des dépendances
         try:
-            if hasattr(self, 'btn_suggest_deps') and self.btn_suggest_deps:
+            if hasattr(self, "btn_suggest_deps") and self.btn_suggest_deps:
                 self.btn_suggest_deps.setEnabled(enabled)
         except Exception:
             pass
         # API Loader buttons (BCASL and ACASL)
         try:
-            if hasattr(self, 'btn_api_loader') and self.btn_api_loader:
+            if hasattr(self, "btn_api_loader") and self.btn_api_loader:
                 self.btn_api_loader.setEnabled(enabled)
         except Exception:
             pass
         try:
-            if hasattr(self, 'btn_acasl_loader') and self.btn_acasl_loader:
+            if hasattr(self, "btn_acasl_loader") and self.btn_acasl_loader:
                 self.btn_acasl_loader.setEnabled(enabled)
         except Exception:
             pass
         # Désactiver aussi options de langue/thème et stats (sensibles en cours de build)
         try:
-            if hasattr(self, 'select_lang') and self.select_lang:
+            if hasattr(self, "select_lang") and self.select_lang:
                 self.select_lang.setEnabled(enabled)
         except Exception:
             pass
         try:
-            if hasattr(self, 'select_theme') and self.select_theme:
+            if hasattr(self, "select_theme") and self.select_theme:
                 self.select_theme.setEnabled(enabled)
         except Exception:
             pass
         try:
-            if hasattr(self, 'btn_show_stats') and self.btn_show_stats:
+            if hasattr(self, "btn_show_stats") and self.btn_show_stats:
                 self.btn_show_stats.setEnabled(enabled)
         except Exception:
             pass
         self.venv_button.setEnabled(enabled)
         self.output_dir_input.setEnabled(enabled)
         # Désactive toutes les cases à cocher d'options
-        for checkbox in [self.opt_onefile, self.opt_windowed, self.opt_noconfirm,
-                         self.opt_clean, self.opt_noupx, self.opt_main_only, self.opt_debug,
-                         self.opt_auto_install, self.opt_silent_errors]:
+        for checkbox in [
+            self.opt_onefile,
+            self.opt_windowed,
+            self.opt_noconfirm,
+            self.opt_clean,
+            self.opt_noupx,
+            self.opt_main_only,
+            self.opt_debug,
+            self.opt_auto_install,
+            self.opt_silent_errors,
+        ]:
             checkbox.setEnabled(enabled)
         # Rafraîchir visuellement l'état grisé de tous les contrôles sensibles
         try:
             grey_targets = [
-                getattr(self, 'btn_build_all', None),
-                getattr(self, 'btn_select_folder', None),
-                getattr(self, 'btn_select_icon', None),
-                getattr(self, 'btn_select_files', None),
-                getattr(self, 'btn_remove_file', None),
-                getattr(self, 'btn_export_config', None),
-                getattr(self, 'btn_import_config', None),
-                getattr(self, 'btn_api_loader', None),
-                getattr(self, 'btn_acasl_loader', None),
-                getattr(self, 'btn_suggest_deps', None),
-                getattr(self, 'select_lang', None),
-                getattr(self, 'select_theme', None),
-                getattr(self, 'btn_show_stats', None),
-                getattr(self, 'venv_button', None),
-                getattr(self, 'output_dir_input', None),
+                getattr(self, "btn_build_all", None),
+                getattr(self, "btn_select_folder", None),
+                getattr(self, "btn_select_icon", None),
+                getattr(self, "btn_select_files", None),
+                getattr(self, "btn_remove_file", None),
+                getattr(self, "btn_export_config", None),
+                getattr(self, "btn_import_config", None),
+                getattr(self, "btn_api_loader", None),
+                getattr(self, "btn_acasl_loader", None),
+                getattr(self, "btn_suggest_deps", None),
+                getattr(self, "select_lang", None),
+                getattr(self, "select_theme", None),
+                getattr(self, "btn_show_stats", None),
+                getattr(self, "venv_button", None),
+                getattr(self, "output_dir_input", None),
             ]
             for w in grey_targets:
                 try:
-                    if w and hasattr(w, 'style'):
+                    if w and hasattr(w, "style"):
                         w.style().unpolish(w)
                         w.style().polish(w)
                         w.update()
                 except Exception:
                     pass
             # S'assurer que Cancel reflète visuellement son état inverse
-            if hasattr(self, 'btn_cancel_all') and self.btn_cancel_all:
+            if hasattr(self, "btn_cancel_all") and self.btn_cancel_all:
                 try:
                     self.btn_cancel_all.style().unpolish(self.btn_cancel_all)
                     self.btn_cancel_all.style().polish(self.btn_cancel_all)
@@ -934,24 +1108,27 @@ class PyInstallerWorkspaceGUI(QWidget):
             pass
         # self.custom_args supprimé (widget supprimé)
 
-    
-    
     from .preferences import load_preferences, save_preferences, update_ui_state
+
     def show_statistics(self):
         import psutil
-        import time
+
         # Statistiques de compilation
-        if not hasattr(self, '_compilation_times') or not self._compilation_times:
-            QMessageBox.information(self, self.tr("Statistiques", "Statistics"), self.tr("Aucune compilation récente à analyser.", "No recent builds to analyze."))
+        if not hasattr(self, "_compilation_times") or not self._compilation_times:
+            QMessageBox.information(
+                self,
+                self.tr("Statistiques", "Statistics"),
+                self.tr("Aucune compilation récente à analyser.", "No recent builds to analyze."),
+            )
             return
         total_files = len(self._compilation_times)
         total_time = sum(self._compilation_times.values())
         avg_time = total_time / total_files if total_files else 0
         try:
-            mem_info = psutil.Process().memory_info().rss / (1024*1024)
+            mem_info = psutil.Process().memory_info().rss / (1024 * 1024)
         except Exception:
             mem_info = None
-        msg = f"<b>Statistiques de compilation</b><br>"
+        msg = "<b>Statistiques de compilation</b><br>"
         msg += f"Fichiers compilés : {total_files}<br>"
         msg += f"Temps total : {total_time:.2f} secondes<br>"
         msg += f"Temps moyen par fichier : {avg_time:.2f} secondes<br>"
@@ -964,7 +1141,7 @@ class PyInstallerWorkspaceGUI(QWidget):
 
     def _apply_translations(self, tr: dict):
         # Utilitaires internes pour éviter les valeurs codées en dur
-        def _set(attr: str, key: str, method: str = 'setText'):
+        def _set(attr: str, key: str, method: str = "setText"):
             try:
                 widget = getattr(self, attr, None)
                 value = tr.get(key)
@@ -974,23 +1151,23 @@ class PyInstallerWorkspaceGUI(QWidget):
                 pass
 
         # Sidebar & main buttons
-        _set('btn_select_folder', 'select_folder')
-        _set('btn_select_files', 'select_files')
-        _set('btn_build_all', 'build_all')
-        _set('btn_export_config', 'export_config')
-        _set('btn_import_config', 'import_config')
-        _set('btn_cancel_all', 'cancel_all')
-        _set('btn_suggest_deps', 'suggest_deps')
-        _set('btn_help', 'help')
-        _set('btn_show_stats', 'show_stats')
+        _set("btn_select_folder", "select_folder")
+        _set("btn_select_files", "select_files")
+        _set("btn_build_all", "build_all")
+        _set("btn_export_config", "export_config")
+        _set("btn_import_config", "import_config")
+        _set("btn_cancel_all", "cancel_all")
+        _set("btn_suggest_deps", "suggest_deps")
+        _set("btn_help", "help")
+        _set("btn_show_stats", "show_stats")
 
         # Bouton de langue (variante System vs simple), sans valeur de secours
         try:
-            if getattr(self, 'select_lang', None):
-                if getattr(self, 'language_pref', getattr(self, 'language', 'System')) == 'System':
-                    val = tr.get('choose_language_system_button') or tr.get('choose_language_button')
+            if getattr(self, "select_lang", None):
+                if getattr(self, "language_pref", getattr(self, "language", "System")) == "System":
+                    val = tr.get("choose_language_system_button") or tr.get("choose_language_button")
                 else:
-                    val = tr.get('choose_language_button')
+                    val = tr.get("choose_language_button")
                 if val:
                     self.select_lang.setText(val)
         except Exception:
@@ -998,72 +1175,76 @@ class PyInstallerWorkspaceGUI(QWidget):
 
         # Bouton de thème (variante System vs simple), sans valeur de secours
         try:
-            if getattr(self, 'select_theme', None):
-                if getattr(self, 'theme', 'System') == 'System':
-                    val = tr.get('choose_theme_system_button') or tr.get('choose_theme_button')
+            if getattr(self, "select_theme", None):
+                if getattr(self, "theme", "System") == "System":
+                    val = tr.get("choose_theme_system_button") or tr.get("choose_theme_button")
                 else:
-                    val = tr.get('choose_theme_button')
+                    val = tr.get("choose_theme_button")
                 if val:
                     self.select_theme.setText(val)
         except Exception:
             pass
 
         # Workspace
-        _set('venv_button', 'venv_button')
-        _set('label_workspace_section', 'label_workspace_section')
-        _set('venv_label', 'venv_label')
-        _set('label_folder', 'label_folder')
+        _set("venv_button", "venv_button")
+        _set("label_workspace_section", "label_workspace_section")
+        _set("venv_label", "venv_label")
+        _set("label_folder", "label_folder")
 
         # Files
-        _set('label_files_section', 'label_files_section')
-        _set('btn_remove_file', 'btn_remove_file')
+        _set("label_files_section", "label_files_section")
+        _set("btn_remove_file", "btn_remove_file")
 
         # Logs
-        _set('label_logs_section', 'label_logs_section')
+        _set("label_logs_section", "label_logs_section")
 
         # Tabs
         try:
-            val0 = tr.get('tab_pyinstaller')
+            val0 = tr.get("tab_pyinstaller")
             if val0:
                 self.compiler_tabs.setTabText(0, val0)
-            val1 = tr.get('tab_nuitka')
+            val1 = tr.get("tab_nuitka")
             if val1:
                 self.compiler_tabs.setTabText(1, val1)
         except Exception:
             pass
 
         # PyInstaller options
-        _set('opt_onefile', 'opt_onefile')
-        _set('opt_windowed', 'opt_windowed')
-        _set('opt_noconfirm', 'opt_noconfirm')
-        _set('opt_clean', 'opt_clean')
-        _set('opt_noupx', 'opt_noupx')
-        _set('opt_main_only', 'opt_main_only')
-        _set('btn_select_icon', 'btn_select_icon')
-        _set('opt_debug', 'opt_debug')
-        _set('opt_auto_install', 'opt_auto_install')
-        _set('opt_silent_errors', 'opt_silent_errors')
+        _set("opt_onefile", "opt_onefile")
+        _set("opt_windowed", "opt_windowed")
+        _set("opt_noconfirm", "opt_noconfirm")
+        _set("opt_clean", "opt_clean")
+        _set("opt_noupx", "opt_noupx")
+        _set("opt_main_only", "opt_main_only")
+        _set("btn_select_icon", "btn_select_icon")
+        _set("opt_debug", "opt_debug")
+        _set("opt_auto_install", "opt_auto_install")
+        _set("opt_silent_errors", "opt_silent_errors")
 
         # Nuitka options
-        _set('nuitka_onefile', 'nuitka_onefile')
-        _set('nuitka_standalone', 'nuitka_standalone')
-        _set('nuitka_disable_console', 'nuitka_disable_console')
-        _set('nuitka_show_progress', 'nuitka_show_progress')
+        _set("nuitka_onefile", "nuitka_onefile")
+        _set("nuitka_standalone", "nuitka_standalone")
+        _set("nuitka_disable_console", "nuitka_disable_console")
+        _set("nuitka_show_progress", "nuitka_show_progress")
         try:
-            placeholder = tr.get('nuitka_output_dir')
-            if placeholder and getattr(self, 'nuitka_output_dir', None):
+            placeholder = tr.get("nuitka_output_dir")
+            if placeholder and getattr(self, "nuitka_output_dir", None):
                 self.nuitka_output_dir.setPlaceholderText(placeholder)
         except Exception:
             pass
-        _set('btn_nuitka_icon', 'btn_nuitka_icon')
+        _set("btn_nuitka_icon", "btn_nuitka_icon")
 
     def apply_language(self, lang_display: str):
         # Launch non-blocking translation loading and apply when ready
-        from .i18n import normalize_lang_pref, get_translations, resolve_system_language
+        from .i18n import get_translations, normalize_lang_pref, resolve_system_language
+
         async def _do():
-            code = await resolve_system_language() if lang_display == "System" else await normalize_lang_pref(lang_display)
+            code = (
+                await resolve_system_language() if lang_display == "System" else await normalize_lang_pref(lang_display)
+            )
             tr = await get_translations(code)
             return code, tr
+
         def _on_result(res):
             if isinstance(res, Exception):
                 return
@@ -1080,6 +1261,7 @@ class PyInstallerWorkspaceGUI(QWidget):
                 # Registry-based propagation to engine instances
                 try:
                     import utils.engines_loader as engines_loader
+
                     engines_loader.registry.apply_translations(self, tr)
                 except Exception:
                     pass
@@ -1094,9 +1276,12 @@ class PyInstallerWorkspaceGUI(QWidget):
             except Exception:
                 pass
             try:
-                self.log_i18n(f"🌐 Langue appliquée : {self.current_language}", f"🌐 Language applied: {self.current_language}")
+                self.log_i18n(
+                    f"🌐 Langue appliquée : {self.current_language}", f"🌐 Language applied: {self.current_language}"
+                )
             except Exception:
                 pass
+
         _run_coro_async(_do(), _on_result, ui_owner=self)
 
     def register_language_refresh(self, callback):
@@ -1140,7 +1325,9 @@ class PyInstallerWorkspaceGUI(QWidget):
 
     def show_language_dialog(self):
         from PySide6.QtWidgets import QInputDialog
+
         from .i18n import available_languages, get_translations, resolve_system_language
+
         async def _prepare():
             langs = await available_languages()
             name_to_code = {l.get("name", l.get("code")): l.get("code") for l in langs}
@@ -1151,10 +1338,13 @@ class PyInstallerWorkspaceGUI(QWidget):
             except Exception:
                 start_index = 0
             return name_to_code, display, start_index
+
         def _after_prepared(res):
             if isinstance(res, Exception):
                 try:
-                    self.log_i18n("❌ Échec de chargement des langues disponibles.", "❌ Failed to load available languages.")
+                    self.log_i18n(
+                        "❌ Échec de chargement des langues disponibles.", "❌ Failed to load available languages."
+                    )
                 except Exception:
                     pass
                 return
@@ -1168,26 +1358,44 @@ class PyInstallerWorkspaceGUI(QWidget):
                     # Apply resolved system language for UI strings, but keep pref as System
                     self.apply_language("System")
                     if self.select_lang:
+
                         async def _fetch_sys():
                             code = await resolve_system_language()
                             return await get_translations(code)
-                        _run_coro_async(_fetch_sys(), lambda tr: self.select_lang.setText((tr.get("choose_language_system_button") or tr.get("select_lang") or "")), ui_owner=self)
+
+                        _run_coro_async(
+                            _fetch_sys(),
+                            lambda tr: self.select_lang.setText(
+                                tr.get("choose_language_system_button") or tr.get("select_lang") or ""
+                            ),
+                            ui_owner=self,
+                        )
                 else:
                     code = name_to_code.get(choice) or choice
                     self.language_pref = code
                     self.apply_language(code)
                     if self.select_lang:
-                        _run_coro_async(get_translations(code), lambda tr2: self.select_lang.setText((tr2.get("choose_language_button") or tr2.get("select_lang") or "")), ui_owner=self)
+                        _run_coro_async(
+                            get_translations(code),
+                            lambda tr2: self.select_lang.setText(
+                                tr2.get("choose_language_button") or tr2.get("select_lang") or ""
+                            ),
+                            ui_owner=self,
+                        )
             else:
                 try:
                     self.log_i18n("Sélection de la langue annulée.", "Language selection canceled.")
                 except Exception:
                     pass
+
         _run_coro_async(_prepare(), _after_prepared, ui_owner=self)
 
-    
-
-    from .dependency_analysis import suggest_missing_dependencies, _install_next_dependency, _on_dep_pip_finished, _on_dep_pip_output
+    from .dependency_analysis import (
+        _install_next_dependency,
+        _on_dep_pip_finished,
+        _on_dep_pip_output,
+        suggest_missing_dependencies,
+    )
 
     def _safe_log(self, text):
         try:
@@ -1206,14 +1414,14 @@ class PyInstallerWorkspaceGUI(QWidget):
         if self.processes:
             return True
         # Tâches liées au venv via le gestionnaire
-        if hasattr(self, 'venv_manager') and self.venv_manager and self.venv_manager.has_active_tasks():
+        if hasattr(self, "venv_manager") and self.venv_manager and self.venv_manager.has_active_tasks():
             return True
         return False
 
     def _terminate_background_tasks(self):
         # Stoppe les tâches en arrière-plan liées au venv via le gestionnaire
         try:
-            if hasattr(self, 'venv_manager') and self.venv_manager:
+            if hasattr(self, "venv_manager") and self.venv_manager:
                 self.venv_manager.terminate_tasks()
         except Exception:
             pass
@@ -1223,8 +1431,8 @@ class PyInstallerWorkspaceGUI(QWidget):
             details = []
             if self.processes:
                 details.append("compilation")
-            if hasattr(self, 'venv_manager') and self.venv_manager:
-                details.extend(self.venv_manager.get_active_task_labels('Français'))
+            if hasattr(self, "venv_manager") and self.venv_manager:
+                details.extend(self.venv_manager.get_active_task_labels("Français"))
             if getattr(self, "current_language", "Français") == "English":
                 mapping = {
                     "compilation": "build",
@@ -1244,13 +1452,7 @@ class PyInstallerWorkspaceGUI(QWidget):
                     msg += " (" + ", ".join(details) + ")"
                 msg += ". Voulez-vous vraiment arrêter et quitter ?"
                 title = "Processus en cours"
-            reply = QMessageBox.question(
-                self,
-                title,
-                msg,
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
+            reply = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self._closing = True
                 # Annule les compilations en cours si nécessaire
@@ -1261,6 +1463,7 @@ class PyInstallerWorkspaceGUI(QWidget):
                 # Arrêt propre des threads BCASL si actifs
                 try:
                     from bcasl.bcasl_loader import ensure_bcasl_thread_stopped
+
                     ensure_bcasl_thread_stopped(self)
                 except Exception:
                     pass
@@ -1271,6 +1474,7 @@ class PyInstallerWorkspaceGUI(QWidget):
             # Arrêt propre des threads BCASL si actifs
             try:
                 from bcasl.bcasl_loader import ensure_bcasl_thread_stopped
+
                 ensure_bcasl_thread_stopped(self)
             except Exception:
                 pass

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 from __future__ import annotations
+
 """
 API Plugin: PyArmor Obfuscation (self-contained, no utils dependency)
 
@@ -8,14 +9,22 @@ This BCASL plugin obfuscates selected Python sources using PyArmor.
 - Checks PyArmor availability and proposes installation when missing.
 - Uses API_SDK facilities (progress, run_command, safe paths) and writes a report.
 """
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 import re
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any, Optional
 
 from API_SDK.BCASL_SDK import (
-    PluginBase, PluginMeta, PreCompileContext, wrap_context,
-    ensure_min_sdk, ensure_settings_file, progress, ensure_system_pip_install
+    PluginBase,
+    PluginMeta,
+    PreCompileContext,
+    ensure_min_sdk,
+    ensure_settings_file,
+    ensure_system_pip_install,
+    progress,
+    wrap_context,
 )
+
 try:
     from API_SDK.BCASL_SDK import plugin  # preferred
 except Exception:  # pragma: no cover
@@ -29,7 +38,7 @@ BCASL_NAME = "PyArmor"
 BCASL_VERSION = "0.1.2"
 BCASL_AUTHOR = "Samuel Amen Ague"
 BCASL_CREATED = "2025-09-06"
-BCASL_COMPATIBILITY = ['PyCompiler ARK++ v3.2+', 'Python 3.10+']
+BCASL_COMPATIBILITY = ["PyCompiler ARK++ v3.2+", "Python 3.10+"]
 BCASL_LICENSE = "GPL-3.0-only"
 BCASL_TAGS = ["obfuscation", "protect"]
 
@@ -48,6 +57,7 @@ DEFAULT_SETTINGS = {
 # Local helpers (self-contained)
 # -----------------------------
 
+
 def _pyarmor_available(sctx) -> bool:
     """Detect PyArmor via 'pyarmor --version' or 'python -m pyarmor --version'."""
     rc, out, err = sctx.run_command(["pyarmor", "--version"], timeout_s=10)
@@ -57,7 +67,7 @@ def _pyarmor_available(sctx) -> bool:
     return rc == 0
 
 
-def _pyarmor_version(sctx) -> Tuple[int, int, int]:
+def _pyarmor_version(sctx) -> tuple[int, int, int]:
     """Return detected PyArmor version tuple or (0,0,0)."""
     for cmd in (["pyarmor", "--version"], ["python", "-m", "pyarmor", "--version"]):
         rc, out, err = sctx.run_command(cmd, timeout_s=10)
@@ -85,10 +95,10 @@ def _build_gen_args(
     recursive: bool = False,
     exclude: Optional[Sequence[str]] = None,
     manifest: Optional[str] = None,
-    advanced: Optional[Dict[str, Any]] = None,
-) -> List[str]:
+    advanced: Optional[dict[str, Any]] = None,
+) -> list[str]:
     """Build 'pyarmor gen' arguments for PyArmor 8+."""
-    args: List[str] = ["gen", "-O", out_dir]
+    args: list[str] = ["gen", "-O", out_dir]
     if recursive:
         args.append("-r")
     if exclude:
@@ -114,9 +124,11 @@ def _build_gen_args(
     return args
 
 
-def _run_pyarmor(sctx, args: Sequence[str], *, cwd: Optional[str] = None, timeout_s: int = 1800) -> Tuple[int, str, str, List[str]]:
+def _run_pyarmor(
+    sctx, args: Sequence[str], *, cwd: Optional[str] = None, timeout_s: int = 1800
+) -> tuple[int, str, str, list[str]]:
     """Run PyArmor with given args using either 'pyarmor' or 'python -m pyarmor'."""
-    runner: List[str]
+    runner: list[str]
     rc, _out, _err = sctx.run_command(["pyarmor", "--version"], timeout_s=5)
     if rc == 0:
         runner = ["pyarmor"]
@@ -135,13 +147,13 @@ def _obfuscate(
     recursive: bool = False,
     exclude: Optional[Sequence[str]] = None,
     manifest: Optional[str] = None,
-    advanced: Optional[Dict[str, Any]] = None,
+    advanced: Optional[dict[str, Any]] = None,
     cwd: Optional[str] = None,
     timeout_s: int = 1800,
-) -> Tuple[bool, Dict[str, Any]]:
+) -> tuple[bool, dict[str, Any]]:
     args = _build_gen_args(inputs, out_dir, recursive=recursive, exclude=exclude, manifest=manifest, advanced=advanced)
     rc, out, err, cmd = _run_pyarmor(sctx, args, cwd=cwd, timeout_s=timeout_s)
-    ok = (rc == 0)
+    ok = rc == 0
     report = {
         "cmd": cmd[0],
         "args": args,
@@ -194,17 +206,19 @@ class PyArmorPlugin(PluginBase):
         sctx.log_info(f"[pyarmor] Settings file: {settings_path}")
 
         # Resolve runtime configuration
-        inputs: List[str] = subcfg.get("inputs", DEFAULT_SETTINGS["inputs"]) or DEFAULT_SETTINGS["inputs"]
+        inputs: list[str] = subcfg.get("inputs", DEFAULT_SETTINGS["inputs"]) or DEFAULT_SETTINGS["inputs"]
         out_dir: str = subcfg.get("out_dir", DEFAULT_SETTINGS["out_dir"]) or DEFAULT_SETTINGS["out_dir"]
         recursive: bool = bool(subcfg.get("recursive", DEFAULT_SETTINGS["recursive"]))
-        exclude_patterns: List[str] = subcfg.get("exclude_patterns", DEFAULT_SETTINGS["exclude_patterns"]) or DEFAULT_SETTINGS["exclude_patterns"]
+        exclude_patterns: list[str] = (
+            subcfg.get("exclude_patterns", DEFAULT_SETTINGS["exclude_patterns"]) or DEFAULT_SETTINGS["exclude_patterns"]
+        )
         manifest: str = subcfg.get("manifest", DEFAULT_SETTINGS["manifest"]) or ""
-        advanced: Dict[str, Any] = subcfg.get("advanced", DEFAULT_SETTINGS["advanced"]) or {}
+        advanced: dict[str, Any] = subcfg.get("advanced", DEFAULT_SETTINGS["advanced"]) or {}
         dry_run: bool = bool(subcfg.get("dry_run", DEFAULT_SETTINGS["dry_run"]))
 
         # Sanitize and resolve paths relative to workspace
         ws = sctx.workspace_root
-        abs_inputs: List[str] = []
+        abs_inputs: list[str] = []
         for it in inputs:
             try:
                 p = sctx.safe_path(it)
@@ -243,12 +257,12 @@ class PyArmorPlugin(PluginBase):
         # Bilingual message about detected version/license
         try:
             import platform as _platform
+
             detail = _pyarmor_version_detail(sctx)
             plat = f"{_platform.system()} {_platform.machine()}"
             title = "PyArmor — Version | Version"
             msg = (
-                f"Version détectée : {detail}\nPlateforme : {plat}\n\n"
-                f"Detected version: {detail}\nPlatform: {plat}"
+                f"Version détectée : {detail}\nPlateforme : {plat}\n\n" f"Detected version: {detail}\nPlatform: {plat}"
             )
             if not noninteractive:
                 sctx.msg_info(title, msg)
@@ -262,10 +276,7 @@ class PyArmorPlugin(PluginBase):
                     "Obfuscation may fail (e.g., 'out of license')."
                 )
                 sctx.msg_warn("PyArmor — Licence | License", warn)
-                q = (
-                    "Continuer l'obfuscation ?\n\n"
-                    "Proceed with obfuscation?"
-                )
+                q = "Continuer l'obfuscation ?\n\n" "Proceed with obfuscation?"
                 if not sctx.msg_question("PyArmor — Continuer ? | Continue?", q, default_yes=True):
                     sctx.log_warn("[pyarmor] User canceled obfuscation due to trial license")
                     return
@@ -275,7 +286,14 @@ class PyArmorPlugin(PluginBase):
         # Build args (supports PyArmor 8+ gen command)
         if dry_run:
             sctx.log_info("[pyarmor] Dry run enabled; generating command only")
-            args = _build_gen_args(abs_inputs, str(out_path), recursive=recursive, exclude=exclude_patterns, manifest=(str(sctx.safe_path(manifest)) if manifest else None), advanced=advanced)
+            args = _build_gen_args(
+                abs_inputs,
+                str(out_path),
+                recursive=recursive,
+                exclude=exclude_patterns,
+                manifest=(str(sctx.safe_path(manifest)) if manifest else None),
+                advanced=advanced,
+            )
             sctx.log_info("[pyarmor] Command: pyarmor " + " ".join(args))
             return
 
@@ -299,6 +317,7 @@ class PyArmorPlugin(PluginBase):
         # Save a report under the output directory
         try:
             import json
+
             rpt = out_path / "pyarmor_report.json"
             payload = json.dumps(report, indent=2, ensure_ascii=False)
             try:
@@ -326,7 +345,7 @@ class PyArmorPlugin(PluginBase):
                     sctx.msg_warn(
                         "PyArmor — Erreur licence | License error",
                         "Obfuscation échouée: licence PyArmor insuffisante ou trial.\n\n"
-                        "Obfuscation failed: insufficient or trial PyArmor license."
+                        "Obfuscation failed: insufficient or trial PyArmor license.",
                     )
             except Exception:
                 pass
@@ -335,6 +354,7 @@ class PyArmorPlugin(PluginBase):
 
 META = PluginMeta(id=BCASL_ID, name=BCASL_NAME, version=BCASL_VERSION, description=BCASL_DESCRIPTION)
 PLUGIN = PyArmorPlugin(META)
+
 
 def bcasl_register(manager):
     manager.add_plugin(PLUGIN)

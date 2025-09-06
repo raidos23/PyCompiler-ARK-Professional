@@ -11,15 +11,14 @@ pas nécessaires à l'exécution et sont désactivées/neutralisées pour évite
 impact en production. Les entrées publiques référencées par l'UI (suggest_missing_dependencies)
 sont conservées.
 """
-from PySide6.QtWidgets import (
-    QMessageBox
-)
-from PySide6.QtCore import QProcess
 # À compléter avec les fonctions et classes liées à l'analyse de dépendances
 import os
 import platform
-import subprocess
 import re
+import subprocess
+
+from PySide6.QtCore import QProcess
+from PySide6.QtWidgets import QMessageBox
 
 from .dialogs import ProgressDialog
 
@@ -30,16 +29,61 @@ from .dialogs import ProgressDialog
 
 # Liste explicite de modules de la bibliothèque standard à exclure
 EXCLUDED_STDLIB = {
-    'sys', 'os', 're', 'subprocess', 'json', 'math', 'time', 'pathlib',
-    'typing', 'itertools', 'functools', 'collections', 'asyncio',
-    'importlib', 'inspect', 'logging', 'argparse', 'dataclasses',
-    'unittest', 'threading', 'multiprocessing', 'http', 'urllib', 'email',
-    'socket', 'ssl', 'hashlib', 'hmac', 'gzip', 'bz2', 'lzma', 'base64',
-    'shutil', 'tempfile', 'glob', 'fnmatch', 'statistics', 'pprint',
-    'getpass', 'uuid', 'enum', 'contextlib', 'queue', 'traceback',
-    'warnings', 'gc', 'platform', 'sysconfig', 'pkgutil', 'site', 'venv',
-    'sqlite3', 'tkinter'
+    "sys",
+    "os",
+    "re",
+    "subprocess",
+    "json",
+    "math",
+    "time",
+    "pathlib",
+    "typing",
+    "itertools",
+    "functools",
+    "collections",
+    "asyncio",
+    "importlib",
+    "inspect",
+    "logging",
+    "argparse",
+    "dataclasses",
+    "unittest",
+    "threading",
+    "multiprocessing",
+    "http",
+    "urllib",
+    "email",
+    "socket",
+    "ssl",
+    "hashlib",
+    "hmac",
+    "gzip",
+    "bz2",
+    "lzma",
+    "base64",
+    "shutil",
+    "tempfile",
+    "glob",
+    "fnmatch",
+    "statistics",
+    "pprint",
+    "getpass",
+    "uuid",
+    "enum",
+    "contextlib",
+    "queue",
+    "traceback",
+    "warnings",
+    "gc",
+    "platform",
+    "sysconfig",
+    "pkgutil",
+    "site",
+    "venv",
+    "sqlite3",
+    "tkinter",
 }
+
 
 def _is_stdlib_module(module_name: str) -> bool:
     """
@@ -49,22 +93,23 @@ def _is_stdlib_module(module_name: str) -> bool:
     try:
         if module_name in EXCLUDED_STDLIB:
             return True
+        import importlib.util
         import sys
         import sysconfig
-        import importlib.util
+
         if module_name in sys.builtin_module_names:
             return True
         spec = importlib.util.find_spec(module_name)
         if spec is None:
             return False
-        if getattr(spec, 'origin', None) in ('built-in', 'frozen'):
+        if getattr(spec, "origin", None) in ("built-in", "frozen"):
             return True
-        stdlib_path = sysconfig.get_path('stdlib') or ''
+        stdlib_path = sysconfig.get_path("stdlib") or ""
         stdlib_path = os.path.realpath(stdlib_path)
         candidates = []
-        if getattr(spec, 'origin', None):
+        if getattr(spec, "origin", None):
             candidates.append(os.path.realpath(spec.origin))
-        for loc in (spec.submodule_search_locations or []):
+        for loc in spec.submodule_search_locations or []:
             candidates.append(os.path.realpath(loc))
         for c in candidates:
             try:
@@ -77,6 +122,7 @@ def _is_stdlib_module(module_name: str) -> bool:
     except Exception:
         return False
 
+
 def suggest_missing_dependencies(self):
     """
     Analyse les fichiers principaux à compiler, détecte les modules importés,
@@ -84,10 +130,12 @@ def suggest_missing_dependencies(self):
     """
     # Vérifie que le workspace ou le venv est bien sélectionné
     if not self.workspace_dir and not self.venv_path_manuel:
-        self.log.append("❌ Aucun workspace ou venv sélectionné. Veuillez d'abord sélectionner un dossier workspace ou un venv.")
+        self.log.append(
+            "❌ Aucun workspace ou venv sélectionné. Veuillez d'abord sélectionner un dossier workspace ou un venv."
+        )
         return
     import ast
-    import importlib.util
+
     modules = set()
     # Détermine la liste des fichiers à analyser (sélectionnés ou tous les fichiers du projet)
     files = self.selected_files if self.selected_files else self.python_files
@@ -97,39 +145,42 @@ def suggest_missing_dependencies(self):
     else:
         venv_dir = os.path.abspath(os.path.join(self.workspace_dir, "venv"))
     filtered_files = [
-        f for f in files
+        f
+        for f in files
         if not os.path.commonpath([os.path.abspath(f), venv_dir]) == venv_dir
-        and not any(part.startswith('.') or part == '__pycache__' for part in f.split(os.sep))
+        and not any(part.startswith(".") or part == "__pycache__" for part in f.split(os.sep))
     ]
     # Analyse chaque fichier Python pour détecter les imports
     for file in filtered_files:
         try:
-            with open(file, 'r', encoding='utf-8') as f:
+            with open(file, encoding="utf-8") as f:
                 source = f.read()
                 tree = ast.parse(source, filename=file)
             # Imports classiques (import ... / from ... import ...)
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:
-                        modules.add(alias.name.split('.')[0])
+                        modules.add(alias.name.split(".")[0])
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
-                        modules.add(node.module.split('.')[0])
+                        modules.add(node.module.split(".")[0])
             # Imports dynamiques via __import__ ou importlib.import_module
             dynamic_imports = re.findall(r"__import__\(['\"]([\w\.]+)['\"]\)", source)
-            modules.update([mod.split('.')[0] for mod in dynamic_imports])
+            modules.update([mod.split(".")[0] for mod in dynamic_imports])
             importlib_imports = re.findall(r"importlib\.import_module\(['\"]([\w\.]+)['\"]\)", source)
-            modules.update([mod.split('.')[0] for mod in importlib_imports])
+            modules.update([mod.split(".")[0] for mod in importlib_imports])
         except Exception as e:
             self.log.append(f"⚠️ Erreur analyse dépendances dans {file} : {e}")
     # Exclure les modules standards Python (stdlib)
     import sys
     import sysconfig
+
     stdlib = set(sys.builtin_module_names)
     # Ajoute les modules de la vraie stdlib (trouvés dans le dossier stdlib)
-    stdlib_paths = [sysconfig.get_path('stdlib')]
+    stdlib_paths = [sysconfig.get_path("stdlib")]
     try:
         import pkgutil
+
         for finder, name, ispkg in pkgutil.iter_modules(stdlib_paths):
             stdlib.add(name)
     except Exception:
@@ -144,8 +195,9 @@ def suggest_missing_dependencies(self):
     # Alerte spéciale pour tkinter (std lib optionnelle non installable via pip)
     try:
         import importlib.util as _il_util
-        if 'tkinter' in modules:
-            if _il_util.find_spec('tkinter') is None:
+
+        if "tkinter" in modules:
+            if _il_util.find_spec("tkinter") is None:
                 msg = (
                     "Le module tkinter n'est pas disponible dans votre environnement Python. "
                     "tkinter fait partie de la bibliothèque standard mais nécessite des paquets système et ne s'installe pas via pip.\n\n"
@@ -171,7 +223,9 @@ def suggest_missing_dependencies(self):
     if self.venv_path_manuel:
         pip_exe = os.path.join(self.venv_path_manuel, "Scripts" if platform.system() == "Windows" else "bin", pip_name)
     else:
-        pip_exe = os.path.join(self.workspace_dir, "venv", "Scripts" if platform.system() == "Windows" else "bin", pip_name)
+        pip_exe = os.path.join(
+            self.workspace_dir, "venv", "Scripts" if platform.system() == "Windows" else "bin", pip_name
+        )
     # Détermine la stratégie pip: binaire du venv si présent, sinon 'python -m pip'
     pip_program = pip_exe
     pip_prefix = []
@@ -181,7 +235,9 @@ def suggest_missing_dependencies(self):
             pip_program = sys.executable
             pip_prefix = ["-m", "pip"]
             try:
-                self.log.append("ℹ️ pip du venv introuvable; utilisation de 'python -m pip' pour la vérification des modules.")
+                self.log.append(
+                    "ℹ️ pip du venv introuvable; utilisation de 'python -m pip' pour la vérification des modules."
+                )
             except Exception:
                 pass
     except Exception:
@@ -203,8 +259,11 @@ def suggest_missing_dependencies(self):
         reply = QMessageBox.question(
             self,
             self.tr("Installer les dépendances", "Install dependencies"),
-            self.tr("Installer automatiquement les modules manquants ?\n{mods}", "Automatically install missing modules?\n{mods}").format(mods=', '.join(not_installed)),
-            QMessageBox.Yes | QMessageBox.No
+            self.tr(
+                "Installer automatiquement les modules manquants ?\n{mods}",
+                "Automatically install missing modules?\n{mods}",
+            ).format(mods=", ".join(not_installed)),
+            QMessageBox.Yes | QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
             self._dep_install_index = 0
@@ -216,13 +275,18 @@ def suggest_missing_dependencies(self):
             except Exception:
                 self._dep_pip_program = sys.executable
                 self._dep_pip_prefix = ["-m", "pip"]
-            self.dep_progress_dialog = ProgressDialog(self.tr("Installation des dépendances", "Installing dependencies"), self)
-            self.dep_progress_dialog.set_message(self.tr("Installation de {m}...", "Installing {m}...").format(m=not_installed[0]))
+            self.dep_progress_dialog = ProgressDialog(
+                self.tr("Installation des dépendances", "Installing dependencies"), self
+            )
+            self.dep_progress_dialog.set_message(
+                self.tr("Installation de {m}...", "Installing {m}...").format(m=not_installed[0])
+            )
             self.dep_progress_dialog.set_progress(0, len(not_installed))
             self.dep_progress_dialog.show()
             self._install_next_dependency()
     else:
         self.log.append("✅ Tous les modules nécessaires sont déjà installés dans le venv.")
+
 
 # Installation automatique des dépendances manquantes (récursif)
 def _install_next_dependency(self):
@@ -241,6 +305,7 @@ def _install_next_dependency(self):
     # Utilise le programme et préfixe déterminés (pip du venv ou 'python -m pip')
     try:
         import sys as _sys
+
         default_prog = _sys.executable
     except Exception:
         default_prog = "python"
@@ -253,14 +318,16 @@ def _install_next_dependency(self):
     process.finished.connect(lambda code, status: self._on_dep_pip_finished(process, code, status))
     process.start()
 
+
 # Affiche la sortie de pip dans la ProgressDialog et les logs
 def _on_dep_pip_output(self, process, error=False):
     data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
-    if hasattr(self, 'dep_progress_dialog') and self.dep_progress_dialog:
+    if hasattr(self, "dep_progress_dialog") and self.dep_progress_dialog:
         lines = data.strip().splitlines()
         if lines:
             self.dep_progress_dialog.set_message(lines[-1])
     self.log.append(data)
+
 
 # Callback après l'installation d'un module (pip)
 def _on_dep_pip_finished(self, process, code, status):

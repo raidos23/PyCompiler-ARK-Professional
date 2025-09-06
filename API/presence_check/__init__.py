@@ -3,7 +3,7 @@
 # Author: Samuel Amen Ague
 from __future__ import annotations
 
-from API_SDK import PluginBase, PreCompileContext, wrap_context, plugin, PluginMeta
+from API_SDK import PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
 
 # BCASL package signature (required)
 BCASL_PLUGIN = True
@@ -13,18 +13,22 @@ BCASL_NAME = "Presence Check"
 BCASL_VERSION = "1.0.0"
 BCASL_AUTHOR = "Samuel Amen Ague"
 BCASL_CREATED = "2025-09-06"
-BCASL_COMPATIBILITY = ['PyCompiler ARK++ v3.2+', 'Python 3.10+']
+BCASL_COMPATIBILITY = ["PyCompiler ARK++ v3.2+", "Python 3.10+"]
 BCASL_LICENSE = "GPL-3.0-only"
-BCASL_TAGS = ['pre-compilation', 'validation', 'requirements']
+BCASL_TAGS = ["pre-compilation", "validation", "requirements"]
 
-import API_SDK
 import os
 import re
 from pathlib import Path
-from typing import Iterable, List, Tuple
+
+import API_SDK
 
 
-@plugin(id="presence_check", version="1.0.0", description="Garde-fou: vérifie la présence et la conformité des éléments requis")
+@plugin(
+    id="presence_check",
+    version="1.0.0",
+    description="Garde-fou: vérifie la présence et la conformité des éléments requis",
+)
 class PresenceCheck(PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -34,7 +38,7 @@ class PresenceCheck(PluginBase):
             return
 
         cfg = sctx.config_view
-        subcfg = cfg.for_plugin(getattr(self, 'id', 'presence_check'))
+        subcfg = cfg.for_plugin(getattr(self, "id", "presence_check"))
 
         # Exigences: motifs glob et/ou chemins explicites (relatifs au workspace)
         requires = subcfg.get("require", None)
@@ -45,7 +49,7 @@ class PresenceCheck(PluginBase):
         requires = [str(x).strip() for x in requires if str(x).strip()]
 
         # Exclusions (glob) à respecter lors du développement des motifs
-        exclude: List[str] = list(cfg.exclude_patterns) + list(subcfg.get("exclude_patterns", []))
+        exclude: list[str] = list(cfg.exclude_patterns) + list(subcfg.get("exclude_patterns", []))
 
         # Contraintes optionnelles
         must_be_file = bool(subcfg.get("must_be_file", True))
@@ -58,11 +62,15 @@ class PresenceCheck(PluginBase):
             return
 
         # Demande de confirmation avant vérification
-        if not sctx.msg_question("Presence Check", f"Vérifier la présence et la conformité des éléments requis ({len(requires)} entrée(s)) ?", default_yes=False):
+        if not sctx.msg_question(
+            "Presence Check",
+            f"Vérifier la présence et la conformité des éléments requis ({len(requires)} entrée(s)) ?",
+            default_yes=False,
+        ):
             sctx.log_warn("presence_check: opération annulée par l'utilisateur")
             return
 
-        problems: List[str] = []
+        problems: list[str] = []
 
         def _wildcard(s: str) -> bool:
             return bool(re.search(r"[\*\?\[]", s))
@@ -78,7 +86,9 @@ class PresenceCheck(PluginBase):
                 return
 
             if must_be_file and not p.is_file():
-                problems.append(f"{origin}: n'est pas un fichier -> {p.relative_to(sctx.workspace_root) if p.exists() else p}")
+                problems.append(
+                    f"{origin}: n'est pas un fichier -> {p.relative_to(sctx.workspace_root) if p.exists() else p}"
+                )
                 return
 
             if must_be_readable:
@@ -102,7 +112,7 @@ class PresenceCheck(PluginBase):
         # Progression: phase 1 (analyse)
         ph = API_SDK.progress("Presence Check", "Analyse des éléments à vérifier...", maximum=0, cancelable=True)
         try:
-            to_check: List[Tuple[Path, str]] = []
+            to_check: list[tuple[Path, str]] = []
             total_checked = 0
             found = 0
 

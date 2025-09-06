@@ -178,18 +178,18 @@ def process_files(files: list[str]) -> dict[str, bool]:
 ```python
 def compile_project(source_path: str, output_path: str, options: dict[str, Any]) -> bool:
     """Compile un projet Python.
-    
+
     Args:
         source_path: Chemin vers le code source
         output_path: Chemin de sortie pour les artefacts
         options: Options de compilation
-        
+
     Returns:
         True si la compilation réussit, False sinon
-        
+
     Raises:
         CompilationError: Si la compilation échoue
-        
+
     Example:
         >>> compile_project("/src", "/dist", {"optimize": True})
         True
@@ -224,10 +224,10 @@ def test_compile_project_success():
     source_path = "/valid/source"
     output_path = "/valid/output"
     options = {"optimize": True}
-    
+
     # Act
     result = compile_project(source_path, output_path, options)
-    
+
     # Assert
     assert result is True
 

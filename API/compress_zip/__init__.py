@@ -19,12 +19,12 @@ Notes:
 - Idempotent: does not overwrite unless explicitly allowed (we don't overwrite by default).
 """
 
-import os
-import sys
 import stat
+import sys
 import zipfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional
+
 from API_SDK.ACASL_SDK import wrap_post_context
 
 ACASL_PLUGIN = True
@@ -49,7 +49,7 @@ def _is_executable_file(p: Path) -> bool:
         return False
 
 
-def _pick_target(artifacts: List[Path]) -> Optional[Path]:
+def _pick_target(artifacts: list[Path]) -> Optional[Path]:
     """Pick the most plausible main target among artifacts.
 
     Priority:
@@ -138,7 +138,7 @@ def acasl_run(ctx) -> None:
         return
 
     # Decide whether to zip a directory or a single file
-    to_zip: Tuple[str, str]  # (kind, path)
+    to_zip: tuple[str, str]  # (kind, path)
     kind = "dir" if target.is_dir() else "file"
 
     # For PyInstaller-like one-folder layouts: if the target is an executable file and its parent

@@ -160,7 +160,7 @@ acasl:
   plugins:
     - code_signing
     - sbom_generator
-  
+
   code_signing:
     enabled: true
     windows:
@@ -169,7 +169,7 @@ acasl:
       signing_identity: "Developer ID Application: Your Name"
     linux:
       gpg_key_id: "your-key-id"
-  
+
   sbom:
     enabled: true
     cyclonedx: true

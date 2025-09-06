@@ -1,25 +1,22 @@
 # SPDX-License-Identifier: GPL-3.0-only
 from __future__ import annotations
 
-from typing import Dict, List
-
 # Engine-controlled auto builder for Nuitka
 # Signature required by host: (matched: dict, pkg_to_import: dict) -> list[str]
-
 from engine_sdk import register_auto_builder  # type: ignore
 
 
 def _normalize_plugin_arg(val: str) -> str:
-    v = (val or '').strip()
+    v = (val or "").strip()
     if not v:
         return v
-    if v.startswith('--enable-plugin=') or v.startswith('--plugin-enable='):
-        name = v.split('=', 1)[1]
+    if v.startswith("--enable-plugin=") or v.startswith("--plugin-enable="):
+        name = v.split("=", 1)[1]
         return f"--enable-plugin={name}"
     return f"--enable-plugin={v}"
 
 
-def AUTO_BUILDER(matched: Dict[str, Dict[str, object]], pkg_to_import: Dict[str, str]) -> List[str]:
+def AUTO_BUILDER(matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]) -> list[str]:
     """
     Build Nuitka arguments from the engine-owned mapping.
 
@@ -29,22 +26,22 @@ def AUTO_BUILDER(matched: Dict[str, Dict[str, object]], pkg_to_import: Dict[str,
       - dict: expects 'args' or 'flags' -> str | list[str]
       - True: ignored by default (no generic meaning)
     """
-    out: List[str] = []
+    out: list[str] = []
     seen = set()
 
     for pkg, entry in matched.items():
         if not isinstance(entry, dict):
             continue
-        val = entry.get('nuitka')
+        val = entry.get("nuitka")
         if val is True:
             continue
-        args: List[str] = []
+        args: list[str] = []
         if isinstance(val, str):
             args = [_normalize_plugin_arg(val)]
         elif isinstance(val, list):
             args = [_normalize_plugin_arg(str(x)) for x in val]
         elif isinstance(val, dict):
-            a = val.get('args') or val.get('flags')
+            a = val.get("args") or val.get("flags")
             if isinstance(a, list):
                 args = [str(x) for x in a]
             elif isinstance(a, str):
@@ -55,6 +52,7 @@ def AUTO_BUILDER(matched: Dict[str, Dict[str, object]], pkg_to_import: Dict[str,
                 seen.add(a)
 
     return out
+
 
 # Register at import time via the SDK facade
 try:

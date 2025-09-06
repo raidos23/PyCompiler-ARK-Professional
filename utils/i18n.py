@@ -3,14 +3,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import locale
 import os
-import asyncio
-from typing import Dict, Any, List
+from typing import Any
 
 # Built-in fallback for English if language files are missing
-FALLBACK_EN: Dict[str, Any] = {
+FALLBACK_EN: dict[str, Any] = {
     "_meta": {"code": "en", "name": "English"},
     # Sidebar & main buttons
     "select_folder": "📁 Workspace",
@@ -84,6 +84,7 @@ async def normalize_lang_pref(pref: str | None) -> str:
 
 # Internal sync helpers (non-public); used via asyncio.to_thread
 
+
 def _resolve_system_language_sync() -> str:
     try:
         loc = locale.getdefaultlocale()[0] or ""
@@ -92,19 +93,19 @@ def _resolve_system_language_sync() -> str:
         return "en"
 
 
-def _load_language_file_sync(code: str) -> Dict[str, Any] | None:
+def _load_language_file_sync(code: str) -> dict[str, Any] | None:
     fpath = os.path.join(_languages_dir(), f"{code}.json")
     if not os.path.isfile(fpath):
         return None
     try:
-        with open(fpath, "r", encoding="utf-8") as f:
+        with open(fpath, encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return None
 
 
-def _available_languages_sync() -> List[Dict[str, str]]:
-    langs: List[Dict[str, str]] = []
+def _available_languages_sync() -> list[dict[str, str]]:
+    langs: list[dict[str, str]] = []
     try:
         path = _languages_dir()
         if not os.path.isdir(path):
@@ -115,7 +116,7 @@ def _available_languages_sync() -> List[Dict[str, str]]:
             default_code = os.path.splitext(fname)[0]
             fpath = os.path.join(path, fname)
             try:
-                with open(fpath, "r", encoding="utf-8") as f:
+                with open(fpath, encoding="utf-8") as f:
                     data = json.load(f)
                 meta = data.get("_meta", {}) if isinstance(data, dict) else {}
                 name = None
@@ -123,10 +124,12 @@ def _available_languages_sync() -> List[Dict[str, str]]:
                 if isinstance(data, dict):
                     name = data.get("name") or (meta.get("name") if isinstance(meta, dict) else None)
                     code = data.get("code") or (meta.get("code") if isinstance(meta, dict) else None)
-                langs.append({
-                    "code": code or default_code,
-                    "name": name or default_code,
-                })
+                langs.append(
+                    {
+                        "code": code or default_code,
+                        "name": name or default_code,
+                    }
+                )
             except Exception:
                 langs.append({"code": default_code, "name": default_code})
     except Exception:
@@ -141,11 +144,11 @@ async def resolve_system_language() -> str:
     return await asyncio.to_thread(_resolve_system_language_sync)
 
 
-async def available_languages() -> List[Dict[str, str]]:
+async def available_languages() -> list[dict[str, str]]:
     return await asyncio.to_thread(_available_languages_sync)
 
 
-async def get_translations(lang_pref: str | None) -> Dict[str, Any]:
+async def get_translations(lang_pref: str | None) -> dict[str, Any]:
     code = await normalize_lang_pref(lang_pref)
     if code == "System":
         code = await resolve_system_language()
@@ -159,7 +162,11 @@ async def get_translations(lang_pref: str | None) -> Dict[str, Any]:
     meta_in = data.get("_meta", {}) if isinstance(data, dict) else {}
     meta = {
         "code": (top_code or (meta_in.get("code") if isinstance(meta_in, dict) else None) or code),
-        "name": (top_name or (meta_in.get("name") if isinstance(meta_in, dict) else None) or ("English" if code == "en" else ("Français" if code == "fr" else code)))
+        "name": (
+            top_name
+            or (meta_in.get("name") if isinstance(meta_in, dict) else None)
+            or ("English" if code == "en" else ("Français" if code == "fr" else code))
+        ),
     }
     data["_meta"] = meta
     return data

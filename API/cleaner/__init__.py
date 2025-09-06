@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2025 Samuel Amen Ague
 # Author: Samuel Amen Ague
-from API_SDK import PluginBase, PreCompileContext, wrap_context, plugin
-import shutil
-import os
-import fnmatch
-from API_SDK import PluginMeta
-from API_SDK import load_plugin_translations
-import API_SDK
 import asyncio
+import fnmatch
+import os
+import shutil
+
+import API_SDK
+from API_SDK import PluginBase, PluginMeta, PreCompileContext, load_plugin_translations, plugin, wrap_context
 
 # BCASL package signature (required)
 BCASL_PLUGIN = True
@@ -18,9 +17,9 @@ BCASL_NAME = "Cleaner"
 BCASL_VERSION = "1.0.0"
 BCASL_AUTHOR = "Samuel Amen Ague"
 BCASL_CREATED = "2025-09-06"
-BCASL_COMPATIBILITY = ['PyCompiler ARK++ v3.2+', 'Python 3.10+']
+BCASL_COMPATIBILITY = ["PyCompiler ARK++ v3.2+", "Python 3.10+"]
 BCASL_LICENSE = "GPL-3.0-only"
-BCASL_TAGS = ['pre-compilation', 'clean', 'cache', 'pyc']
+BCASL_TAGS = ["pre-compilation", "clean", "cache", "pyc"]
 
 
 @plugin(id="cleaner", version="1.0.0", description="Nettoie le workspace (.pyc et __pycache__)")
@@ -35,7 +34,7 @@ class Cleaner(PluginBase):
 
         # Préparer exclusions (globales + spécifiques au plugin)
         cfg = sctx.config_view
-        subcfg = cfg.for_plugin(getattr(self, 'id', 'cleaner'))
+        subcfg = cfg.for_plugin(getattr(self, "id", "cleaner"))
         lang_code = subcfg.get("language", "System")
         tr = asyncio.run(load_plugin_translations(__file__, lang_code))
         exclude = list(cfg.exclude_patterns) + list(subcfg.get("exclude_patterns", []))
@@ -69,7 +68,12 @@ class Cleaner(PluginBase):
             return
 
         # 1) Analyse (comptage des éléments à supprimer) avec progression indéterminée
-        ph = API_SDK.progress(tr.get("progress_title", "Nettoyage du workspace"), tr.get("analysis_text", "Analyse des éléments à supprimer..."), maximum=0, cancelable=True)
+        ph = API_SDK.progress(
+            tr.get("progress_title", "Nettoyage du workspace"),
+            tr.get("analysis_text", "Analyse des éléments à supprimer..."),
+            maximum=0,
+            cancelable=True,
+        )
         try:
             total = 0
             for r, dirs, files in os.walk(root, topdown=False):
@@ -133,9 +137,12 @@ class Cleaner(PluginBase):
                             ph.update(current, f"Suppression __pycache__ ({current}/{total})")
 
             # 3) Logs UI
-            sctx.log_info(f"🗑️ Nettoyage terminé : {pyc_count} fichier(s) .pyc et {pycache_count} dossier(s) __pycache__ supprimés.")
+            sctx.log_info(
+                f"🗑️ Nettoyage terminé : {pyc_count} fichier(s) .pyc et {pycache_count} dossier(s) __pycache__ supprimés."
+            )
         finally:
             ph.close()
+
 
 # Métadonnées et instance du plugin pour BCASL
 META = PluginMeta(
@@ -147,6 +154,7 @@ META = PluginMeta(
 PLUGIN = Cleaner(META)
 
 # Fonction requise par le chargeur BCASL
+
 
 def bcasl_register(manager):
     manager.add_plugin(PLUGIN)

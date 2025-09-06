@@ -5,11 +5,11 @@ from __future__ import annotations
 from utils.auto_plugins import (
     compute_auto_for_engine,
     compute_for_all,
-    register_auto_builder,
     register_aliases,
+    register_auto_builder,
     register_import_alias,
     register_package_import_name,
-)  # type: ignore[F401]
+)
 
 __all__ = [
     "compute_auto_for_engine",

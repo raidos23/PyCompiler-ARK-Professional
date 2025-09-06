@@ -560,7 +560,7 @@ def acasl_run(ctx):
             except Exception as e:
                 sctx.log_error(f"[codesign] error {p}: {e}")
     # Notarize example (requires prior credentials configuration)
-    # _run(["xcrun", "notarytool", "submit", str(dmg_or_zip), "--keychain-profile", "AC_PROFILE", "--wait"]) 
+    # _run(["xcrun", "notarytool", "submit", str(dmg_or_zip), "--keychain-profile", "AC_PROFILE", "--wait"])
 ```
 
 ### 6) SBOM (CycloneDX) — stub

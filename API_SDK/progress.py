@@ -7,16 +7,16 @@ API_SDK.progress — Progress and messaging utilities for API plugins
 This module encapsulates UI/console progress reporting and message boxes in a
 single place for better modularity and independent evolution.
 """
-from typing import Optional
-import platform
 import getpass
+import platform
+from typing import Optional
 
 # Optional Qt toolkits
 try:
-    from PySide6 import QtWidgets as _QtW, QtCore as _QtC  # type: ignore
+    from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
 except Exception:  # pragma: no cover
     try:
-        from PyQt5 import QtWidgets as _QtW, QtCore as _QtC  # type: ignore
+        from PyQt5 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
     except Exception:  # pragma: no cover
         _QtW = None  # type: ignore
         _QtC = None  # type: ignore
@@ -31,6 +31,7 @@ except Exception:
 def _is_noninteractive() -> bool:
     try:
         import os as _os
+
         v = _os.environ.get("PYCOMPILER_NONINTERACTIVE")
         if v is None:
             return False
@@ -147,7 +148,8 @@ class ProgressHandle:
                 try:
                     _ = _QtW.QApplication.processEvents()
                     try:
-                        dlg.raise_(); dlg.activateWindow()
+                        dlg.raise_()
+                        dlg.activateWindow()
                     except Exception:
                         pass
                 except Exception:
@@ -187,7 +189,8 @@ class ProgressHandle:
                 try:
                     _ = _QtW.QApplication.processEvents()
                     try:
-                        dlg.raise_(); dlg.activateWindow()
+                        dlg.raise_()
+                        dlg.activateWindow()
                     except Exception:
                         pass
                 except Exception:
@@ -289,7 +292,7 @@ class ProgressHandle:
             finally:
                 self._dlg = None
 
-    def __enter__(self) -> "ProgressHandle":
+    def __enter__(self) -> ProgressHandle:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:
@@ -308,7 +311,9 @@ def progress(title: str, text: str = "", maximum: int = 0, cancelable: bool = Fa
     return create_progress(title=title, text=text, maximum=maximum, cancelable=cancelable)
 
 
-def sys_msgbox_for_installing(subject: str, explanation: Optional[str] = None, title: str = "Installation required") -> Optional[tuple]:
+def sys_msgbox_for_installing(
+    subject: str, explanation: Optional[str] = None, title: str = "Installation required"
+) -> Optional[tuple]:
     """Ask for install authorization (multi-OS).
 
     Windows: returns ("uac", None) if confirmed.
@@ -319,7 +324,11 @@ def sys_msgbox_for_installing(subject: str, explanation: Optional[str] = None, t
     msg = (
         f"Installation of '{subject}' requires administrator privileges.\n"
         + (f"\n{explanation}\n" if explanation else "")
-        + ("\nOn Windows, UAC elevation will be requested." if is_windows else "\nOn Linux/macOS, your sudo password is required.")
+        + (
+            "\nOn Windows, UAC elevation will be requested."
+            if is_windows
+            else "\nOn Linux/macOS, your sudo password is required."
+        )
     )
     if _is_noninteractive():
         try:
@@ -331,13 +340,15 @@ def sys_msgbox_for_installing(subject: str, explanation: Optional[str] = None, t
         try:
             parent = _qt_active_parent()
             from API_SDK.progress import show_msgbox as _show
+
             proceed = _show("question", title, msg, default="Yes")
             if not proceed:
                 return None
             if is_windows:
                 return ("uac", None)
             pwd, ok = _QtW.QInputDialog.getText(
-                parent, title,
+                parent,
+                title,
                 "Enter your password (sudo):",
                 _QtW.QLineEdit.Password,
             )

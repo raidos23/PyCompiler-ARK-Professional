@@ -13,7 +13,9 @@ __all__: list[str] = []
 # Explicit registration to ensure the engine is available even if auto-import misses it
 try:
     from engine_sdk import registry as _registry  # type: ignore
+
     from .engine import PyInstallerEngine as _PyInstallerEngine
+
     if _registry:
         _registry.register(_PyInstallerEngine)
 except Exception:

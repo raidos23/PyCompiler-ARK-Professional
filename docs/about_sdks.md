@@ -249,7 +249,7 @@ class MyPlugin(PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         sctx = wrap_context(ctx)
         sctx.log_info("Hello from BCASL")
-        missing = sctx.require_files(["main.py"]) 
+        missing = sctx.require_files(["main.py"])
         if missing:
             raise FileNotFoundError("Missing main.py")
 ```

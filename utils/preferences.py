@@ -9,10 +9,10 @@ La langue sélectionnée par l'utilisateur (clé "language") est enregistrée et
 
 import json
 import os
-import platform
 
 MAX_PARALLEL = 3
 PREFS_BASENAME = "pycompiler_gui_prefs.json"
+
 
 def _user_config_dir() -> str:
     """
@@ -25,6 +25,7 @@ def _user_config_dir() -> str:
         # Repli: toujours utiliser un dossier '.pref' à la racine du module utils
         return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".pref"))
 
+
 def _prefs_path() -> str:
     cfgdir = _user_config_dir()
     try:
@@ -33,7 +34,9 @@ def _prefs_path() -> str:
         pass
     return os.path.join(cfgdir, PREFS_BASENAME)
 
+
 PREFS_FILE = _prefs_path()
+
 
 def _atomic_write_json(path: str, data: dict):
     tmp = path + ".tmp"
@@ -48,18 +51,18 @@ def load_preferences(self):
         # Essaye d'abord le chemin config utilisateur, puis l'ancien chemin relatif (migration douce)
         prefs_path = PREFS_FILE
         try:
-            with open(prefs_path, "r", encoding="utf-8") as f:
+            with open(prefs_path, encoding="utf-8") as f:
                 prefs = json.load(f)
         except Exception:
             # Migration douce: tenter l'ancien chemin <project_root>/pref/<basename>
             try:
                 old_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "pref"))
                 old_path = os.path.join(old_dir, PREFS_BASENAME)
-                with open(old_path, "r", encoding="utf-8") as f:
+                with open(old_path, encoding="utf-8") as f:
                     prefs = json.load(f)
             except Exception:
                 # Dernier recours: fichier à la racine du cwd
-                with open(PREFS_BASENAME, "r", encoding="utf-8") as f:
+                with open(PREFS_BASENAME, encoding="utf-8") as f:
                     prefs = json.load(f)
         self.icon_path = prefs.get("icon_path", None)
         self.opt_onefile_state = prefs.get("opt_onefile", False)
@@ -96,11 +99,16 @@ def load_preferences(self):
         # Thème UI par défaut
         self.theme = "System"
 
+
 def save_preferences(self):
     # Minimal persisted preferences: only language/theme; other UI states omitted by design.
     prefs = {
-        "language_pref": getattr(self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))),
-        "language": getattr(self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))),
+        "language_pref": getattr(
+            self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))
+        ),
+        "language": getattr(
+            self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))
+        ),
         "theme": getattr(self, "theme", "System"),
     }
     try:
@@ -118,6 +126,7 @@ def save_preferences(self):
     except Exception as e:
         self.log.append(f"⚠️ Impossible de sauvegarder les préférences : {e}")
 
+
 def update_ui_state(self):
     self.opt_onefile.setChecked(self.opt_onefile_state)
     self.opt_windowed.setChecked(self.opt_windowed_state)
@@ -134,7 +143,9 @@ def update_ui_state(self):
         self.log.append(f"🎨 Icône chargée depuis préférences : {self.icon_path}")
     self.update_command_preview()
 
+
 # --- System preference detection helpers ---
+
 
 def detect_system_color_scheme() -> str:
     """
@@ -145,18 +156,25 @@ def detect_system_color_scheme() -> str:
     Returns "light" on failure.
     """
     try:
+        import os as _os
         import platform
         import subprocess
-        import os as _os
+
         sysname = platform.system()
         # Windows
         if sysname == "Windows":
             try:
-                out = subprocess.run([
-                    "reg", "query",
-                    r"HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
-                    "/v", "AppsUseLightTheme"
-                ], capture_output=True, text=True)
+                out = subprocess.run(
+                    [
+                        "reg",
+                        "query",
+                        r"HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+                        "/v",
+                        "AppsUseLightTheme",
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
                 if out.returncode == 0 and out.stdout:
                     val = out.stdout.lower()
                     if "0x0" in val or " 0x0\n" in val:
@@ -178,18 +196,18 @@ def detect_system_color_scheme() -> str:
         if sysname == "Linux":
             # GNOME 42+: color-scheme
             try:
-                out = subprocess.run([
-                    "gsettings", "get", "org.gnome.desktop.interface", "color-scheme"
-                ], capture_output=True, text=True)
+                out = subprocess.run(
+                    ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], capture_output=True, text=True
+                )
                 if out.returncode == 0 and "prefer-dark" in out.stdout:
                     return "dark"
             except Exception:
                 pass
             # GNOME: gtk-theme contains "dark"
             try:
-                out = subprocess.run([
-                    "gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"
-                ], capture_output=True, text=True)
+                out = subprocess.run(
+                    ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"], capture_output=True, text=True
+                )
                 if out.returncode == 0 and "dark" in out.stdout.lower():
                     return "dark"
             except Exception:
@@ -198,7 +216,7 @@ def detect_system_color_scheme() -> str:
             try:
                 kdeglobals = _os.path.expanduser("~/.config/kdeglobals")
                 if _os.path.isfile(kdeglobals):
-                    with open(kdeglobals, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(kdeglobals, encoding="utf-8", errors="ignore") as f:
                         txt = f.read().lower()
                     if "colorscheme" in txt and "dark" in txt:
                         return "dark"
@@ -226,6 +244,7 @@ def detect_system_language() -> tuple[str, str]:
     """
     try:
         import locale
+
         loc = (locale.getdefaultlocale()[0] or "").lower()
         if loc.startswith(("fr", "fr_")):
             return ("fr", "Français")

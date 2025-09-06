@@ -11,11 +11,11 @@ Conforms to the ACASL loader contract:
 - Uses API_SDK.ACASL_SDK facade and wrap_post_context
 """
 
-from API_SDK.ACASL_SDK import wrap_post_context
-from pathlib import Path
 import hashlib
 import json
-from typing import List
+from pathlib import Path
+
+from API_SDK.ACASL_SDK import wrap_post_context
 
 ACASL_PLUGIN = True  # required explicit signature for ACASL packages
 # Metadata (required id/description; optional name/version)
@@ -32,8 +32,8 @@ ACASL_TAGS = ["post-compilation", "hash", "report", "automatisation"]
 
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(8192), b''):
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
             h.update(chunk)
     return h.hexdigest()
 
@@ -41,7 +41,7 @@ def _sha256(path: Path) -> str:
 def acasl_run(ctx) -> None:
     """Compute SHA‑256 for produced artifacts and write a JSON report next to them."""
     sctx = wrap_post_context(ctx)
-    arts: List[str] = list(getattr(sctx, 'artifacts', []) or [])
+    arts: list[str] = list(getattr(sctx, "artifacts", []) or [])
     if not arts:
         sctx.log_warn("ACASL/hash_report: no artifacts.")
         return
@@ -64,13 +64,7 @@ def acasl_run(ctx) -> None:
     try:
         out.write_text(json.dumps({"artifacts": rows}, indent=2, ensure_ascii=False), encoding="utf-8")
         # Bilingual info
-        sctx.msg_info(
-            "ACASL — Hachage | Hash",
-            (
-                f"Rapport de hachage écrit: {out}\n\n"
-                f"Hash report written: {out}"
-            )
-        )
+        sctx.msg_info("ACASL — Hachage | Hash", (f"Rapport de hachage écrit: {out}\n\n" f"Hash report written: {out}"))
         sctx.log_info(f"ACASL/hash_report: written {out}")
     except Exception as e:
         sctx.log_error(f"ACASL/hash_report: failed writing {out}: {e}")

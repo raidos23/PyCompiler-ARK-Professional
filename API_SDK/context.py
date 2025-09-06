@@ -8,20 +8,15 @@ This module provides the SDKContext class used by API plugins during the
 pre-compilation phase (BCASL). It also includes common file operations and
 helpers designed for safety and performance in large workspaces.
 """
+import fnmatch
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
-import fnmatch
-import io
-import json
-
-# Local utility imports (UI helpers and message boxes)
-from .progress import show_msgbox
+from typing import Any, Optional, Union
 
 # Reuse i18n facade from host
-from utils.i18n import (
-    normalize_lang_pref,
-)  # type: ignore
+# Local utility imports (UI helpers and message boxes)
+from .progress import show_msgbox
 
 Pathish = Union[str, Path]
 LogFn = Callable[[str], None]
@@ -46,10 +41,12 @@ class SDKContext:
     log_fn: Optional[LogFn] = None
     engine_id: Optional[str] = None
     plugin_id: Optional[str] = None
-    artifacts: List[str] = field(default_factory=list)
+    artifacts: list[str] = field(default_factory=list)
     redact_logs: bool = True
     debug_enabled: bool = False
-    _iter_cache: Dict[Tuple[Tuple[str, ...], Tuple[str, ...]], List[Path]] = field(default_factory=dict, repr=False, compare=False)
+    _iter_cache: dict[tuple[tuple[str, ...], tuple[str, ...]], list[Path]] = field(
+        default_factory=dict, repr=False, compare=False
+    )
 
     # ---------- Logging ----------
     def log(self, message: str) -> None:
@@ -95,6 +92,7 @@ class SDKContext:
     def noninteractive(self) -> bool:
         try:
             import os as _os
+
             v = _os.environ.get("PYCOMPILER_NONINTERACTIVE")
             if v is None:
                 return False
@@ -107,6 +105,7 @@ class SDKContext:
             if self.noninteractive:
                 return False
             from PySide6 import QtWidgets as _QtW2  # type: ignore
+
             return _QtW2.QApplication.instance() is not None
         except Exception:
             return False
@@ -120,18 +119,36 @@ class SDKContext:
         return False
 
     # ---------- Subprocess convenience ----------
-    def run_command(self, cmd: List[str] | str, *, timeout_s: int = 60, cwd: Optional[str] = None, env: Optional[Dict[str, str]] = None, shell: bool = False) -> Tuple[int, str, str]:
+    def run_command(
+        self,
+        cmd: list[str] | str,
+        *,
+        timeout_s: int = 60,
+        cwd: Optional[str] = None,
+        env: Optional[dict[str, str]] = None,
+        shell: bool = False,
+    ) -> tuple[int, str, str]:
         """Proxy to API_SDK.run_command to avoid direct imports here and keep modularity."""
         try:
             from API_SDK import run_command as _run
         except Exception:
             # Minimal fallback if API_SDK.run_command is not accessible
-            import subprocess, os as _os
+            import os as _os
+            import subprocess
+
             base_env = {k: v for k, v in _os.environ.items() if k in ("PATH", "LANG", "HOME", "LC_ALL", "LC_CTYPE")}
             if isinstance(env, dict):
                 base_env.update({str(k): str(v) for k, v in env.items()})
             try:
-                cp = subprocess.run(cmd, cwd=cwd, env=base_env, shell=bool(shell), capture_output=True, text=True, timeout=int(timeout_s) if timeout_s else None)
+                cp = subprocess.run(
+                    cmd,
+                    cwd=cwd,
+                    env=base_env,
+                    shell=bool(shell),
+                    capture_output=True,
+                    text=True,
+                    timeout=int(timeout_s) if timeout_s else None,
+                )
                 return int(cp.returncode), cp.stdout or "", cp.stderr or ""
             except subprocess.TimeoutExpired as te:
                 out = te.stdout.decode() if isinstance(te.stdout, (bytes, bytearray)) else (te.stdout or "")
@@ -139,8 +156,10 @@ class SDKContext:
                 return -999, out, err
         rc, out, err = _run(cmd, timeout_s=timeout_s, cwd=cwd, env=env, shell=shell)
         try:
+
             def _clamp(s: str, n: int = 4000) -> str:
                 return s if len(s) <= n else (s[:n] + "\n<...truncated...>")
+
             if rc == -999:
                 self.log_warn(f"run_command timeout ({timeout_s}s): {cmd}")
             self.log_info(f"$ {cmd}\n[stdout]\n{_clamp(out)}\n[stderr]\n{_clamp(err)}")
@@ -168,8 +187,8 @@ class SDKContext:
             raise ValueError(f"Path escapes workspace: {p}")
         return p
 
-    def require_files(self, paths: Sequence[Pathish]) -> List[Path]:
-        missing: List[Path] = []
+    def require_files(self, paths: Sequence[Pathish]) -> list[Path]:
+        missing: list[Path] = []
         for rel in paths:
             try:
                 p = self.safe_path(rel)
@@ -193,7 +212,14 @@ class SDKContext:
             return None
 
     # ---------- Workspace scanning ----------
-    def iter_files(self, patterns: Sequence[str], exclude: Sequence[str] = (), *, enforce_workspace: bool = True, max_files: Optional[int] = None) -> Iterable[Path]:
+    def iter_files(
+        self,
+        patterns: Sequence[str],
+        exclude: Sequence[str] = (),
+        *,
+        enforce_workspace: bool = True,
+        max_files: Optional[int] = None,
+    ) -> Iterable[Path]:
         root = self.workspace_root
         ex_patterns = list(exclude or [])
         count = 0
@@ -214,8 +240,17 @@ class SDKContext:
             except Exception:
                 continue
 
-    def iter_project_files(self, patterns: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]] = None, *, use_cache: bool = True, max_files: Optional[int] = None) -> Iterable[Path]:
-        pats = list(patterns) if patterns else (self.config_view.file_patterns or ["**/*.py"])  # default to python files
+    def iter_project_files(
+        self,
+        patterns: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        *,
+        use_cache: bool = True,
+        max_files: Optional[int] = None,
+    ) -> Iterable[Path]:
+        pats = (
+            list(patterns) if patterns else (self.config_view.file_patterns or ["**/*.py"])
+        )  # default to python files
         exc = list(exclude) if exclude else (self.config_view.exclude_patterns or [])
         key = None
         if use_cache:
@@ -223,13 +258,13 @@ class SDKContext:
                 key = (tuple(sorted(pats)), tuple(sorted(exc)))
                 cached = self._iter_cache.get(key)
                 if cached is not None:
-                    for cp in (cached[:max_files] if isinstance(max_files, int) and max_files > 0 else cached):
+                    for cp in cached[:max_files] if isinstance(max_files, int) and max_files > 0 else cached:
                         yield cp
                     return
             except Exception:
                 key = None
         root = self.workspace_root
-        matches: List[Path] = []
+        matches: list[Path] = []
         count = 0
         for p in root.rglob("*"):
             try:
@@ -256,8 +291,12 @@ class SDKContext:
                 pass
 
     # ---------- Replace helpers ----------
-    def write_text_atomic(self, *parts: Pathish, text: str, create_dirs: bool = True, backup: bool = True, encoding: str = "utf-8") -> Path:
-        import tempfile, os as _os
+    def write_text_atomic(
+        self, *parts: Pathish, text: str, create_dirs: bool = True, backup: bool = True, encoding: str = "utf-8"
+    ) -> Path:
+        import os as _os
+        import tempfile
+
         tgt = self.safe_path(*parts)
         if create_dirs:
             try:
@@ -288,7 +327,16 @@ class SDKContext:
             except Exception:
                 pass
 
-    def replace_in_file(self, *parts: Pathish, pattern: str, repl: str, regex: bool = False, flags: int = 0, count: int = 0, encoding: str = "utf-8") -> int:
+    def replace_in_file(
+        self,
+        *parts: Pathish,
+        pattern: str,
+        repl: str,
+        regex: bool = False,
+        flags: int = 0,
+        count: int = 0,
+        encoding: str = "utf-8",
+    ) -> int:
         p = self.safe_path(*parts)
         try:
             data = p.read_text(encoding=encoding)
@@ -298,6 +346,7 @@ class SDKContext:
         n = 0
         if regex:
             import re as _re
+
             new, n = _re.subn(pattern, repl, data, count=0 if count is None or count <= 0 else count, flags=flags)
         else:
             if pattern in data:
@@ -308,8 +357,17 @@ class SDKContext:
             self.write_text_atomic(p, text=new, create_dirs=False, backup=True, encoding=encoding)
         return n
 
-    def batch_replace(self, replacements: List[Tuple[str, str]], patterns: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]] = None, *, regex: bool = False, flags: int = 0, max_files: Optional[int] = None) -> Dict[str, int]:
-        stats: Dict[str, int] = {}
+    def batch_replace(
+        self,
+        replacements: list[tuple[str, str]],
+        patterns: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        *,
+        regex: bool = False,
+        flags: int = 0,
+        max_files: Optional[int] = None,
+    ) -> dict[str, int]:
+        stats: dict[str, int] = {}
         for fp in self.iter_project_files(patterns=patterns, exclude=exclude, use_cache=True, max_files=max_files):
             total = 0
             try:
@@ -319,6 +377,7 @@ class SDKContext:
             new = content
             if regex:
                 import re as _re
+
                 for pat, rep in replacements:
                     new, n = _re.subn(pat, rep, new, flags=flags)
                     total += n
@@ -338,7 +397,9 @@ class SDKContext:
 
     # ---------- Timing ----------
     def time_step(self, label: str):
-        import time as _t, contextlib
+        import contextlib
+        import time as _t
+
         @contextlib.contextmanager
         def _ctx():
             t0 = _t.perf_counter()
@@ -348,14 +409,17 @@ class SDKContext:
             finally:
                 dt = (_t.perf_counter() - t0) * 1000.0
                 self.log_info(f"{label} done in {dt:.1f} ms")
+
         return _ctx()
 
     # ---------- Parallel map ----------
-    def parallel_map(self, func: Callable[[Any], Any], items: Sequence[Any], max_workers: Optional[int] = None) -> List[Any]:
+    def parallel_map(
+        self, func: Callable[[Any], Any], items: Sequence[Any], max_workers: Optional[int] = None
+    ) -> list[Any]:
         try:
             from concurrent.futures import ThreadPoolExecutor, as_completed
         except Exception:
-            out: List[Any] = []
+            out: list[Any] = []
             for it in items:
                 try:
                     out.append(func(it))
@@ -363,7 +427,7 @@ class SDKContext:
                     self.log_error(f"parallel_map error: {e}")
             return out
         maxw = max_workers or min(32, max(1, (len(items) or 1)))
-        results: List[Any] = [None] * len(items)  # type: ignore
+        results: list[Any] = [None] * len(items)  # type: ignore
         with ThreadPoolExecutor(max_workers=maxw) as ex:
             futures = {ex.submit(func, items[i]): i for i in range(len(items))}
             for fut in as_completed(futures):

@@ -1,15 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2025 Samuel Amen Ague
 
+import hashlib
 import os
-import sys
 import platform
 import shutil
-import hashlib
-from typing import List
+import sys
 
 from PySide6.QtCore import QProcess, QTimer
-from PySide6.QtWidgets import QFileDialog, QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from .dialogs import ProgressDialog
 
@@ -69,11 +68,11 @@ class VenvManager:
         Prefers an existing .venv over venv; if none exists, returns the default path (.venv).
         """
         try:
-            manual = getattr(self.parent, 'venv_path_manuel', None)
+            manual = getattr(self.parent, "venv_path_manuel", None)
             if manual:
                 base = os.path.abspath(manual)
                 return base
-            if getattr(self.parent, 'workspace_dir', None):
+            if getattr(self.parent, "workspace_dir", None):
                 base = os.path.abspath(self.parent.workspace_dir)
                 existing, default_path = self._detect_venv_in(base)
                 return existing or default_path
@@ -139,11 +138,13 @@ class VenvManager:
                 callback(False)
                 return
             proc = QProcess(self.parent)
+
             def _done(code, _status):
                 try:
                     callback(code == 0)
                 except Exception:
                     pass
+
             proc.finished.connect(_done)
             proc.setProgram(pip_exe)
             proc.setArguments(["show", tool])
@@ -228,7 +229,9 @@ class VenvManager:
                     return True
                 except Exception as e:
                     try:
-                        QMessageBox.critical(self.parent, title, f"Échec de recréation du venv / Failed to recreate venv: {e}")
+                        QMessageBox.critical(
+                            self.parent, title, f"Échec de recréation du venv / Failed to recreate venv: {e}"
+                        )
                     except Exception:
                         pass
                     return False
@@ -277,11 +280,11 @@ class VenvManager:
                 pyexe = cand1 if os.path.isfile(cand1) else cand2
             # Politique pyvenv.cfg: include-system-site-packages doit être false
             try:
-                with open(cfg, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(cfg, encoding="utf-8", errors="ignore") as f:
                     text = f.read()
                 for line in text.splitlines():
-                    if 'include-system-site-packages' in line.lower():
-                        _, _, v = line.partition('=')
+                    if "include-system-site-packages" in line.lower():
+                        _, _, v = line.partition("=")
                         if str(v).strip().lower() in ("1", "true", "yes"):
                             return False, "include-system-site-packages=true (refusé)"
                         break
@@ -309,17 +312,17 @@ class VenvManager:
             ok, reason = self.validate_venv_strict(path)
             if ok:
                 self.parent.venv_path_manuel = path
-                if hasattr(self.parent, 'venv_label') and self.parent.venv_label:
+                if hasattr(self.parent, "venv_label") and self.parent.venv_label:
                     self.parent.venv_label.setText(f"Venv sélectionné : {path}")
                 self._safe_log(f"✅ Venv valide sélectionné: {path}")
             else:
                 self._safe_log(f"❌ Venv refusé: {reason}")
                 self.parent.venv_path_manuel = None
-                if hasattr(self.parent, 'venv_label') and self.parent.venv_label:
+                if hasattr(self.parent, "venv_label") and self.parent.venv_label:
                     self.parent.venv_label.setText("Venv sélectionné : Aucun")
         else:
             self.parent.venv_path_manuel = None
-            if hasattr(self.parent, 'venv_label') and self.parent.venv_label:
+            if hasattr(self.parent, "venv_label") and self.parent.venv_label:
                 self.parent.venv_label.setText("Venv sélectionné : Aucun")
 
     # ---------- Existing venv: check and install tools ----------
@@ -331,6 +334,7 @@ class VenvManager:
                 # Offer to delete and recreate
                 self._prompt_recreate_invalid_venv(venv_path, reason)
                 return
+
             # Vérification asynchrone de la liaison python/pip → venv
             def _after_binding(ok_bind: bool):
                 if not ok_bind:
@@ -347,6 +351,7 @@ class VenvManager:
                 self.venv_check_progress.set_progress(0, len(self._venv_check_pkgs))
                 self.venv_check_progress.show()
                 self._check_next_venv_pkg()
+
             self._verify_venv_binding_async(venv_path, _after_binding)
         except Exception as e:
             self._safe_log(f"❌ Erreur lors de la vérification du venv: {e}")
@@ -355,14 +360,14 @@ class VenvManager:
         if self._venv_check_index >= len(self._venv_check_pkgs):
             try:
                 self.venv_check_progress.set_message("Vérification terminée.")
-                total = len(self._venv_check_pkgs) if hasattr(self, '_venv_check_pkgs') and self._venv_check_pkgs else 0
+                total = len(self._venv_check_pkgs) if hasattr(self, "_venv_check_pkgs") and self._venv_check_pkgs else 0
                 self.venv_check_progress.set_progress(total, total)
                 self.venv_check_progress.close()
             except Exception:
                 pass
             # Installer les dépendances du projet si un requirements.txt est présent
             try:
-                if getattr(self.parent, 'workspace_dir', None):
+                if getattr(self.parent, "workspace_dir", None):
                     self.install_requirements_if_needed(self.parent.workspace_dir)
             except Exception:
                 pass
@@ -385,7 +390,11 @@ class VenvManager:
             self._safe_log(f"✅ {pkg} déjà installé dans le venv.")
             self._venv_check_index += 1
             try:
-                next_label = self._venv_check_pkgs[self._venv_check_index] if self._venv_check_index < len(self._venv_check_pkgs) else ''
+                next_label = (
+                    self._venv_check_pkgs[self._venv_check_index]
+                    if self._venv_check_index < len(self._venv_check_pkgs)
+                    else ""
+                )
                 self.venv_check_progress.set_message(f"Vérification de {next_label}...")
                 self.venv_check_progress.set_progress(self._venv_check_index, len(self._venv_check_pkgs))
             except Exception:
@@ -413,7 +422,9 @@ class VenvManager:
     def _on_venv_check_output(self, process, error=False):
         if getattr(self.parent, "_closing", False):
             return
-        data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        data = (
+            process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        )
         try:
             if self.venv_check_progress:
                 lines = data.strip().splitlines()
@@ -426,11 +437,14 @@ class VenvManager:
     def verify_venv_binding(self, venv_root: str) -> bool:
         """Conservation de la version synchrone pour compat interne (éviter blocages ailleurs)."""
         try:
-            import subprocess, re
+            import subprocess
+
             vpython = self.python_path(venv_root)
             if not os.path.isfile(vpython):
                 return False
-            cp = subprocess.run([vpython, '-c', 'import sys, os; print(os.path.realpath(sys.prefix))'], capture_output=True, text=True)
+            cp = subprocess.run(
+                [vpython, "-c", "import sys, os; print(os.path.realpath(sys.prefix))"], capture_output=True, text=True
+            )
             if cp.returncode != 0:
                 return False
             sys_prefix = os.path.realpath(cp.stdout.strip())
@@ -439,10 +453,11 @@ class VenvManager:
             vpip = self.pip_path(venv_root)
             if not os.path.isfile(vpip):
                 return False
-            cp2 = subprocess.run([vpip, '--version'], capture_output=True, text=True)
+            cp2 = subprocess.run([vpip, "--version"], capture_output=True, text=True)
             if cp2.returncode != 0:
                 return False
             import re as _re
+
             m = _re.search(r" from (.+?) \(python ", cp2.stdout.strip())
             if not m:
                 return False
@@ -458,45 +473,56 @@ class VenvManager:
         try:
             vpython = self.python_path(venv_root)
             if not os.path.isfile(vpython):
-                callback(False); return
+                callback(False)
+                return
             # Étape 1: vérifier sys.prefix
             p1 = QProcess(self.parent)
+
             def _p1_finished(code, _status):
                 try:
                     if code != 0:
-                        callback(False); return
+                        callback(False)
+                        return
                     out = p1.readAllStandardOutput().data().decode().strip()
                     sys_prefix = os.path.realpath(out)
                     if not self._is_within(sys_prefix, venv_root):
-                        callback(False); return
+                        callback(False)
+                        return
                     # Étape 2: vérifier pip --version et site-path
                     vpip = self.pip_path(venv_root)
                     if not os.path.isfile(vpip):
-                        callback(False); return
+                        callback(False)
+                        return
                     p2 = QProcess(self.parent)
+
                     def _p2_finished(code2, _status2):
                         try:
                             if code2 != 0:
-                                callback(False); return
+                                callback(False)
+                                return
                             text = p2.readAllStandardOutput().data().decode().strip()
                             import re as _re
+
                             m = _re.search(r" from (.+?) \(python ", text)
                             if not m:
-                                callback(False); return
+                                callback(False)
+                                return
                             site_path = os.path.realpath(m.group(1))
                             callback(self._is_within(site_path, venv_root))
                         except Exception:
                             callback(False)
+
                     p2.finished.connect(_p2_finished)
                     p2.setProgram(vpip)
-                    p2.setArguments(['--version'])
+                    p2.setArguments(["--version"])
                     p2.setWorkingDirectory(venv_root)
                     p2.start()
                 except Exception:
                     callback(False)
+
             p1.finished.connect(_p1_finished)
             p1.setProgram(vpython)
-            p1.setArguments(['-c', 'import sys, os; print(os.path.realpath(sys.prefix))'])
+            p1.setArguments(["-c", "import sys, os; print(os.path.realpath(sys.prefix))"])
             p1.setWorkingDirectory(venv_root)
             p1.start()
         except Exception:
@@ -508,6 +534,7 @@ class VenvManager:
             if timeout_ms and timeout_ms > 0:
                 t = QTimer(self.parent)
                 t.setSingleShot(True)
+
                 def _on_timeout():
                     try:
                         if process.state() != QProcess.NotRunning:
@@ -515,10 +542,12 @@ class VenvManager:
                             process.kill()
                     except Exception:
                         pass
+
                 t.timeout.connect(_on_timeout)
                 t.start(timeout_ms)
                 # keep reference to avoid GC
                 self._proc_timers.append(t)
+
                 # also attach to process so timer can be cleared if process finishes earlier
                 def _clear_timer(*_args):
                     try:
@@ -526,6 +555,7 @@ class VenvManager:
                             t.stop()
                     except Exception:
                         pass
+
                 process.finished.connect(_clear_timer)
         except Exception:
             pass
@@ -642,7 +672,9 @@ class VenvManager:
     def _on_venv_output(self, process, error=False):
         if getattr(self.parent, "_closing", False):
             return
-        data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        data = (
+            process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        )
         try:
             if self.venv_progress_dialog:
                 lines = data.strip().splitlines()
@@ -680,7 +712,6 @@ class VenvManager:
                 pass
         QApplication.processEvents()
 
-    
     # ---------- Install requirements.txt ----------
     def install_requirements_if_needed(self, path: str):
         req_path = os.path.join(path, "requirements.txt")
@@ -701,12 +732,16 @@ class VenvManager:
                 # if recreated, try install again
                 self._start_requirements_install(path, venv_root, req_path)
             return
+
         # Vérifier la liaison de manière asynchrone, puis démarrer l'installation
         def _after_binding(ok_bind: bool):
             if not ok_bind:
-                self._safe_log("⚠️ Liaison venv invalide (python/pip ne pointent pas vers le venv); installation ignorée.")
+                self._safe_log(
+                    "⚠️ Liaison venv invalide (python/pip ne pointent pas vers le venv); installation ignorée."
+                )
                 return
             self._start_requirements_install(path, venv_root, req_path)
+
         self._verify_venv_binding_async(venv_root, _after_binding)
 
     def _start_requirements_install(self, path: str, venv_root: str, req_path: str):
@@ -716,7 +751,7 @@ class VenvManager:
             return
         # Compute checksum and skip install if unchanged
         try:
-            with open(req_path, 'rb') as f:
+            with open(req_path, "rb") as f:
                 data = f.read()
             req_hash = hashlib.sha256(data).hexdigest()
         except Exception as e:
@@ -725,7 +760,7 @@ class VenvManager:
         marker_path = os.path.join(venv_root, ".requirements.sha256")
         if req_hash and os.path.isfile(marker_path):
             try:
-                with open(marker_path, 'r', encoding='utf-8') as mf:
+                with open(marker_path, encoding="utf-8") as mf:
                     current = mf.read().strip()
                 if current == req_hash:
                     self._safe_log("✅ requirements.txt déjà installé (aucun changement détecté).")
@@ -739,7 +774,7 @@ class VenvManager:
             self._req_marker_hash = req_hash
             self._req_path = req_path
             self._venv_python_exe = py_exe
-            self._pip_phase = 'ensurepip'
+            self._pip_phase = "ensurepip"
             self.progress_dialog = ProgressDialog("Installation des dépendances", self.parent)
             self.progress_dialog.set_message("Activation de pip (ensurepip)...")
             process = QProcess(self.parent)
@@ -761,7 +796,9 @@ class VenvManager:
     def _on_pip_output(self, process, error=False):
         if getattr(self.parent, "_closing", False):
             return
-        data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        data = (
+            process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+        )
         try:
             if self.progress_dialog:
                 # Affiche la dernière ligne reçue
@@ -779,7 +816,7 @@ class VenvManager:
         if getattr(self.parent, "_closing", False):
             return
         phase = self._pip_phase
-        if phase == 'ensurepip':
+        if phase == "ensurepip":
             # Proceed to upgrade pip/setuptools/wheel regardless of ensurepip result
             try:
                 if self.progress_dialog:
@@ -793,13 +830,13 @@ class VenvManager:
             p2.setWorkingDirectory(os.path.dirname(self._req_path))
             p2.readyReadStandardOutput.connect(lambda: self._on_pip_output(p2))
             p2.readyReadStandardError.connect(lambda: self._on_pip_output(p2, error=True))
-            self._pip_phase = 'upgrade'
+            self._pip_phase = "upgrade"
             p2.finished.connect(lambda code2, status2: self._on_pip_finished(p2, code2, status2))
             p2.start()
             # Safety timeout for upgrade (5 min)
             self._arm_process_timeout(p2, 300_000, "pip upgrade core")
             return
-        elif phase == 'upgrade':
+        elif phase == "upgrade":
             if code == 0:
                 # now install requirements.txt
                 try:
@@ -814,7 +851,7 @@ class VenvManager:
                 p2.setWorkingDirectory(os.path.dirname(self._req_path))
                 p2.readyReadStandardOutput.connect(lambda: self._on_pip_output(p2))
                 p2.readyReadStandardError.connect(lambda: self._on_pip_output(p2, error=True))
-                self._pip_phase = 'install'
+                self._pip_phase = "install"
                 p2.finished.connect(lambda code2, status2: self._on_pip_finished(p2, code2, status2))
                 p2.start()
                 # Safety timeout for requirements install (15 min)
@@ -832,8 +869,8 @@ class VenvManager:
                 self._safe_log("✅ requirements.txt installé.")
                 # Write/update marker if we computed it
                 try:
-                    if getattr(self, '_req_marker_path', None) and getattr(self, '_req_marker_hash', None):
-                        with open(self._req_marker_path, 'w', encoding='utf-8') as mf:
+                    if getattr(self, "_req_marker_path", None) and getattr(self, "_req_marker_hash", None):
+                        with open(self._req_marker_path, "w", encoding="utf-8") as mf:
                             mf.write(self._req_marker_hash)
                 except Exception:
                     pass
@@ -881,10 +918,10 @@ class VenvManager:
     def terminate_tasks(self):
         # Kill processes
         for attr in [
-            '_venv_create_process',
-            '_venv_check_process',
-            '_venv_check_install_process',
-            '_req_install_process',
+            "_venv_create_process",
+            "_venv_check_process",
+            "_venv_check_install_process",
+            "_req_install_process",
         ]:
             proc = getattr(self, attr, None)
             try:
@@ -894,7 +931,7 @@ class VenvManager:
                 pass
             setattr(self, attr, None)
         # Close dialogs
-        for dlg_attr in ['venv_progress_dialog', 'progress_dialog', 'venv_check_progress']:
+        for dlg_attr in ["venv_progress_dialog", "progress_dialog", "venv_check_progress"]:
             dlg = getattr(self, dlg_attr, None)
             try:
                 if dlg:
@@ -902,33 +939,33 @@ class VenvManager:
             except Exception:
                 pass
 
-    def get_active_task_labels(self, lang: str) -> List[str]:
+    def get_active_task_labels(self, lang: str) -> list[str]:
         """Return active venv task labels in requested language ('English' or 'Français')."""
         labels_fr = {
-            'create': "création du venv",
-            'reqs': "installation des dépendances",
-            'check': "vérification/installation du venv",
+            "create": "création du venv",
+            "reqs": "installation des dépendances",
+            "check": "vérification/installation du venv",
         }
         labels_en = {
-            'create': "venv creation",
-            'reqs': "dependencies installation",
-            'check': "venv check/installation",
+            "create": "venv creation",
+            "reqs": "dependencies installation",
+            "check": "venv check/installation",
         }
         L = labels_en if lang == "English" else labels_fr
         out = []
         try:
             if self.venv_progress_dialog and self.venv_progress_dialog.isVisible():
-                out.append(L['create'])
+                out.append(L["create"])
         except Exception:
             pass
         try:
             if self.progress_dialog and self.progress_dialog.isVisible():
-                out.append(L['reqs'])
+                out.append(L["reqs"])
         except Exception:
             pass
         try:
             if self.venv_check_progress and self.venv_check_progress.isVisible():
-                out.append(L['check'])
+                out.append(L["check"])
         except Exception:
             pass
         return out

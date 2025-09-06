@@ -22,48 +22,48 @@ ACASL_PRIORITY = 75  # After compilation and signing, before final packaging
 def acasl_main(sctx: Any) -> bool:
     """
     Main ACASL entry point for SBOM generation.
-    
+
     Args:
         sctx: ACASL context object containing workspace and configuration
-        
+
     Returns:
         bool: True if SBOM generation successful, False otherwise
     """
     try:
         print(f"[{ACASL_ID}] Starting SBOM generation...")
-        
+
         # Get configuration
         config = getattr(sctx, 'config', {})
         sbom_config = config.get('sbom', {})
-        
+
         if not sbom_config.get('enabled', True):  # Enabled by default
             print(f"[{ACASL_ID}] SBOM generation disabled in configuration")
             return True
-        
+
         workspace = Path(sctx.workspace_root)
-        
+
         # Generate SBOM using multiple methods
         success = True
-        
+
         # Method 1: CycloneDX for Python dependencies
         if sbom_config.get('cyclonedx', True):
             success &= _generate_cyclonedx_sbom(workspace, sbom_config)
-        
+
         # Method 2: Custom SBOM with project metadata
         if sbom_config.get('custom', True):
             success &= _generate_custom_sbom(workspace, sctx, sbom_config)
-        
+
         # Method 3: SPDX format (if requested)
         if sbom_config.get('spdx', False):
             success &= _generate_spdx_sbom(workspace, sctx, sbom_config)
-        
+
         if success:
             print(f"[{ACASL_ID}] SBOM generation completed successfully")
         else:
             print(f"[{ACASL_ID}] SBOM generation completed with errors")
-            
+
         return success
-        
+
     except Exception as e:
         print(f"[{ACASL_ID}] Error during SBOM generation: {e}")
         return False
@@ -76,29 +76,29 @@ def _generate_cyclonedx_sbom(workspace: Path, config: Dict[str, Any]) -> bool:
         if not requirements_file.exists():
             print(f"[{ACASL_ID}] No requirements.txt found, skipping CycloneDX SBOM")
             return True
-        
+
         output_dir = workspace / "dist"
         output_dir.mkdir(exist_ok=True)
-        
+
         # Generate CycloneDX SBOM
         output_file = output_dir / "sbom-cyclonedx.json"
-        
+
         cmd = [
             sys.executable, "-m", "cyclonedx_py",
             "-r", str(requirements_file),
             "-o", str(output_file),
             "--format", "json"
         ]
-        
+
         # Add additional options if configured
         if config.get('include_dev_dependencies', False):
             cmd.append("--include-dev")
-        
+
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        
+
         if result.returncode == 0:
             print(f"[{ACASL_ID}] CycloneDX SBOM generated: {output_file}")
-            
+
             # Also generate XML format if requested
             if config.get('xml_format', False):
                 xml_file = output_dir / "sbom-cyclonedx.xml"
@@ -106,12 +106,12 @@ def _generate_cyclonedx_sbom(workspace: Path, config: Dict[str, Any]) -> bool:
                 xml_result = subprocess.run(xml_cmd, capture_output=True, text=True, timeout=300)
                 if xml_result.returncode == 0:
                     print(f"[{ACASL_ID}] CycloneDX SBOM XML generated: {xml_file}")
-            
+
             return True
         else:
             print(f"[{ACASL_ID}] Failed to generate CycloneDX SBOM: {result.stderr}")
             return False
-            
+
     except subprocess.TimeoutExpired:
         print(f"[{ACASL_ID}] Timeout generating CycloneDX SBOM")
         return False
@@ -129,16 +129,16 @@ def _generate_custom_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) ->
         output_dir = workspace / "dist"
         output_dir.mkdir(exist_ok=True)
         output_file = output_dir / "sbom-custom.json"
-        
+
         # Collect project information
         project_info = _collect_project_info(workspace, sctx)
-        
+
         # Collect dependency information
         dependencies = _collect_dependencies(workspace)
-        
+
         # Collect artifact information
         artifacts = _collect_artifacts(output_dir)
-        
+
         # Build SBOM structure
         sbom = {
             "bomFormat": "PyCompiler-ARK-SBOM",
@@ -161,14 +161,14 @@ def _generate_custom_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) ->
             "buildInfo": _collect_build_info(sctx),
             "vulnerabilities": []  # Placeholder for future vulnerability scanning
         }
-        
+
         # Write SBOM to file
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(sbom, f, indent=2, ensure_ascii=False)
-        
+
         print(f"[{ACASL_ID}] Custom SBOM generated: {output_file}")
         return True
-        
+
     except Exception as e:
         print(f"[{ACASL_ID}] Error generating custom SBOM: {e}")
         return False
@@ -180,7 +180,7 @@ def _generate_spdx_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) -> b
         output_dir = workspace / "dist"
         output_dir.mkdir(exist_ok=True)
         output_file = output_dir / "sbom-spdx.json"
-        
+
         # Basic SPDX structure
         spdx_doc = {
             "spdxVersion": "SPDX-2.3",
@@ -196,7 +196,7 @@ def _generate_spdx_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) -> b
             "packages": [],
             "relationships": []
         }
-        
+
         # Add project as main package
         project_info = _collect_project_info(workspace, sctx)
         main_package = {
@@ -210,7 +210,7 @@ def _generate_spdx_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) -> b
             "versionInfo": project_info.get("version", "Unknown")
         }
         spdx_doc["packages"].append(main_package)
-        
+
         # Add dependencies
         dependencies = _collect_dependencies(workspace)
         for i, dep in enumerate(dependencies):
@@ -226,7 +226,7 @@ def _generate_spdx_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) -> b
                 "versionInfo": dep.get("version", "Unknown")
             }
             spdx_doc["packages"].append(package)
-            
+
             # Add relationship
             relationship = {
                 "spdxElementId": "SPDXRef-Package-Main",
@@ -234,14 +234,14 @@ def _generate_spdx_sbom(workspace: Path, sctx: Any, config: Dict[str, Any]) -> b
                 "relatedSpdxElement": pkg_id
             }
             spdx_doc["relationships"].append(relationship)
-        
+
         # Write SPDX document
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(spdx_doc, f, indent=2, ensure_ascii=False)
-        
+
         print(f"[{ACASL_ID}] SPDX SBOM generated: {output_file}")
         return True
-        
+
     except Exception as e:
         print(f"[{ACASL_ID}] Error generating SPDX SBOM: {e}")
         return False
@@ -258,13 +258,13 @@ def _collect_project_info(workspace: Path, sctx: Any) -> Dict[str, Any]:
         "supplier": "",
         "author": ""
     }
-    
+
     # Try to get info from pyproject.toml
     pyproject_file = workspace / "pyproject.toml"
     if pyproject_file.exists():
         try:
             import tomli if sys.version_info < (3, 11) else tomllib
-            
+
             with open(pyproject_file, 'rb') as f:
                 if sys.version_info >= (3, 11):
                     import tomllib
@@ -272,7 +272,7 @@ def _collect_project_info(workspace: Path, sctx: Any) -> Dict[str, Any]:
                 else:
                     import tomli
                     data = tomli.load(f)
-            
+
             project = data.get("project", {})
             info.update({
                 "name": project.get("name", info["name"]),
@@ -280,7 +280,7 @@ def _collect_project_info(workspace: Path, sctx: Any) -> Dict[str, Any]:
                 "description": project.get("description", info["description"]),
                 "author": ", ".join([author.get("name", "") for author in project.get("authors", [])]),
             })
-            
+
             # Extract license info
             license_info = project.get("license", {})
             if isinstance(license_info, dict) and "file" in license_info:
@@ -290,17 +290,17 @@ def _collect_project_info(workspace: Path, sctx: Any) -> Dict[str, Any]:
                         "license": {"name": "See LICENSE file"},
                         "expression": "See LICENSE file"
                     })
-                    
+
         except Exception as e:
             print(f"[{ACASL_ID}] Warning: Could not parse pyproject.toml: {e}")
-    
+
     return info
 
 
 def _collect_dependencies(workspace: Path) -> List[Dict[str, Any]]:
     """Collect dependency information from requirements files."""
     dependencies = []
-    
+
     # Parse requirements.txt
     req_file = workspace / "requirements.txt"
     if req_file.exists():
@@ -319,7 +319,7 @@ def _collect_dependencies(workspace: Path) -> List[Dict[str, Any]]:
                         else:
                             name = line.split(';')[0].strip()
                             version = "unknown"
-                        
+
                         dependencies.append({
                             "type": "library",
                             "name": name.strip(),
@@ -329,17 +329,17 @@ def _collect_dependencies(workspace: Path) -> List[Dict[str, Any]]:
                         })
         except Exception as e:
             print(f"[{ACASL_ID}] Warning: Could not parse requirements.txt: {e}")
-    
+
     return dependencies
 
 
 def _collect_artifacts(output_dir: Path) -> List[Dict[str, Any]]:
     """Collect information about generated artifacts."""
     artifacts = []
-    
+
     if not output_dir.exists():
         return artifacts
-    
+
     for file_path in output_dir.iterdir():
         if file_path.is_file() and not file_path.name.startswith('sbom-'):
             try:
@@ -354,14 +354,14 @@ def _collect_artifacts(output_dir: Path) -> List[Dict[str, Any]]:
                 })
             except Exception as e:
                 print(f"[{ACASL_ID}] Warning: Could not process artifact {file_path}: {e}")
-    
+
     return artifacts
 
 
 def _collect_build_info(sctx: Any) -> Dict[str, Any]:
     """Collect build environment information."""
     import platform
-    
+
     return {
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "platform": {
@@ -385,9 +385,9 @@ def _collect_build_info(sctx: Any) -> Dict[str, Any]:
 def _calculate_checksum(file_path: Path) -> Dict[str, str]:
     """Calculate file checksums."""
     import hashlib
-    
+
     checksums = {}
-    
+
     try:
         with open(file_path, 'rb') as f:
             content = f.read()
@@ -395,14 +395,14 @@ def _calculate_checksum(file_path: Path) -> Dict[str, str]:
             checksums['md5'] = hashlib.md5(content).hexdigest()
     except Exception as e:
         print(f"[{ACASL_ID}] Warning: Could not calculate checksum for {file_path}: {e}")
-    
+
     return checksums
 
 
 def _determine_file_type(file_path: Path) -> str:
     """Determine file type based on extension and content."""
     suffix = file_path.suffix.lower()
-    
+
     type_map = {
         '.exe': 'executable',
         '.dll': 'library',
@@ -419,7 +419,7 @@ def _determine_file_type(file_path: Path) -> str:
         '.whl': 'package',
         '.egg': 'package'
     }
-    
+
     return type_map.get(suffix, 'file')
 
 

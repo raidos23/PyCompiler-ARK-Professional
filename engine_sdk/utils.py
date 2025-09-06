@@ -29,14 +29,16 @@ Typical usage (inside an engine plugin):
             return prog, args
 """
 
-from pathlib import Path
-from typing import Iterable, Mapping, MutableMapping, Sequence, Tuple, Union, Any, Optional, Dict, List
 import os
-import re
 import platform
+import re
 import shutil
-import time
 import subprocess
+import time
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any, Optional, Union
+
 try:
     from PySide6.QtCore import QProcess  # type: ignore
 except Exception:  # pragma: no cover - optional at import time
@@ -54,6 +56,7 @@ _REDACT_PATTERNS = [
     re.compile(r"(token\s*[:=]\s*)([A-Za-z0-9\-_.]{12,})", re.IGNORECASE),
 ]
 
+
 def redact_secrets(text: str) -> str:
     """Return text with obvious secrets masked to avoid log leakage."""
     if not text:
@@ -66,9 +69,11 @@ def redact_secrets(text: str) -> str:
         pass
     return redacted
 
+
 # -------------------------------
 # Workspace path safety
 # -------------------------------
+
 
 def is_within_workspace(workspace: Pathish, p: Pathish) -> bool:
     """True if path p resolves within workspace."""
@@ -79,6 +84,7 @@ def is_within_workspace(workspace: Pathish, p: Pathish) -> bool:
         return True
     except Exception:
         return False
+
 
 def safe_join(workspace: Pathish, *parts: Pathish) -> Path:
     """Join parts under workspace and ensure the resolved path stays within it.
@@ -93,17 +99,19 @@ def safe_join(workspace: Pathish, *parts: Pathish) -> Path:
         raise ValueError(f"Path escapes workspace: {rp}")
     return rp
 
+
 # -------------------------------
 # Args and environment hardening
 # -------------------------------
 
-def validate_args(args: Sequence[Any], *, max_len: int = 4096) -> List[str]:
+
+def validate_args(args: Sequence[Any], *, max_len: int = 4096) -> list[str]:
     """Normalize/validate CLI arguments:
     - Convert Path-like and numbers to str
     - Reject None and control characters/newlines
     - Enforce a max length per arg
     """
-    out: List[str] = []
+    out: list[str] = []
     for a in args:
         if a is None:
             raise ValueError("Argument is None")
@@ -115,7 +123,9 @@ def validate_args(args: Sequence[Any], *, max_len: int = 4096) -> List[str]:
         out.append(s)
     return out
 
+
 _DEF_ENV_KEYS = ("PATH", "LANG", "LC_ALL", "LC_CTYPE", "TMP", "TEMP")
+
 
 def build_env(
     base: Optional[Mapping[str, str]] = None,
@@ -123,14 +133,14 @@ def build_env(
     whitelist: Optional[Sequence[str]] = None,
     extra: Optional[Mapping[str, str]] = None,
     minimal_path: Optional[str] = None,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Construct a minimal environment map for subprocess/QProcess.
     - Start from an empty map or a provided 'base'
     - Keep only whitelisted keys (defaults to a sensible minimal set)
     - Override/add with 'extra'
     - Set PATH to minimal_path if provided
     """
-    env: Dict[str, str] = {}
+    env: dict[str, str] = {}
     src = dict(base or {})
     allow = set(whitelist or _DEF_ENV_KEYS)
     for k, v in src.items():
@@ -144,9 +154,11 @@ def build_env(
                 env[k] = v
     return env
 
+
 # -------------------------------
 # Output/log safety
 # -------------------------------
+
 
 def clamp_text(text: str, *, max_len: int = 10000) -> str:
     """Clamp long text to max_len characters (suffix with …)."""
@@ -155,11 +167,13 @@ def clamp_text(text: str, *, max_len: int = 10000) -> str:
     s = str(text)
     return s if len(s) <= max_len else (s[: max_len - 1] + "…")
 
+
 # -------------------------------
 # Normalization helpers
 # -------------------------------
 
-def normalized_program_and_args(program: Pathish, args: Sequence[Any]) -> Tuple[str, List[str]]:
+
+def normalized_program_and_args(program: Pathish, args: Sequence[Any]) -> tuple[str, list[str]]:
     """Return (program, args) as (str, list[str]) with basic validation.
     - Ensure program is a string path
     - Validate args with validate_args
@@ -167,28 +181,32 @@ def normalized_program_and_args(program: Pathish, args: Sequence[Any]) -> Tuple[
     prog_str = str(program)
     return prog_str, validate_args(args)
 
+
 # -------------------------------
 # i18n & logging helpers
 # -------------------------------
 
+
 def tr(gui: Any, fr: str, en: str) -> str:
     """Robust translator wrapper using the host GUI translator when available."""
     try:
-        fn = getattr(gui, 'tr', None)
+        fn = getattr(gui, "tr", None)
         if callable(fn):
             return fn(fr, en)
     except Exception:
         pass
     # Fallback: prefer English when current_language is English
     try:
-        cur = getattr(gui, 'current_language', None)
-        if isinstance(cur, str) and cur.lower().startswith('en'):
+        cur = getattr(gui, "current_language", None)
+        if isinstance(cur, str) and cur.lower().startswith("en"):
             return en
     except Exception:
         pass
     return fr
 
+
 essential_log_max_len = 10000
+
 
 def safe_log(gui: Any, text: str, *, redact: bool = True, clamp: bool = True) -> None:
     """Append text to GUI log safely (or print), with optional redaction and clamping."""
@@ -198,7 +216,7 @@ def safe_log(gui: Any, text: str, *, redact: bool = True, clamp: bool = True) ->
             msg = redact_secrets(msg)
         if clamp:
             msg = clamp_text(msg, max_len=essential_log_max_len)
-        if hasattr(gui, 'log') and getattr(gui, 'log') is not None:
+        if hasattr(gui, "log") and getattr(gui, "log") is not None:
             try:
                 gui.log.append(msg)
                 return
@@ -211,9 +229,11 @@ def safe_log(gui: Any, text: str, *, redact: bool = True, clamp: bool = True) ->
         except Exception:
             pass
 
+
 # -------------------------------
 # Executable resolution helper
 # -------------------------------
+
 
 def resolve_executable(program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True) -> str:
     """Resolve an executable path according to a clear, cross-platform policy.
@@ -245,33 +265,42 @@ def resolve_executable(program: Pathish, base_dir: Optional[Pathish] = None, *, 
         # Fallback: return the original string
         return prog
 
+
 # Fallback: host-level resolver override if available; else use SDK's resolve_executable
 try:  # pragma: no cover
     from utils.engines_loader.external import resolve_executable_path as resolve_executable_path  # type: ignore
 except Exception:  # pragma: no cover
-    def resolve_executable_path(program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True) -> str:  # type: ignore
+
+    def resolve_executable_path(
+        program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True
+    ) -> str:  # type: ignore
         return resolve_executable(program, base_dir, prefer_path=prefer_path)
+
 
 # -------------------------------
 # OS helpers
 # -------------------------------
+
 
 def open_path(path: Pathish) -> bool:
     """Open a file or directory with the OS default handler. Returns True on attempt."""
     try:
         p = str(path)
         sysname = platform.system()
-        if sysname == 'Windows':
+        if sysname == "Windows":
             os.startfile(p)  # type: ignore[attr-defined]
-        elif sysname == 'Linux':
+        elif sysname == "Linux":
             import subprocess
-            subprocess.run(['xdg-open', p])
+
+            subprocess.run(["xdg-open", p])
         else:
             import subprocess
-            subprocess.run(['open', p])
+
+            subprocess.run(["open", p])
         return True
     except Exception:
         return False
+
 
 def open_dir_candidates(candidates: Sequence[Pathish]) -> Optional[str]:
     """Open the first existing directory from candidates, return the opened path or None."""
@@ -285,12 +314,19 @@ def open_dir_candidates(candidates: Sequence[Pathish]) -> Optional[str]:
             continue
     return None
 
+
 # ---------------------------------------------
 # Universal output directory discovery and open
 # ---------------------------------------------
-from typing import Sequence as _Seq
+from collections.abc import Sequence as _Seq
 
-def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source_file: Optional[Pathish] = None, artifacts: Optional[_Seq[Pathish]] = None) -> List[str]:
+
+def discover_output_candidates(
+    gui: Any,
+    engine_id: Optional[str] = None,
+    source_file: Optional[Pathish] = None,
+    artifacts: Optional[_Seq[Pathish]] = None,
+) -> list[str]:
     """Discover plausible output directory candidates in a plug-and-play manner.
 
     Strategy (generic; no engine-specific dependencies):
@@ -300,7 +336,8 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
 
     Returns an ordered list of unique path strings; non-existing paths are allowed (will be filtered by opener).
     """
-    cands: List[str] = []
+    cands: list[str] = []
+
     def _add(p: Optional[Pathish]) -> None:
         try:
             if not p:
@@ -312,14 +349,14 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
             pass
 
     try:
-        ws = getattr(gui, 'workspace_dir', None) or os.getcwd()
+        ws = getattr(gui, "workspace_dir", None) or os.getcwd()
     except Exception:
         ws = os.getcwd()
 
     # 1) GUI fields (global common fields and heuristic scan)
     try:
-        out = getattr(gui, 'output_dir_input', None)
-        if out and hasattr(out, 'text') and callable(out.text):
+        out = getattr(gui, "output_dir_input", None)
+        if out and hasattr(out, "text") and callable(out.text):
             _add(out.text())
     except Exception:
         pass
@@ -331,11 +368,11 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
                 w = getattr(gui, nm)
             except Exception:
                 continue
-            if not w or not hasattr(w, 'text') or not callable(w.text):
+            if not w or not hasattr(w, "text") or not callable(w.text):
                 continue
-            label_parts: List[str] = [nm]
+            label_parts: list[str] = [nm]
             try:
-                on = getattr(w, 'objectName', None)
+                on = getattr(w, "objectName", None)
                 if callable(on):
                     label_parts.append(str(on()))
                 elif isinstance(on, str):
@@ -343,15 +380,15 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
             except Exception:
                 pass
             try:
-                an = getattr(w, 'accessibleName', None)
+                an = getattr(w, "accessibleName", None)
                 if callable(an):
                     label_parts.append(str(an()))
                 elif isinstance(an, str):
                     label_parts.append(an)
             except Exception:
                 pass
-            lab = ' '.join([str(x) for x in label_parts if x]).lower()
-            if any(tok in lab for tok in ('output', 'dist')) and any(tok in lab for tok in ('dir', 'path')):
+            lab = " ".join([str(x) for x in label_parts if x]).lower()
+            if any(tok in lab for tok in ("output", "dist")) and any(tok in lab for tok in ("dir", "path")):
                 try:
                     _add(w.text())
                 except Exception:
@@ -363,8 +400,8 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
     try:
         arts = artifacts
         if arts is None:
-            arts = getattr(gui, '_last_artifacts', None)
-        parents: List[tuple[float, str]] = []
+            arts = getattr(gui, "_last_artifacts", None)
+        parents: list[tuple[float, str]] = []
         if arts:
             for a in arts:
                 try:
@@ -381,8 +418,8 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
 
     # 3) Conventional fallbacks
     try:
-        _add(os.path.join(ws, 'dist'))
-        _add(os.path.join(ws, 'build'))
+        _add(os.path.join(ws, "dist"))
+        _add(os.path.join(ws, "build"))
         if source_file:
             try:
                 base = os.path.splitext(os.path.basename(str(source_file)))[0]
@@ -395,7 +432,12 @@ def discover_output_candidates(gui: Any, engine_id: Optional[str] = None, source
     return cands
 
 
-def open_output_directory(gui: Any, engine_id: Optional[str] = None, source_file: Optional[Pathish] = None, artifacts: Optional[_Seq[Pathish]] = None) -> Optional[str]:
+def open_output_directory(
+    gui: Any,
+    engine_id: Optional[str] = None,
+    source_file: Optional[Pathish] = None,
+    artifacts: Optional[_Seq[Pathish]] = None,
+) -> Optional[str]:
     """Open a plausible output directory for the last successful build using generic discovery.
 
     Does not call engine hooks; respects plug-and-play by avoiding engine-specific code paths.
@@ -407,7 +449,9 @@ def open_output_directory(gui: Any, engine_id: Optional[str] = None, source_file
     except Exception:
         return None
 
+
 # Filesystem safety helpers
+
 
 def ensure_dir(path: Pathish) -> Path:
     """Ensure directory exists and return its Path."""
@@ -427,6 +471,7 @@ def atomic_write_text(path: Pathish, text: str, *, encoding: str = "utf-8") -> b
     except Exception:
         pass
     import tempfile
+
     try:
         fd, tmp = tempfile.mkstemp(prefix=".sdk_", dir=str(target.parent))
         try:
@@ -447,7 +492,9 @@ def atomic_write_text(path: Pathish, text: str, *, encoding: str = "utf-8") -> b
     except Exception:
         return False
 
+
 # Generic process runner for engines
+
 
 def run_process(
     gui: Any,
@@ -459,7 +506,7 @@ def run_process(
     timeout_ms: int = 300000,
     on_stdout: Optional[Any] = None,
     on_stderr: Optional[Any] = None,
-) -> Tuple[int, str, str]:
+) -> tuple[int, str, str]:
     """Run a process using QProcess when available, else subprocess.
 
     Returns (exit_code, stdout, stderr). Honors working directory and environment when provided.
@@ -470,7 +517,7 @@ def run_process(
     # Default working directory from GUI if not specified
     if cwd is None:
         try:
-            ws = getattr(gui, 'workspace_dir', None)
+            ws = getattr(gui, "workspace_dir", None)
             if ws:
                 cwd = ws
         except Exception:
@@ -490,25 +537,29 @@ def run_process(
                 pass
             try:
                 if env:
-                    proc.setEnvironment([f"{k}={v}" for k, v in env.items() if isinstance(k, str) and isinstance(v, str)])
+                    proc.setEnvironment(
+                        [f"{k}={v}" for k, v in env.items() if isinstance(k, str) and isinstance(v, str)]
+                    )
             except Exception:
                 pass
             proc.start()
             finished = proc.waitForFinished(timeout_ms)
             if not finished:
                 try:
-                    proc.terminate(); proc.waitForFinished(5000)
+                    proc.terminate()
+                    proc.waitForFinished(5000)
                 except Exception:
                     pass
                 try:
-                    proc.kill(); proc.waitForFinished(2000)
+                    proc.kill()
+                    proc.waitForFinished(2000)
                 except Exception:
                     pass
             try:
                 out_bytes = proc.readAllStandardOutput().data()
                 err_bytes = proc.readAllStandardError().data()
-                out = out_bytes.decode(errors='ignore') if isinstance(out_bytes, (bytes, bytearray)) else str(out_bytes)
-                err = err_bytes.decode(errors='ignore') if isinstance(err_bytes, (bytes, bytearray)) else str(err_bytes)
+                out = out_bytes.decode(errors="ignore") if isinstance(out_bytes, (bytes, bytearray)) else str(out_bytes)
+                err = err_bytes.decode(errors="ignore") if isinstance(err_bytes, (bytes, bytearray)) else str(err_bytes)
             except Exception:
                 out, err = "", ""
             code = int(proc.exitCode())
@@ -547,14 +598,16 @@ def run_process(
     except Exception as e:
         return 1, "", str(e)
 
+
 # -------------------------------
 # venv/pip helpers
 # -------------------------------
 
+
 def resolve_project_venv(gui: Any) -> Optional[str]:
     """Resolve the project venv path using VenvManager when available, else workspace/venv."""
     try:
-        vm = getattr(gui, 'venv_manager', None)
+        vm = getattr(gui, "venv_manager", None)
         if vm:
             vroot = vm.resolve_project_venv()
             if vroot and os.path.isdir(vroot):
@@ -562,18 +615,20 @@ def resolve_project_venv(gui: Any) -> Optional[str]:
     except Exception:
         pass
     try:
-        ws = getattr(gui, 'workspace_dir', None)
+        ws = getattr(gui, "workspace_dir", None)
         if ws:
-            v = os.path.join(ws, 'venv')
+            v = os.path.join(ws, "venv")
             return v if os.path.isdir(v) else None
     except Exception:
         pass
     return None
 
+
 def pip_executable(vroot: str) -> str:
     """Return pip executable path under a venv root (cross-platform)."""
-    name = 'pip.exe' if platform.system() == 'Windows' else 'pip'
-    return os.path.join(vroot, 'Scripts' if platform.system() == 'Windows' else 'bin', name)
+    name = "pip.exe" if platform.system() == "Windows" else "pip"
+    return os.path.join(vroot, "Scripts" if platform.system() == "Windows" else "bin", name)
+
 
 def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) -> int:
     """Run 'pip show <package>' and return exit code (0 if installed).
@@ -584,11 +639,13 @@ def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) 
     try:
         if not os.path.isfile(pip_exe):
             import sys as _sys
+
             prog = _sys.executable
             args = ["-m", "pip", "show", package]
     except Exception:
         try:
             import sys as _sys
+
             prog = _sys.executable
             args = ["-m", "pip", "show", package]
         except Exception:
@@ -596,6 +653,7 @@ def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) 
             args = ["show", package]
     code, _out, _err = run_process(gui, prog, args, timeout_ms=timeout_ms)
     return int(code)
+
 
 def pip_install(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 600000) -> int:
     """Run 'pip install <package>' and return exit code (0 if success).
@@ -607,11 +665,13 @@ def pip_install(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 60000
     try:
         if not os.path.isfile(pip_exe):
             import sys as _sys
+
             prog = _sys.executable
             args = ["-m", "pip", "install", package]
     except Exception:
         try:
             import sys as _sys
+
             prog = _sys.executable
             args = ["-m", "pip", "install", package]
         except Exception:

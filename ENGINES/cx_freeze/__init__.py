@@ -6,7 +6,9 @@ __all__: list[str] = []
 
 try:
     from engine_sdk import registry as _registry  # type: ignore
+
     from .engine import CxFreezeEngine as _CxFreezeEngine
+
     if _registry:
         _registry.register(_CxFreezeEngine)
 except Exception:

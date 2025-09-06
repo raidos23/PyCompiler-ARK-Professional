@@ -14,12 +14,12 @@ Notes:
 """
 from __future__ import annotations
 
-import json
 import configparser
-from pathlib import Path
-from typing import Dict, Any, Optional
+import json
 import os
 import shutil
+from pathlib import Path
+from typing import Any, Optional
 
 # Optional parsers
 try:
@@ -37,6 +37,7 @@ except Exception:
 
 from bcasl import BCASL, PreCompileContext
 
+
 def _has_bcasl_marker(pkg_dir: Path) -> bool:
     """Return True if plugin package declares BCASL_PLUGIN = True in its __init__.py."""
     try:
@@ -45,13 +46,15 @@ def _has_bcasl_marker(pkg_dir: Path) -> bool:
             return False
         txt = init_py.read_text(encoding="utf-8", errors="ignore")
         import re as _re
+
         return _re.search(r"(?m)^\s*BCASL_PLUGIN\s*=\s*True\s*(#.*)?$", txt) is not None
     except Exception:
         return False
 
+
 # Optional Qt threading primitives for non-blocking execution
 try:
-    from PySide6.QtCore import QObject, Signal, Slot, QThread, QEventLoop, Qt
+    from PySide6.QtCore import QEventLoop, QObject, Qt, QThread, Signal, Slot
 except Exception:  # pragma: no cover
     QObject = None  # type: ignore
     Signal = None  # type: ignore
@@ -60,9 +63,11 @@ except Exception:  # pragma: no cover
     QEventLoop = None  # type: ignore
 
 
-def _write_json_atomic(path: Path, data: Dict[str, Any]) -> bool:
+def _write_json_atomic(path: Path, data: dict[str, Any]) -> bool:
     """Write JSON atomically with optional backup. Returns True on success."""
-    import tempfile, os as _os
+    import os as _os
+    import tempfile
+
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -99,8 +104,9 @@ def _write_json_atomic(path: Path, data: Dict[str, Any]) -> bool:
     except Exception:
         return False
 
-def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
-    def _parse_text_config(p: Path) -> Dict[str, Any]:
+
+def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
+    def _parse_text_config(p: Path) -> dict[str, Any]:
         # Lit le fichier texte et tente de le parser en dict selon l'extension puis par heuristiques
         try:
             text = p.read_text(encoding="utf-8")
@@ -123,7 +129,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                     cp.read_string(text)
                 except Exception:
                     return {}
-                cfg: Dict[str, Any] = {}
+                cfg: dict[str, Any] = {}
                 for sect in cp.sections():
                     cfg[sect] = {k: v for k, v in cp.items(sect)}
                 if cp.defaults():
@@ -145,7 +151,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                 if try_fmt == "ini":
                     cp = configparser.ConfigParser()
                     cp.read_string(text)
-                    cfg: Dict[str, Any] = {}
+                    cfg: dict[str, Any] = {}
                     for sect in cp.sections():
                         cfg[sect] = {k: v for k, v in cp.items(sect)}
                     if cp.defaults():
@@ -157,12 +163,18 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
 
     # Priorité sur des noms usuels
     candidates = [
-        "bcasl.json", ".bcasl.json",
-        "bcasl.yaml", ".bcasl.yaml",
-        "bcasl.yml", ".bcasl.yml",
-        "bcasl.toml", ".bcasl.toml",
-        "bcasl.ini", ".bcasl.ini",
-        "bcasl.cfg", ".bcasl.cfg",
+        "bcasl.json",
+        ".bcasl.json",
+        "bcasl.yaml",
+        ".bcasl.yaml",
+        "bcasl.yml",
+        ".bcasl.yml",
+        "bcasl.toml",
+        ".bcasl.toml",
+        "bcasl.ini",
+        ".bcasl.ini",
+        "bcasl.cfg",
+        ".bcasl.cfg",
     ]
     for name in candidates:
         p = workspace_root / name
@@ -191,7 +203,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                 api_dir = repo_root / "API"
             except Exception:
                 api_dir = None
-            detected_plugins: Dict[str, Any] = {}
+            detected_plugins: dict[str, Any] = {}
             if api_dir and api_dir.exists() and api_dir.is_dir():
                 try:
                     for entry in sorted(api_dir.iterdir()):
@@ -212,7 +224,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
             # Construire la configuration par défaut enrichie
             # Étendre la liste de fichiers requis usuels avec fichiers de build/config/doc si présents
             try:
-                for fname in ("pyproject.toml","setup.cfg","setup.py","manage.py","README.md","LICENSE"):
+                for fname in ("pyproject.toml", "setup.cfg", "setup.py", "manage.py", "README.md", "LICENSE"):
                     p = workspace_root / fname
                     if p.exists() and p.is_file() and fname not in suggested_required:
                         suggested_required.append(fname)
@@ -288,7 +300,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                         # options.packages.find where
                         if cp.has_section("options.packages.find") and cp.has_option("options.packages.find", "where"):
                             where = cp.get("options.packages.find", "where")
-                            for part in (where.split("\n") if "\n" in where else where.split(",")):
+                            for part in where.split("\n") if "\n" in where else where.split(","):
                                 w = part.strip()
                                 if w and (workspace_root / w).is_dir():
                                     suggested_patterns_set.add(f"{w}/**/*.py")
@@ -364,6 +376,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                 # 8) Inférence par imports depuis les points d'entrée
                 try:
                     import re
+
                     mod_re = re.compile(r"^\s*(?:from|import)\s+([a-zA-Z_][\w\.]*)", re.MULTILINE)
                     seeds: set[str] = set()
                     # Ajouter __main__ dans src/** si présent
@@ -407,7 +420,18 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                     pass
                 # 8.1) Monorepo: projets Python imbriqués (pyproject/setup)
                 try:
-                    skip = {"venv", ".venv", "build", "dist", ".git", "__pycache__", "main.build", ".mypy_cache", ".idea", "node_modules"}
+                    skip = {
+                        "venv",
+                        ".venv",
+                        "build",
+                        "dist",
+                        ".git",
+                        "__pycache__",
+                        "main.build",
+                        ".mypy_cache",
+                        ".idea",
+                        "node_modules",
+                    }
                     for d in workspace_root.iterdir():
                         if not d.is_dir() or d.name in skip:
                             continue
@@ -463,7 +487,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                     if "/**/" in pat:
                         base = pat.split("/**/")[0]
                     elif pat.endswith("**/*.py"):
-                        base = pat[:-len("**/*.py")].rstrip("/")
+                        base = pat[: -len("**/*.py")].rstrip("/")
                     bases.append((pat, base))
                 compressed: set[str] = set()
                 for pat, base in bases:
@@ -480,6 +504,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
             except Exception:
                 suggested_patterns = sorted(suggested_patterns_set)
             from datetime import datetime
+
             # Intégrer .gitignore dans exclude_patterns et préparer ordre/priorités
             # Élargir exclude_patterns de base
             exclude_patterns = [
@@ -500,7 +525,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                 "__pypackages__/**",
                 ".vscode/**",
                 "docs/_build/**",
-                "tests/**"
+                "tests/**",
             ]
             try:
                 gid = workspace_root / ".gitignore"
@@ -526,32 +551,94 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                 meta_map = {}
             tag_score = {
                 # Nettoyage
-                "clean": 0, "cleanup": 0, "sanitize": 0, "prune": 0, "tidy": 0,
+                "clean": 0,
+                "cleanup": 0,
+                "sanitize": 0,
+                "prune": 0,
+                "tidy": 0,
                 # Vérifications / sécurité
-                "validation": 10, "presence": 10, "sanity": 10, "policy": 10, "requirements": 10,
-                "check": 10, "audit": 10, "scan": 10, "security": 10, "sast": 10, "compliance": 10, "license-check": 10,
+                "validation": 10,
+                "presence": 10,
+                "sanity": 10,
+                "policy": 10,
+                "requirements": 10,
+                "check": 10,
+                "audit": 10,
+                "scan": 10,
+                "security": 10,
+                "sast": 10,
+                "compliance": 10,
+                "license-check": 10,
                 # Tests rapides (avant lourdes transformations)
-                "test": 15, "tests": 15, "unit-test": 15, "integration-test": 15, "pytest": 15,
+                "test": 15,
+                "tests": 15,
+                "unit-test": 15,
+                "integration-test": 15,
+                "pytest": 15,
                 # Préparation / génération / provisioning
-                "prepare": 20, "codegen": 20, "generate": 20, "fetch": 20, "resources": 20, "download": 20,
-                "install": 20, "bootstrap": 20, "configure": 20,
+                "prepare": 20,
+                "codegen": 20,
+                "generate": 20,
+                "fetch": 20,
+                "resources": 20,
+                "download": 20,
+                "install": 20,
+                "bootstrap": 20,
+                "configure": 20,
                 # Conformité / entêtes / normalisation
-                "license": 30, "header": 30, "normalize": 30, "inject": 30, "spdx": 30, "banner": 30, "copyright": 30,
+                "license": 30,
+                "header": 30,
+                "normalize": 30,
+                "inject": 30,
+                "spdx": 30,
+                "banner": 30,
+                "copyright": 30,
                 # Lint / format / typage
-                "lint": 40, "format": 40, "black": 40, "isort": 40, "sort-imports": 40, "typecheck": 40, "mypy": 40, "flake8": 40, "ruff": 40, "pep8": 40,
+                "lint": 40,
+                "format": 40,
+                "black": 40,
+                "isort": 40,
+                "sort-imports": 40,
+                "typecheck": 40,
+                "mypy": 40,
+                "flake8": 40,
+                "ruff": 40,
+                "pep8": 40,
                 # Minification (avant obfuscation)
-                "minify": 45, "uglify": 45, "shrink": 45, "compress-code": 45,
+                "minify": 45,
+                "uglify": 45,
+                "shrink": 45,
+                "compress-code": 45,
                 # Obfuscation / transpilation / protection
-                "obfuscation": 50, "obfuscate": 50, "transpile": 50, "protect": 50, "encrypt": 50,
+                "obfuscation": 50,
+                "obfuscate": 50,
+                "transpile": 50,
+                "protect": 50,
+                "encrypt": 50,
                 # Packaging / bundling / archives
-                "package": 55, "packaging": 55, "bundle": 55, "archive": 55, "compress": 55, "zip": 55,
+                "package": 55,
+                "packaging": 55,
+                "bundle": 55,
+                "archive": 55,
+                "compress": 55,
+                "zip": 55,
                 # Manifest / version / metadata
-                "manifest": 60, "version": 60, "metadata": 60, "bump": 60, "changelog": 60,
+                "manifest": 60,
+                "version": 60,
+                "metadata": 60,
+                "bump": 60,
+                "changelog": 60,
                 # Documentation
-                "docs": 70, "documentation": 70, "doc": 70, "generate-docs": 70,
+                "docs": 70,
+                "documentation": 70,
+                "doc": 70,
+                "generate-docs": 70,
                 # Publication / déploiement (rare en BCASL mais supporté)
-                "publish": 80, "deploy": 80, "release": 80,
+                "publish": 80,
+                "deploy": 80,
+                "release": 80,
             }
+
             def _score_for(pid: str) -> int:
                 try:
                     meta = meta_map.get(pid) or {}
@@ -565,15 +652,61 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                         # Nettoyage
                         ({"clean", "cleanup", "sanitize", "prune", "tidy"}, 0),
                         # Vérifications / sécurité
-                        ({"validation", "validate", "presence", "sanity", "policy", "requirement", "requirements", "check", "audit", "scan", "security", "sast", "compliance", "license-check"}, 10),
+                        (
+                            {
+                                "validation",
+                                "validate",
+                                "presence",
+                                "sanity",
+                                "policy",
+                                "requirement",
+                                "requirements",
+                                "check",
+                                "audit",
+                                "scan",
+                                "security",
+                                "sast",
+                                "compliance",
+                                "license-check",
+                            },
+                            10,
+                        ),
                         # Tests
                         ({"test", "tests", "unit", "unit-test", "integration", "integration-test", "pytest"}, 15),
                         # Préparation / génération
-                        ({"prepare", "codegen", "generate", "fetch", "resource", "resources", "download", "install", "bootstrap", "configure"}, 20),
+                        (
+                            {
+                                "prepare",
+                                "codegen",
+                                "generate",
+                                "fetch",
+                                "resource",
+                                "resources",
+                                "download",
+                                "install",
+                                "bootstrap",
+                                "configure",
+                            },
+                            20,
+                        ),
                         # Conformité / entêtes
                         ({"license", "header", "normalize", "inject", "spdx", "banner", "copyright"}, 30),
                         # Lint / format / typage
-                        ({"lint", "format", "black", "isort", "sort-imports", "typecheck", "mypy", "flake8", "ruff", "pep8"}, 40),
+                        (
+                            {
+                                "lint",
+                                "format",
+                                "black",
+                                "isort",
+                                "sort-imports",
+                                "typecheck",
+                                "mypy",
+                                "flake8",
+                                "ruff",
+                                "pep8",
+                            },
+                            40,
+                        ),
                         # Minification
                         ({"minify", "uglify", "shrink", "compress-code"}, 45),
                         # Obfuscation / transpilation
@@ -594,19 +727,27 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                     pass
                 # 3) Défaut neutre
                 return 100
+
             # Tri stable par (score, id)
             plugin_order = sorted(detected_ids, key=lambda x: (_score_for(x), x))
-            plugins_out: Dict[str, Any] = {}
+            plugins_out: dict[str, Any] = {}
             for idx, pid in enumerate(plugin_order):
                 try:
                     cur = detected_plugins.get(pid, {})
-                    enabled = bool(cur.get("enabled", True)) if isinstance(cur, dict) else bool(cur) if isinstance(cur, bool) else True
+                    enabled = (
+                        bool(cur.get("enabled", True))
+                        if isinstance(cur, dict)
+                        else bool(cur)
+                        if isinstance(cur, bool)
+                        else True
+                    )
                 except Exception:
                     enabled = True
                 plugins_out[pid] = {"enabled": enabled, "priority": idx}
             # Options enrichies
             try:
                 import platform as _plat
+
                 _is_windows = _plat.system().lower().startswith("win")
             except Exception:
                 _is_windows = False
@@ -617,12 +758,8 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
             except Exception:
                 pass
 
-            default_cfg: Dict[str, Any] = {
-                "_meta": {
-                    "generated": True,
-                    "generated_at": datetime.utcnow().isoformat() + "Z",
-                    "schema": "1.0"
-                },
+            default_cfg: dict[str, Any] = {
+                "_meta": {"generated": True, "generated_at": datetime.utcnow().isoformat() + "Z", "schema": "1.0"},
                 "required_files": suggested_required,
                 "file_patterns": suggested_patterns,
                 "exclude_patterns": exclude_patterns,
@@ -634,10 +771,10 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
                     "plugin_parallelism": 0,
                     "sandbox": True,
                     "iter_files_cache": True,
-                    "plugin_limits": {"mem_mb": 0, "cpu_time_s": 0, "nofile": 0, "fsize_mb": 0}
+                    "plugin_limits": {"mem_mb": 0, "cpu_time_s": 0, "nofile": 0, "fsize_mb": 0},
                 },
                 "plugins": plugins_out,
-                "plugin_order": plugin_order
+                "plugin_order": plugin_order,
             }
             target = workspace_root / "bcasl.json"
             ok = _write_json_atomic(target, default_cfg)
@@ -654,7 +791,7 @@ def _load_workspace_config(workspace_root: Path) -> Dict[str, Any]:
     return {}
 
 
-def _prepare_enabled_plugins_dir(api_dir: Path, cfg: Dict[str, Any], workspace_root: Path) -> Path:
+def _prepare_enabled_plugins_dir(api_dir: Path, cfg: dict[str, Any], workspace_root: Path) -> Path:
     """Construit un dossier éphémère qui ne contient que les plugins activés.
     - Si cfg["plugins"][plugin_id]["enabled"] est False, le plugin est exclu
     - Utilise des liens symboliques si possible, sinon copie (fallback)
@@ -708,13 +845,15 @@ def _prepare_enabled_plugins_dir(api_dir: Path, cfg: Dict[str, Any], workspace_r
         # En cas d'erreur, retourner le dossier API original (aucun filtrage)
         return api_dir
 
+
 # Worker to run BCASL in a background thread and forward logs safely to the UI
 if QObject is not None and Signal is not None:
+
     class _BCASLWorker(QObject):
         finished = Signal(object)  # report or None
         log = Signal(str)
 
-        def __init__(self, workspace_root: Path, api_dir: Path, cfg: Dict[str, Any], plugin_timeout: float) -> None:
+        def __init__(self, workspace_root: Path, api_dir: Path, cfg: dict[str, Any], plugin_timeout: float) -> None:
             super().__init__()
             self.workspace_root = workspace_root
             self.api_dir = api_dir
@@ -774,33 +913,41 @@ if QObject is not None and Signal is not None:
 
 # Bridge to marshal BCASL signals into the GUI thread safely
 if QObject is not None and Signal is not None:
+
     class _BCASLUiBridge(QObject):
         def __init__(self, gui, on_done, thread) -> None:
             super().__init__()
             self._gui = gui
             self._on_done = on_done
             self._thread = thread
+
         @Slot(str)
         def on_log(self, s: str) -> None:
             try:
-                if hasattr(self._gui, 'log') and self._gui.log:
+                if hasattr(self._gui, "log") and self._gui.log:
                     self._gui.log.append(s)
             except Exception:
                 pass
+
         @Slot(object)
         def on_finished(self, rep) -> None:
             try:
                 # Post summary and callback on GUI thread
                 from PySide6.QtCore import QTimer as _QT
+
                 def _invoke():
                     try:
-                        if rep and hasattr(self._gui, 'log') and self._gui.log is not None:
+                        if rep and hasattr(self._gui, "log") and self._gui.log is not None:
                             self._gui.log.append("BCASL - Rapport:\n")
                             for item in rep:
                                 try:
-                                    state = "OK" if getattr(item, 'success', False) else f"FAIL: {getattr(item, 'error', '')}"
-                                    dur = getattr(item, 'duration_ms', 0.0)
-                                    pid = getattr(item, 'plugin_id', '?')
+                                    state = (
+                                        "OK"
+                                        if getattr(item, "success", False)
+                                        else f"FAIL: {getattr(item, 'error', '')}"
+                                    )
+                                    dur = getattr(item, "duration_ms", 0.0)
+                                    pid = getattr(item, "plugin_id", "?")
                                     self._gui.log.append(f" - {pid}: {state} ({dur:.1f} ms)\n")
                                 except Exception:
                                     pass
@@ -815,6 +962,7 @@ if QObject is not None and Signal is not None:
                             self._on_done(rep)
                     except Exception:
                         pass
+
                 try:
                     _QT.singleShot(0, _invoke)
                 except Exception:
@@ -828,7 +976,20 @@ if QObject is not None and Signal is not None:
                 except Exception:
                     pass
 
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QCheckBox, QPushButton, QLabel, QScrollArea, QWidget, QMessageBox, QListWidget, QListWidgetItem, QAbstractItemView, QPlainTextEdit
+
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
@@ -836,7 +997,7 @@ def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
     "QThread: Destroyed while thread is still running" au quit.
     """
     try:
-        t = getattr(self, '_bcasl_thread', None)
+        t = getattr(self, "_bcasl_thread", None)
         if t is not None:
             try:
                 if t.isRunning():
@@ -864,16 +1025,18 @@ def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
     except Exception:
         pass
 
+
 def resolve_bcasl_timeout(self) -> float:
     """Calcule le timeout effectif (secondes) des plugins BCASL.
     <= 0 implique un timeout illimité (0.0 renvoyé).
     """
     try:
-        if not getattr(self, 'workspace_dir', None):
+        if not getattr(self, "workspace_dir", None):
             return 0.0
         workspace_root = Path(self.workspace_dir).resolve()
         cfg = _load_workspace_config(workspace_root)
         import os as _os
+
         try:
             env_timeout = float(_os.environ.get("PYCOMPILER_BCASL_PLUGIN_TIMEOUT", "0"))
         except Exception:
@@ -889,14 +1052,14 @@ def resolve_bcasl_timeout(self) -> float:
         return 0.0
 
 
-def _discover_bcasl_meta(api_dir: Path) -> Dict[str, Dict[str, Any]]:
+def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     """Discover BCASL plugins in API/ directory (no execution).
     Returns a mapping plugin_dir_name -> metadata dict including:
       - id (BCASL_ID or folder name), description (BCASL_DESCRIPTION)
       - optional: name, version, author, created, license, compatibility (list), tags (list)
     Only packages with BCASL_PLUGIN = True are considered.
     """
-    meta: Dict[str, Dict[str, Any]] = {}
+    meta: dict[str, dict[str, Any]] = {}
     try:
         for entry in sorted(api_dir.iterdir()):
             try:
@@ -907,13 +1070,16 @@ def _discover_bcasl_meta(api_dir: Path) -> Dict[str, Dict[str, Any]]:
                     continue
                 if not _has_bcasl_marker(entry):
                     continue
-                m: Dict[str, Any] = {"id": entry.name, "folder": entry.name}
+                m: dict[str, Any] = {"id": entry.name, "folder": entry.name}
                 try:
                     txt = init_py.read_text(encoding="utf-8", errors="ignore")
-                    import re as _re, ast as _ast
+                    import ast as _ast
+                    import re as _re
+
                     def _get(pat: str) -> str:
                         mm = _re.search(pat, txt, _re.S)
                         return mm.group("val").strip() if mm else ""
+
                     def _get_list(sym: str) -> list[str]:
                         try:
                             mm = _re.search(rf"(?m)^\s*{sym}\s*=\s*(?P<val>\[.*?\])\s*$", txt, _re.S)
@@ -926,6 +1092,7 @@ def _discover_bcasl_meta(api_dir: Path) -> Dict[str, Dict[str, Any]]:
                         except Exception:
                             pass
                         return []
+
                     pid = _get(r"BCASL_ID\s*=\s*([\'\"])(?P<val>.+?)\1") or entry.name
                     desc = _get(r"BCASL_DESCRIPTION\s*=\s*([\'\"])(?P<val>.+?)\1")
                     name = _get(r"BCASL_NAME\s*=\s*([\'\"])(?P<val>.+?)\1")
@@ -962,6 +1129,7 @@ def _discover_bcasl_meta(api_dir: Path) -> Dict[str, Dict[str, Any]]:
         pass
     return meta
 
+
 def open_api_loader_dialog(self) -> None:
     """Ouvre une fenêtre permettant d'activer/désactiver les plugins API (BCASL).
     - Source des plugins: <repo_root>/API (packages Python)
@@ -969,20 +1137,34 @@ def open_api_loader_dialog(self) -> None:
     - Format: { "plugins": { "<plugin_id>": {"enabled": true|false}, ... } }
     """
     try:
-        if not getattr(self, 'workspace_dir', None):
-            QMessageBox.warning(self, self.tr("Attention", "Warning"), self.tr("Veuillez d'abord sélectionner un dossier workspace.", "Please select a workspace folder first."))
+        if not getattr(self, "workspace_dir", None):
+            QMessageBox.warning(
+                self,
+                self.tr("Attention", "Warning"),
+                self.tr(
+                    "Veuillez d'abord sélectionner un dossier workspace.", "Please select a workspace folder first."
+                ),
+            )
             return
         workspace_root = Path(self.workspace_dir).resolve()
         repo_root = Path(__file__).resolve().parents[1]
         api_dir = repo_root / "API"
         if not api_dir.exists():
-            QMessageBox.information(self, self.tr("Information", "Information"), self.tr("Aucun répertoire API/ trouvé dans le projet.", "No API/ directory found in the project."))
+            QMessageBox.information(
+                self,
+                self.tr("Information", "Information"),
+                self.tr("Aucun répertoire API/ trouvé dans le projet.", "No API/ directory found in the project."),
+            )
             return
         # Découverte stricte des plugins: paquets Python valides (BCASL_PLUGIN, ID, DESCRIPTION)
         meta_map = _discover_bcasl_meta(api_dir)
         plugin_ids = list(sorted(meta_map.keys()))
         if not plugin_ids:
-            QMessageBox.information(self, self.tr("Information", "Information"), self.tr("Aucun plugin détecté dans API/.", "No plugins detected in API/."))
+            QMessageBox.information(
+                self,
+                self.tr("Information", "Information"),
+                self.tr("Aucun plugin détecté dans API/.", "No plugins detected in API/."),
+            )
             return
         # Charger config existante
         cfg = _load_workspace_config(workspace_root)
@@ -991,7 +1173,12 @@ def open_api_loader_dialog(self) -> None:
         dlg = QDialog(self)
         dlg.setWindowTitle(self.tr("Chargeur API", "API Loader"))
         layout = QVBoxLayout(dlg)
-        info = QLabel(self.tr("Activez/désactivez les plugins API et définissez leur ordre d'exécution (haut = d'abord).", "Enable/disable API plugins and set their execution order (top = first)."))
+        info = QLabel(
+            self.tr(
+                "Activez/désactivez les plugins API et définissez leur ordre d'exécution (haut = d'abord).",
+                "Enable/disable API plugins and set their execution order (top = first).",
+            )
+        )
         layout.addWidget(info)
         # Liste réordonnable par glisser-déposer, avec cases à cocher
         lst = QListWidget(dlg)
@@ -1010,8 +1197,8 @@ def open_api_loader_dialog(self) -> None:
             meta = meta_map.get(pid, {})
             label = pid
             try:
-                disp = meta.get('name') or pid
-                ver = meta.get('version') or ''
+                disp = meta.get("name") or pid
+                ver = meta.get("version") or ""
                 label = f"{disp} ({pid}) v{ver}" if ver else f"{disp} ({pid})"
             except Exception:
                 label = pid
@@ -1019,22 +1206,22 @@ def open_api_loader_dialog(self) -> None:
             # Tooltip étendu (description + métadonnées)
             try:
                 lines = []
-                desc = meta.get('description') or ''
+                desc = meta.get("description") or ""
                 if desc:
                     lines.append(desc)
-                auth = meta.get('author') or ''
+                auth = meta.get("author") or ""
                 if auth:
                     lines.append(f"Auteur: {auth}")
-                created = meta.get('created') or ''
+                created = meta.get("created") or ""
                 if created:
                     lines.append(f"Créé: {created}")
-                lic = meta.get('license') or ''
+                lic = meta.get("license") or ""
                 if lic:
                     lines.append(f"Licence: {lic}")
-                comp = meta.get('compatibility') or []
+                comp = meta.get("compatibility") or []
                 if isinstance(comp, list) and comp:
                     lines.append("Compatibilité: " + ", ".join([str(x) for x in comp]))
-                tags = meta.get('tags') or []
+                tags = meta.get("tags") or []
                 if isinstance(tags, list) and tags:
                     lines.append("Tags: " + ", ".join([str(x) for x in tags]))
                 if lines:
@@ -1062,7 +1249,9 @@ def open_api_loader_dialog(self) -> None:
                 item.setData(0x0100, pid)
             except Exception:
                 pass
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled)
+            item.setFlags(
+                item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
+            )
             item.setCheckState(Qt.Checked if enabled else Qt.Unchecked)
             lst.addItem(item)
         layout.addWidget(lst)
@@ -1071,9 +1260,11 @@ def open_api_loader_dialog(self) -> None:
         layout.addWidget(btn_toggle_raw)
         raw_box = QWidget(dlg)
         raw_lay = QVBoxLayout(raw_box)
-        raw_hint = QLabel(self.tr(
-            "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
-            "You can edit the configuration directly. It will be saved to {} at the workspace root.")
+        raw_hint = QLabel(
+            self.tr(
+                "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
+                "You can edit the configuration directly. It will be saved to {} at the workspace root.",
+            )
         )
         raw_lay.addWidget(raw_hint)
         raw_editor = QPlainTextEdit(raw_box)
@@ -1086,8 +1277,18 @@ def open_api_loader_dialog(self) -> None:
         existing_path = None
         try:
             for name in [
-                "bcasl.json", ".bcasl.json", "bcasl.yaml", ".bcasl.yaml", "bcasl.yml", ".bcasl.yml",
-                "bcasl.toml", ".bcasl.toml", "bcasl.ini", ".bcasl.ini", "bcasl.cfg", ".bcasl.cfg"
+                "bcasl.json",
+                ".bcasl.json",
+                "bcasl.yaml",
+                ".bcasl.yaml",
+                "bcasl.yml",
+                ".bcasl.yml",
+                "bcasl.toml",
+                ".bcasl.toml",
+                "bcasl.ini",
+                ".bcasl.ini",
+                "bcasl.cfg",
+                ".bcasl.cfg",
             ]:
                 p = workspace_root / name
                 if p.exists() and p.is_file():
@@ -1111,14 +1312,17 @@ def open_api_loader_dialog(self) -> None:
         except Exception:
             target_name = "bcasl.json"
         try:
-            btn_toggle_raw.setText(self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(target_name))
+            btn_toggle_raw.setText(
+                self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(target_name)
+            )
         except Exception:
             pass
         try:
-            raw_hint.setText(self.tr(
-                "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
-                "You can edit the configuration directly. It will be saved to {} at the workspace root.")
-                .format(target_name)
+            raw_hint.setText(
+                self.tr(
+                    "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
+                    "You can edit the configuration directly. It will be saved to {} at the workspace root.",
+                ).format(target_name)
             )
         except Exception:
             pass
@@ -1132,12 +1336,15 @@ def open_api_loader_dialog(self) -> None:
         raw_btns.addWidget(btn_save_raw)
         raw_lay.addLayout(raw_btns)
         raw_box.setVisible(False)
+
         def _toggle_raw():
             try:
                 raw_box.setVisible(not raw_box.isVisible())
             except Exception:
                 pass
+
         btn_toggle_raw.clicked.connect(_toggle_raw)
+
         def _reload_raw():
             try:
                 if target_path and target_path.exists():
@@ -1146,8 +1353,12 @@ def open_api_loader_dialog(self) -> None:
                     txt = json.dumps(cfg if isinstance(cfg, dict) else {}, ensure_ascii=False, indent=2)
                 raw_editor.setPlainText(txt)
             except Exception as e:
-                QMessageBox.warning(dlg, self.tr("Attention", "Warning"), self.tr(f"Échec du rechargement: {e}", f"Reload failed: {e}"))
+                QMessageBox.warning(
+                    dlg, self.tr("Attention", "Warning"), self.tr(f"Échec du rechargement: {e}", f"Reload failed: {e}")
+                )
+
         btn_reload_raw.clicked.connect(_reload_raw)
+
         def _save_raw():
             nonlocal target_path, target_name
             txt = raw_editor.toPlainText()
@@ -1174,23 +1385,32 @@ def open_api_loader_dialog(self) -> None:
                             try:
                                 data = json.loads(txt)
                                 new_target = workspace_root / "bcasl.json"
-                                new_target.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                                new_target.write_text(
+                                    json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+                                )
                                 target_path = new_target
                                 target_name = new_target.name
                                 try:
-                                    btn_toggle_raw.setText(self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(target_name))
-                                    raw_hint.setText(self.tr(
-                                        "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
-                                        "You can edit the configuration directly. It will be saved to {} at the workspace root.")
-                                        .format(target_name)
+                                    btn_toggle_raw.setText(
+                                        self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(
+                                            target_name
+                                        )
+                                    )
+                                    raw_hint.setText(
+                                        self.tr(
+                                            "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
+                                            "You can edit the configuration directly. It will be saved to {} at the workspace root.",
+                                        ).format(target_name)
                                     )
                                 except Exception:
                                     pass
-                                if hasattr(self, 'log') and self.log is not None:
-                                    self.log.append(self.tr(
-                                        "⚠️ Contenu non valide YAML; conversion détectée JSON -> sauvegarde dans bcasl.json",
-                                        "⚠️ Invalid YAML content; detected JSON -> saved to bcasl.json",
-                                    ))
+                                if hasattr(self, "log") and self.log is not None:
+                                    self.log.append(
+                                        self.tr(
+                                            "⚠️ Contenu non valide YAML; conversion détectée JSON -> sauvegarde dans bcasl.json",
+                                            "⚠️ Invalid YAML content; detected JSON -> saved to bcasl.json",
+                                        )
+                                    )
                                 return
                             except Exception as conv_err:
                                 raise conv_err
@@ -1199,23 +1419,32 @@ def open_api_loader_dialog(self) -> None:
                         try:
                             data = json.loads(txt)
                             new_target = workspace_root / "bcasl.json"
-                            new_target.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                            new_target.write_text(
+                                json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+                            )
                             target_path = new_target
                             target_name = new_target.name
                             try:
-                                btn_toggle_raw.setText(self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(target_name))
-                                raw_hint.setText(self.tr(
-                                    "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
-                                    "You can edit the configuration directly. It will be saved to {} at the workspace root.")
-                                    .format(target_name)
+                                btn_toggle_raw.setText(
+                                    self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(
+                                        target_name
+                                    )
+                                )
+                                raw_hint.setText(
+                                    self.tr(
+                                        "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
+                                        "You can edit the configuration directly. It will be saved to {} at the workspace root.",
+                                    ).format(target_name)
                                 )
                             except Exception:
                                 pass
-                            if hasattr(self, 'log') and self.log is not None:
-                                self.log.append(self.tr(
-                                    "ℹ️ Librairie YAML absente; contenu JSON détecté -> sauvegarde dans bcasl.json",
-                                    "ℹ️ YAML library missing; detected JSON content -> saved to bcasl.json",
-                                ))
+                            if hasattr(self, "log") and self.log is not None:
+                                self.log.append(
+                                    self.tr(
+                                        "ℹ️ Librairie YAML absente; contenu JSON détecté -> sauvegarde dans bcasl.json",
+                                        "ℹ️ YAML library missing; detected JSON content -> saved to bcasl.json",
+                                    )
+                                )
                             return
                         except Exception:
                             out = txt if txt.endswith("\n") else (txt + "\n")
@@ -1230,23 +1459,32 @@ def open_api_loader_dialog(self) -> None:
                             try:
                                 data = json.loads(txt)
                                 new_target = workspace_root / "bcasl.json"
-                                new_target.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                                new_target.write_text(
+                                    json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+                                )
                                 target_path = new_target
                                 target_name = new_target.name
                                 try:
-                                    btn_toggle_raw.setText(self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(target_name))
-                                    raw_hint.setText(self.tr(
-                                        "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
-                                        "You can edit the configuration directly. It will be saved to {} at the workspace root.")
-                                        .format(target_name)
+                                    btn_toggle_raw.setText(
+                                        self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(
+                                            target_name
+                                        )
+                                    )
+                                    raw_hint.setText(
+                                        self.tr(
+                                            "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
+                                            "You can edit the configuration directly. It will be saved to {} at the workspace root.",
+                                        ).format(target_name)
                                     )
                                 except Exception:
                                     pass
-                                if hasattr(self, 'log') and self.log is not None:
-                                    self.log.append(self.tr(
-                                        "⚠️ Contenu non valide TOML; conversion détectée JSON -> sauvegarde dans bcasl.json",
-                                        "⚠️ Invalid TOML content; detected JSON -> saved to bcasl.json",
-                                    ))
+                                if hasattr(self, "log") and self.log is not None:
+                                    self.log.append(
+                                        self.tr(
+                                            "⚠️ Contenu non valide TOML; conversion détectée JSON -> sauvegarde dans bcasl.json",
+                                            "⚠️ Invalid TOML content; detected JSON -> saved to bcasl.json",
+                                        )
+                                    )
                                 return
                             except Exception as conv_err:
                                 raise conv_err
@@ -1264,23 +1502,32 @@ def open_api_loader_dialog(self) -> None:
                         try:
                             data = json.loads(txt)
                             new_target = workspace_root / "bcasl.json"
-                            new_target.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                            new_target.write_text(
+                                json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+                            )
                             target_path = new_target
                             target_name = new_target.name
                             try:
-                                btn_toggle_raw.setText(self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(target_name))
-                                raw_hint.setText(self.tr(
-                                    "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
-                                    "You can edit the configuration directly. It will be saved to {} at the workspace root.")
-                                    .format(target_name)
+                                btn_toggle_raw.setText(
+                                    self.tr("Modifier la configuration brute ({})", "Edit raw config ({})").format(
+                                        target_name
+                                    )
+                                )
+                                raw_hint.setText(
+                                    self.tr(
+                                        "Vous pouvez modifier la configuration directement. Elle sera enregistrée dans {} à la racine du workspace.",
+                                        "You can edit the configuration directly. It will be saved to {} at the workspace root.",
+                                    ).format(target_name)
                                 )
                             except Exception:
                                 pass
-                            if hasattr(self, 'log') and self.log is not None:
-                                self.log.append(self.tr(
-                                    "⚠️ Contenu non valide INI/CFG; conversion détectée JSON -> sauvegarde dans bcasl.json",
-                                    "⚠️ Invalid INI/CFG content; detected JSON -> saved to bcasl.json",
-                                ))
+                            if hasattr(self, "log") and self.log is not None:
+                                self.log.append(
+                                    self.tr(
+                                        "⚠️ Contenu non valide INI/CFG; conversion détectée JSON -> sauvegarde dans bcasl.json",
+                                        "⚠️ Invalid INI/CFG content; detected JSON -> saved to bcasl.json",
+                                    )
+                                )
                             return
                         except Exception as conv_err:
                             raise conv_err
@@ -1292,22 +1539,28 @@ def open_api_loader_dialog(self) -> None:
                 QMessageBox.critical(
                     dlg,
                     self.tr("Erreur", "Error"),
-                    self.tr(f"Contenu invalide pour le format {fmt.upper()}: {e}", f"Invalid content for format {fmt.upper()}: {e}")
+                    self.tr(
+                        f"Contenu invalide pour le format {fmt.upper()}: {e}",
+                        f"Invalid content for format {fmt.upper()}: {e}",
+                    ),
                 )
                 return
             try:
                 target_path.write_text(out, encoding="utf-8")
-                if hasattr(self, 'log') and self.log is not None:
-                    self.log.append(self.tr(
-                        f"✅ Configuration brute enregistrée dans {target_name} (la boîte reste ouverte)",
-                        f"✅ Raw config saved to {target_name} (dialog remains open)"
-                    ))
+                if hasattr(self, "log") and self.log is not None:
+                    self.log.append(
+                        self.tr(
+                            f"✅ Configuration brute enregistrée dans {target_name} (la boîte reste ouverte)",
+                            f"✅ Raw config saved to {target_name} (dialog remains open)",
+                        )
+                    )
             except Exception as e:
                 QMessageBox.critical(
                     dlg,
                     self.tr("Erreur", "Error"),
-                    self.tr(f"Échec d'écriture {target_name}: {e}", f"Failed to write {target_name}: {e}")
+                    self.tr(f"Échec d'écriture {target_name}: {e}", f"Failed to write {target_name}: {e}"),
                 )
+
         btn_save_raw.clicked.connect(_save_raw)
         layout.addWidget(raw_box)
         # Boutons d'action + réordonnancement
@@ -1316,6 +1569,7 @@ def open_api_loader_dialog(self) -> None:
         btn_down = QPushButton("⬇️")
         btn_save = QPushButton(self.tr("Enregistrer", "Save"))
         btn_cancel = QPushButton(self.tr("Annuler", "Cancel"))
+
         def _move_sel(delta: int):
             row = lst.currentRow()
             if row < 0:
@@ -1326,6 +1580,7 @@ def open_api_loader_dialog(self) -> None:
             it = lst.takeItem(row)
             lst.insertItem(new_row, it)
             lst.setCurrentRow(new_row)
+
         btn_up.clicked.connect(lambda: _move_sel(-1))
         btn_down.clicked.connect(lambda: _move_sel(1))
         btns.addWidget(btn_up)
@@ -1334,19 +1589,20 @@ def open_api_loader_dialog(self) -> None:
         btns.addWidget(btn_cancel)
         btns.addWidget(btn_save)
         layout.addLayout(btns)
+
         def do_save():
             # Extraire ordre et états depuis la QListWidget
-            new_plugins: Dict[str, Any] = {}
+            new_plugins: dict[str, Any] = {}
             order_ids: list[str] = []
             for i in range(lst.count()):
                 it = lst.item(i)
                 pid = it.data(0x0100) or it.text()
-                en = (it.checkState() == Qt.Checked)
+                en = it.checkState() == Qt.Checked
                 new_plugins[str(pid)] = {"enabled": bool(en), "priority": i}
                 order_ids.append(str(pid))
             # Construire une copie de la config pour éviter de réassigner cfg (et l'erreur d'étendue)
             try:
-                cfg_out: Dict[str, Any] = dict(cfg) if isinstance(cfg, dict) else {}
+                cfg_out: dict[str, Any] = dict(cfg) if isinstance(cfg, dict) else {}
             except Exception:
                 cfg_out = {}
             cfg_out["plugins"] = new_plugins
@@ -1356,13 +1612,23 @@ def open_api_loader_dialog(self) -> None:
             try:
                 target.write_text(json.dumps(cfg_out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
                 try:
-                    if hasattr(self, 'log') and self.log is not None:
-                        self.log.append(self.tr("✅ Plugins/API enregistrés avec ordre dans bcasl.json", "✅ API plugins and order saved to bcasl.json"))
+                    if hasattr(self, "log") and self.log is not None:
+                        self.log.append(
+                            self.tr(
+                                "✅ Plugins/API enregistrés avec ordre dans bcasl.json",
+                                "✅ API plugins and order saved to bcasl.json",
+                            )
+                        )
                 except Exception:
                     pass
                 dlg.accept()
             except Exception as e:
-                QMessageBox.critical(dlg, self.tr("Erreur", "Error"), self.tr(f"Impossible d'écrire bcasl.json: {e}", f"Failed to write bcasl.json: {e}"))
+                QMessageBox.critical(
+                    dlg,
+                    self.tr("Erreur", "Error"),
+                    self.tr(f"Impossible d'écrire bcasl.json: {e}", f"Failed to write bcasl.json: {e}"),
+                )
+
         btn_save.clicked.connect(do_save)
         btn_cancel.clicked.connect(dlg.reject)
         # Open non-modally to avoid blocking the UI thread
@@ -1387,7 +1653,7 @@ def open_api_loader_dialog(self) -> None:
         except Exception:
             pass
         try:
-            dlg.finished.connect(lambda _=None: setattr(self, '_api_loader_dlg', None))
+            dlg.finished.connect(lambda _=None: setattr(self, "_api_loader_dlg", None))
         except Exception:
             pass
         try:
@@ -1402,7 +1668,7 @@ def open_api_loader_dialog(self) -> None:
                     pass
     except Exception as e:
         try:
-            if hasattr(self, 'log') and self.log is not None:
+            if hasattr(self, "log") and self.log is not None:
                 self.log.append(f"⚠️ API Loader UI error: {e}")
         except Exception:
             pass
@@ -1414,7 +1680,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
     - on_done est rappelé dans le thread UI (via QTimer.singleShot).
     """
     try:
-        if not getattr(self, 'workspace_dir', None):
+        if not getattr(self, "workspace_dir", None):
             if callable(on_done):
                 on_done(None)
             return
@@ -1425,7 +1691,8 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
         engine_id = None
         try:
             import utils.engines_loader as engines_loader  # import local
-            idx = self.compiler_tabs.currentIndex() if hasattr(self, 'compiler_tabs') and self.compiler_tabs else 0
+
+            idx = self.compiler_tabs.currentIndex() if hasattr(self, "compiler_tabs") and self.compiler_tabs else 0
             engine_id = engines_loader.registry.get_engine_for_tab(idx)
         except Exception:
             pass
@@ -1434,7 +1701,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
         cfg = _load_workspace_config(workspace_root)
         if missing_cfg and (workspace_root / "bcasl.json").exists():
             try:
-                if hasattr(self, 'log') and self.log is not None:
+                if hasattr(self, "log") and self.log is not None:
                     self.log.append("📝 BCASL: fichier bcasl.json créé avec une configuration par défaut\n")
             except Exception:
                 pass
@@ -1442,6 +1709,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             cfg["engine_id"] = engine_id
         # Timeout: <= 0 illimité (0.0)
         import os as _os
+
         try:
             env_timeout = float(_os.environ.get("PYCOMPILER_BCASL_PLUGIN_TIMEOUT", "0"))
         except Exception:
@@ -1455,7 +1723,8 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
         plugin_timeout = plugin_timeout_raw if plugin_timeout_raw and plugin_timeout_raw > 0 else 0.0
         # Lancer le worker thread (aucune boucle imbriquée)
         from PySide6.QtCore import QTimer
-        if QThread is not None and '_BCASLWorker' in globals():
+
+        if QThread is not None and "_BCASLWorker" in globals():
             thread = QThread()
             worker = _BCASLWorker(workspace_root, api_dir, cfg, plugin_timeout)  # type: ignore[name-defined]
             # Conserver des références pour éviter la destruction du QThread avant sa fin
@@ -1470,19 +1739,20 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                 self._bcasl_ui_bridge = bridge
             except Exception:
                 pass
-            if hasattr(self, 'log') and self.log is not None:
+            if hasattr(self, "log") and self.log is not None:
                 worker.log.connect(bridge.on_log)
             worker.finished.connect(bridge.on_finished)
             worker.finished.connect(worker.deleteLater)
+
             # Nettoyage des références et suppression différée du thread
             def _clear_refs():
                 try:
-                    if getattr(self, '_bcasl_thread', None) is thread:
+                    if getattr(self, "_bcasl_thread", None) is thread:
                         self._bcasl_thread = None
-                    if getattr(self, '_bcasl_worker', None) is worker:
+                    if getattr(self, "_bcasl_worker", None) is worker:
                         self._bcasl_worker = None
                     # Clear soft timer reference
-                    if hasattr(self, '_bcasl_soft_timer'):
+                    if hasattr(self, "_bcasl_soft_timer"):
                         try:
                             t = self._bcasl_soft_timer
                             if t:
@@ -1490,7 +1760,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                         except Exception:
                             pass
                         self._bcasl_soft_timer = None
-                    if hasattr(self, '_bcasl_ui_bridge'):
+                    if hasattr(self, "_bcasl_ui_bridge"):
                         try:
                             b = self._bcasl_ui_bridge
                             if b:
@@ -1504,6 +1774,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                     thread.deleteLater()
                 except Exception:
                     pass
+
             thread.finished.connect(_clear_refs)
             worker.moveToThread(thread)
             thread.started.connect(worker.run)
@@ -1512,19 +1783,26 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             try:
                 if plugin_timeout <= 0:
                     import os as _os2
+
                     try:
                         opt2 = cfg.get("options", {}) if isinstance(cfg, dict) else {}
-                        soft_s = float(opt2.get("phase_soft_timeout_s", float(_os2.environ.get("PYCOMPILER_BCASL_SOFT_TIMEOUT", "30"))))
+                        soft_s = float(
+                            opt2.get(
+                                "phase_soft_timeout_s", float(_os2.environ.get("PYCOMPILER_BCASL_SOFT_TIMEOUT", "30"))
+                            )
+                        )
                     except Exception:
                         soft_s = 30.0
                     if soft_s and soft_s > 0:
                         tmr = QTimer(self)
                         tmr.setSingleShot(True)
+
                         def _on_soft():
                             try:
                                 # still running?
-                                if getattr(self, '_bcasl_thread', None) is thread and thread.isRunning():
+                                if getattr(self, "_bcasl_thread", None) is thread and thread.isRunning():
                                     from PySide6.QtWidgets import QMessageBox as _QMB
+
                                     res = _QMB.question(
                                         self,
                                         self.tr("BCASL trop long", "BCASL taking too long"),
@@ -1547,6 +1825,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                                                 pass
                             except Exception:
                                 pass
+
                         tmr.timeout.connect(_on_soft)
                         tmr.start(int(soft_s * 1000))
                         self._bcasl_soft_timer = tmr
@@ -1558,7 +1837,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
             enabled_dir = _prepare_enabled_plugins_dir(api_dir, cfg, workspace_root)
             loaded, errors = manager.load_plugins_from_directory(enabled_dir)
-            if hasattr(self, 'log') and self.log is not None:
+            if hasattr(self, "log") and self.log is not None:
                 self.log.append(f"🧩 BCASL: {loaded} package(s) de plugins chargé(s) depuis API/\n")
                 for mod, msg in errors or []:
                     self.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
@@ -1593,7 +1872,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
         except Exception as _e:
             report = None
             try:
-                if hasattr(self, 'log') and self.log is not None:
+                if hasattr(self, "log") and self.log is not None:
                     self.log.append(f"⚠️ Erreur BCASL: {_e}\n")
             except Exception:
                 pass
@@ -1604,7 +1883,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                 pass
     except Exception as e:
         try:
-            if hasattr(self, 'log') and self.log is not None:
+            if hasattr(self, "log") and self.log is not None:
                 self.log.append(f"⚠️ Erreur BCASL (async): {e}\n")
         except Exception:
             pass
@@ -1623,7 +1902,7 @@ def run_pre_compile(self) -> Optional[object]:
     Retourne le rapport si disponible, sinon None.
     """
     try:
-        if not getattr(self, 'workspace_dir', None):
+        if not getattr(self, "workspace_dir", None):
             # Rien à faire si workspace invalide
             return None
         workspace_root = Path(self.workspace_dir).resolve()
@@ -1634,7 +1913,8 @@ def run_pre_compile(self) -> Optional[object]:
         engine_id = None
         try:
             import utils.engines_loader as engines_loader  # import local pour limiter le coût si non utilisé
-            idx = self.compiler_tabs.currentIndex() if hasattr(self, 'compiler_tabs') and self.compiler_tabs else 0
+
+            idx = self.compiler_tabs.currentIndex() if hasattr(self, "compiler_tabs") and self.compiler_tabs else 0
             engine_id = engines_loader.registry.get_engine_for_tab(idx)
         except Exception:
             pass
@@ -1644,7 +1924,7 @@ def run_pre_compile(self) -> Optional[object]:
         cfg = _load_workspace_config(workspace_root)
         if missing_cfg and (workspace_root / "bcasl.json").exists():
             try:
-                if hasattr(self, 'log') and self.log is not None:
+                if hasattr(self, "log") and self.log is not None:
                     self.log.append("📝 BCASL: fichier bcasl.json créé avec une configuration par défaut\n")
             except Exception:
                 pass
@@ -1652,6 +1932,7 @@ def run_pre_compile(self) -> Optional[object]:
             cfg["engine_id"] = engine_id
         # Timeout configurable: options.plugin_timeout_s in bcasl.* or env PYCOMPILER_BCASL_PLUGIN_TIMEOUT; <= 0 means unlimited
         import os as _os
+
         try:
             env_timeout = float(_os.environ.get("PYCOMPILER_BCASL_PLUGIN_TIMEOUT", "0"))
         except Exception:
@@ -1664,24 +1945,26 @@ def run_pre_compile(self) -> Optional[object]:
         plugin_timeout_raw = cfg_timeout if cfg_timeout != 0.0 else env_timeout
         plugin_timeout = plugin_timeout_raw if plugin_timeout_raw and plugin_timeout_raw > 0 else 0.0
         # Run BCASL in background to avoid blocking UI when plugins use no progress UI
-        if QThread is not None and QEventLoop is not None and '_BCASLWorker' in globals():
+        if QThread is not None and QEventLoop is not None and "_BCASLWorker" in globals():
             try:
                 thread = QThread()
                 worker = _BCASLWorker(workspace_root, api_dir, cfg, plugin_timeout)  # type: ignore[name-defined]
-                result_holder: Dict[str, Any] = {"report": None}
-                if hasattr(self, 'log') and self.log is not None:
+                result_holder: dict[str, Any] = {"report": None}
+                if hasattr(self, "log") and self.log is not None:
                     bridge2 = _BCASLUiBridge(self, None, thread)
                     worker.log.connect(bridge2.on_log)
                     try:
                         thread.finished.connect(bridge2.deleteLater)
                     except Exception:
                         pass
+
                 def _on_finished(rep):
                     result_holder["report"] = rep
                     try:
                         thread.quit()
                     except Exception:
                         pass
+
                 worker.finished.connect(_on_finished)
                 worker.finished.connect(worker.deleteLater)
                 thread.finished.connect(thread.deleteLater)
@@ -1692,7 +1975,7 @@ def run_pre_compile(self) -> Optional[object]:
                 thread.finished.connect(loop.quit)
                 loop.exec()  # nested loop; UI remains responsive
                 report = result_holder.get("report")
-                if report and hasattr(self, 'log') and self.log is not None:
+                if report and hasattr(self, "log") and self.log is not None:
                     self.log.append("BCASL - Rapport:\n")
                     for item in report:
                         state = "OK" if item.success else f"FAIL: {item.error}"
@@ -1706,7 +1989,7 @@ def run_pre_compile(self) -> Optional[object]:
         manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
         enabled_dir = _prepare_enabled_plugins_dir(api_dir, cfg, workspace_root)
         loaded, errors = manager.load_plugins_from_directory(enabled_dir)
-        if hasattr(self, 'log') and self.log is not None:
+        if hasattr(self, "log") and self.log is not None:
             self.log.append(f"🧩 BCASL: {loaded} package(s) de plugins chargé(s) depuis API/\n")
             for mod, msg in errors or []:
                 self.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
@@ -1738,7 +2021,7 @@ def run_pre_compile(self) -> Optional[object]:
         except Exception:
             pass
         report = manager.run_pre_compile(PreCompileContext(workspace_root))
-        if hasattr(self, 'log') and self.log is not None:
+        if hasattr(self, "log") and self.log is not None:
             self.log.append("BCASL - Rapport:\n")
             for item in report:
                 state = "OK" if item.success else f"FAIL: {item.error}"
@@ -1747,7 +2030,7 @@ def run_pre_compile(self) -> Optional[object]:
         return report
     except Exception as e:
         try:
-            if hasattr(self, 'log') and self.log is not None:
+            if hasattr(self, "log") and self.log is not None:
                 self.log.append(f"⚠️ Erreur BCASL: {e}\n")
         except Exception:
             pass
