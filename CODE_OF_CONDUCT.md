@@ -36,7 +36,7 @@ Ce Code de Conduite s'applique dans tous les espaces communautaires, et s'appliq
 
 ## Application
 
-Les cas de comportement abusif, harcelant ou autrement inacceptable peuvent être signalés aux dirigeants de la communauté responsables de l'application à conduct@pycompiler-ark.org. Toutes les plaintes seront examinées et enquêtées rapidement et équitablement.
+Les cas de comportement abusif, harcelant ou autrement inacceptable peuvent être signalés aux dirigeants de la communauté responsables de l'application à ague.samuel27@gmail.com. Toutes les plaintes seront examinées et enquêtées rapidement et équitablement.
 
 Tous les dirigeants de la communauté sont tenus de respecter la vie privée et la sécurité du rapporteur de tout incident.
 
@@ -81,7 +81,7 @@ Pour des réponses aux questions courantes sur ce code de conduite, voir la FAQ 
 ## Contact
 
 Pour toute question concernant ce Code de Conduite :
-- Email : conduct@pycompiler-ark.org
+- Email : ague.samuel27@gmail.com
 - GitHub : Créer une issue avec le label "code-of-conduct"
 
 ---

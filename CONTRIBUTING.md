@@ -16,7 +16,7 @@ Merci de votre intérêt pour contribuer à PyCompiler ARK++ ! Ce guide vous aid
 
 ## Code de Conduite
 
-Ce projet adhère au [Code de Conduite du Contributeur](CODE_OF_CONDUCT.md). En participant, vous vous engagez à respecter ce code. Veuillez signaler tout comportement inacceptable à conduct@pycompiler-ark.org.
+Ce projet adhère au [Code de Conduite du Contributeur](CODE_OF_CONDUCT.md). En participant, vous vous engagez à respecter ce code. Veuillez signaler tout comportement inacceptable à ague.samuel27@gmail.com.
 
 ## Comment Contribuer
 
@@ -355,7 +355,7 @@ Les reviewers vérifieront :
 - [Discussions](https://github.com/your-org/pycompiler-ark/discussions)
 
 ### Communication
-- Email : contribute@pycompiler-ark.org
+- Email : ague.samuel27@gmail.com
 - Discord : [PyCompiler Community](https://discord.gg/pycompiler)
 - Matrix : #pycompiler:matrix.org
 

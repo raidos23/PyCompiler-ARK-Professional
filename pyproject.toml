@@ -98,10 +98,10 @@ description = "PyCompiler ARK++ - Advanced Python compilation toolkit with plugi
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-    {name = "PyCompiler ARK++ Team", email = "team@pycompiler-ark.org"}
+    {name = "Samuel Amen Ague", email = "ague.samuel27@gmail.com"}
 ]
 maintainers = [
-    {name = "PyCompiler ARK++ Maintainers", email = "maintainers@pycompiler-ark.org"}
+    {name = "Samuel Amen Ague", email = "ague.samuel27@gmail.com"}
 ]
 keywords = ["python", "compiler", "packaging", "build-tools", "pyinstaller", "nuitka"]
 classifiers = [

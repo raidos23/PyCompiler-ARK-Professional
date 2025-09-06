@@ -15,7 +15,7 @@ ACASL_PLUGIN = True
 ACASL_ID = "sbom_generator"
 ACASL_DESCRIPTION = "Generate Software Bill of Materials (SBOM) for compiled artifacts"
 ACASL_VERSION = "1.0.0"
-ACASL_AUTHOR = "PyCompiler ARK++ Team"
+ACASL_AUTHOR = "Samuel Amen Ague"
 ACASL_PRIORITY = 75  # After compilation and signing, before final packaging
 
 
@@ -263,15 +263,13 @@ def _collect_project_info(workspace: Path, sctx: Any) -> Dict[str, Any]:
     pyproject_file = workspace / "pyproject.toml"
     if pyproject_file.exists():
         try:
-            import tomli if sys.version_info < (3, 11) else tomllib
+            if sys.version_info >= (3, 11):
+                import tomllib as toml_loader
+            else:
+                import tomli as toml_loader
 
             with open(pyproject_file, 'rb') as f:
-                if sys.version_info >= (3, 11):
-                    import tomllib
-                    data = tomllib.load(f)
-                else:
-                    import tomli
-                    data = tomli.load(f)
+                data = toml_loader.load(f)
 
             project = data.get("project", {})
             info.update({

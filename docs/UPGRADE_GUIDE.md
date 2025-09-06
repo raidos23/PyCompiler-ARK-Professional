@@ -276,7 +276,7 @@ bandit -r . -f json
 ### Support
 - **Issues GitHub** : Pour les bugs et demandes de fonctionnalités
 - **Discussions** : Pour les questions générales
-- **Security** : security@pycompiler-ark.org pour les vulnérabilités
+- **Security** : ague.samuel27@gmail.com pour les vulnérabilités
 
 ## Checklist de Migration
 
@@ -288,7 +288,7 @@ bandit -r . -f json
 - [ ] SBOM généré et vérifié
 - [ ] Documentation mise à jour
 - [ ] CI/CD configuré avec nouveaux jobs
-- [ ] Équipe formée aux nouveaux outils
+- [ ] Formation réalisée aux nouveaux outils
 - [ ] Processus de release mis à jour
 
 ---

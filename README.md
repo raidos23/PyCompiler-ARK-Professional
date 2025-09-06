@@ -221,12 +221,12 @@ This project is licensed under the **GNU General Public License v3.0 only (GPL-3
 ### **Enterprise Support**
 - **Priority Support**: Dedicated support channels
 - **Custom Development**: Feature development and integration
-- **Training**: Team training and best practices
+- **Training**: Training and best practices
 - **Consulting**: Architecture and deployment guidance
 
 ### **Security Issues**
 For security vulnerabilities, please follow our [Security Policy](SECURITY.md):
-- **Email**: security@pycompiler-ark.org
+- **Email**: ague.samuel27@gmail.com
 - **GitHub Security**: Private vulnerability reporting
 - **Response Time**: 48 hours for initial response
 
@@ -256,4 +256,4 @@ PyCompiler ARK++ Professional Edition represents a complete architectural upgrad
 
 **PyCompiler ARK++ Professional Edition** - *Transforming Python compilation from functional to industrial-grade.*
 
-Copyright (C) 2025 PyCompiler ARK++ Team. Licensed under GPL-3.0-only.
+Copyright (C) 2025 Samuel Amen Ague. Licensed under GPL-3.0-only.

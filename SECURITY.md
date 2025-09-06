@@ -27,7 +27,7 @@ Instead, please use one of these secure channels:
    - Fill out the form with detailed information
 
 2. **Email** (Alternative)
-   - Send an email to: security@pycompiler-ark.org
+   - Send an email to: ague.samuel27@gmail.com
    - Use PGP encryption if possible (key available on request)
    - Include "SECURITY" in the subject line
 
@@ -141,7 +141,7 @@ We are committed to responding quickly to security reports:
 ### Notification Channels
 - **GitHub Security Advisories**: Primary notification method
 - **Release Notes**: Security fixes documented in CHANGELOG.md
-- **Mailing List**: security-announce@pycompiler-ark.org (planned)
+- **Mailing List**: ague.samuel27@gmail.com (planned)
 
 ### Update Process
 1. Security fixes are prioritized and fast-tracked
@@ -163,8 +163,8 @@ We are committed to responding quickly to security reports:
 
 ## Contact Information
 
-- **Security Team**: security@pycompiler-ark.org
-- **General Contact**: contact@pycompiler-ark.org
+- **Security**: ague.samuel27@gmail.com
+- **General Contact**: ague.samuel27@gmail.com
 - **GitHub**: [@pycompiler-ark-security](https://github.com/pycompiler-ark-security)
 
 ## Acknowledgments
