@@ -9,9 +9,10 @@ Quick Navigation
 - [Layout](#2-folder-layout)
 - [Minimal plugin](#3-minimal-plugin-with-metadata)
 - [Tags](#4-tag-taxonomy-and-default-ordering-minify-before-obfuscation)
+  - [Why tags matter](#why-tags-matter)
 - [Progress](#5-progress-and-non-interactive-considerations)
 - [Configuration](#6-configuration-patterns)
-- [System installs](#61-system-install-helpers-pip-global--package-managers)
+- [System installs (6.1)](#61-system-install-helpers-pip-global--package-managers)
 - [Context](#7-context-essentials)
 - [i18n](#8-i18n-async)
 - [Workspace](#9-workspace-switching-safe)
@@ -28,7 +29,9 @@ Highlights (what changed)
 - Better examples: minimal plugin, minifier sample, obfuscation sample, and system installs sample.
 
 Strict rules (BCASL package signature)
-- Your plugin must be a Python package under API/<plugin_id>/ with an __init__.py.
+
+> IMPORTANT: BCASL plugins must always live under API/<plugin_id>/ as Python packages (folder with an __init__.py). Paths such as bcasl/<plugin_id>/ or acasl/<plugin_id>/ are invalid and will not be discovered.
+- Your plugin must be a Python package under API/<plugin_id>/ with an __init__.py (not under acasl/ or bcasl/).
 - In __init__.py, declare at least:
   - BCASL_PLUGIN = True
   - BCASL_ID = "your_id"
@@ -128,6 +131,7 @@ def bcasl_register(manager):
 
 2) Folder layout
 
+Place plugins exclusively under API/<plugin_id>/ (never under acasl/ or bcasl/):
 ```
 <project root>
 └── API/
@@ -198,6 +202,22 @@ The host computes a default order from BCASL_TAGS (no IDs are hard‑coded):
 Notes:
 - Using tags improves default ordering and UX; the user remains free to override order in bcasl.* or via the UI.
 - Absence of tags falls back to textual heuristics on name/description with the same taxonomy.
+
+### Why tags matter
+- Drive default ordering deterministically across projects and workspaces.
+- Prevent anti-patterns like running obfuscation before minification or packaging before validation.
+- Improve the UI: grouping, filtering, and tooltips leverage tags to present clearer pipelines.
+- Reduce manual configuration: fewer per-workspace overrides and fewer ordering mistakes.
+- Aid onboarding: contributors understand intent and stage from tags at a glance.
+
+Recommended baseline tags by stage:
+- Early: clean, validation
+- Prepare: prepare, resources, configure, codegen
+- Quality: lint, format, typecheck
+- Transform: minify, obfuscation
+- Package: packaging, bundle, archive
+- Meta: manifest, version, docs
+- Delivery: publish, release
 
 ---
 
@@ -453,7 +473,7 @@ def bcasl_register(manager):
 ---
 
 11) Troubleshooting
-- Plugin not visible → ensure BCASL_PLUGIN/ID/DESCRIPTION exist; use @plugin; register via bcasl_register; open API Loader; check logs
+- Plugin not visible → ensure BCASL_PLUGIN/ID/DESCRIPTION exist; it's under API/<plugin_id>/ (not under acasl/ or bcasl/); use @plugin; register via bcasl_register; open API Loader; check logs
 - Config invalid → use UI raw editor; validate formats; fall back to JSON
 - Long operations → use progress; split work; no modal blocking in background
 - Ordering not as expected → add/adjust BCASL_TAGS (e.g., "minify", "obfuscation") or override order in the UI

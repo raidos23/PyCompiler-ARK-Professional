@@ -26,6 +26,8 @@ Highlights (what changed)
 - Examples updated to demonstrate system installs and best practices.
 
 Important rules (strict)
+
+> IMPORTANT: ACASL plugins must always live under API/<plugin_id>/ as Python packages (folder with an __init__.py). Paths such as acasl/<plugin_id>/ or bcasl/<plugin_id>/ are not valid for ACASL plugins and will not be discovered.
 - ACASL plugins must be Python packages under API/<plugin_id>/ (folder with an __init__.py).
 - Mandatory package signature in __init__.py:
   - ACASL_PLUGIN = True
@@ -87,11 +89,11 @@ ACASL is the post‑compilation counterpart to BCASL. It runs automatically afte
 ## Execution flow and integration
 - ACASL is triggered after all builds complete.
 - The default artifact collector scans `<workspace>/dist` and `<workspace>/build` and passes the file list to plugins.
-- Plugins are discovered under API/ at the project root. Only Python packages that declare ACASL_PLUGIN = True and expose acasl_run(ctx) are considered. The runtime further validates ACASL_ID/ACASL_DESCRIPTION; extended metadata are optional but recommended.
+- Plugins are discovered exclusively under API/ at the project root (never under acasl/ or bcasl/). Only Python packages that declare ACASL_PLUGIN = True and expose acasl_run(ctx) are considered. The runtime further validates ACASL_ID/ACASL_DESCRIPTION; extended metadata are optional but recommended.
 - ACASL runs asynchronously (non‑blocking UI). A soft timeout can be configured; each plugin run is measured (duration in ms).
 
 ## Where to place your plugins (package layout)
-Create Python packages under API/ (not loose .py files):
+Create Python packages under API/ (not loose .py files). Do not place ACASL plugins under acasl/ or bcasl/:
 ```
 API/
   ├── hash_report/
@@ -288,7 +290,7 @@ def acasl_run(ctx):
   - Ensure `acasl/__init__.py` points to `acasl/acasl_loader.py`.
   - Ensure UI connects to `from acasl import open_acasl_loader_dialog`.
 - Plugin not listed
-  - Your plugin must be a Python package under API/<plugin_id>/ with an __init__.py.
+  - Your plugin must be a Python package under API/<plugin_id>/ with an __init__.py (not under acasl/ or bcasl/).
   - __init__.py must define ACASL_PLUGIN = True and a callable acasl_run(ctx).
   - Required metadata missing: ensure ACASL_ID and ACASL_DESCRIPTION are defined (strings) — the loader/runtime enforce these.
 - No artifacts
