@@ -7,6 +7,7 @@ Quick Navigation
 - [What is ACASL?](#what-is-acasl)
 - [Execution flow](#execution-flow-and-integration)
 - [Output directory policy](#output-directory-policy)
+- [Filesystem scope enforcement (SDK)](#filesystem-scope-enforcement-sdk)
 - [Package layout](#where-to-place-your-plugins-package-layout)
 - [Templates](#plugin-templates)
 - [SDK facade & Context](#acasl-sdk-facade-and-context-available-api)
@@ -25,6 +26,7 @@ This guide explains how to write, configure, and run ACASL plugins that operate 
 Highlights (what changed)
 - Orchestrated output opening: the host resolves and opens the engine output directory after ACASL; plugins must not open folders themselves.
 - Artifacts are filtered to the engine-defined output directory.
+- SDK-level enforcement: ACASL plugins are confined to the engine output directory. The SDK context restricts all file helpers (safe_path, write_text_atomic, replace_in_file, batch_replace, iter_files, iter_project_files) to this directory.
 - Global enable/disable switch in the ACASL loader; when disabled, ACASL is skipped but the output folder can still be opened by the orchestrator.
 - Soft timeout prompt (non-blocking) when plugins are unlimited; robust worker threading.
 - Extended plugin metadata supported in the UI: ACASL_NAME, ACASL_VERSION, ACASL_AUTHOR, ACASL_CREATED, ACASL_LICENSE, ACASL_COMPATIBILITY, ACASL_TAGS.
@@ -40,12 +42,25 @@ ACASL is the post‑compilation counterpart to BCASL. It runs automatically afte
 - Discovery is strict: only packages under `API/<plugin_id>/` that declare `ACASL_PLUGIN = True` and expose `acasl_run(ctx)` are considered. The runtime validates `ACASL_ID`/`ACASL_DESCRIPTION`; extended metadata are optional but recommended.
 - ACASL runs asynchronously (non‑blocking UI). Each plugin run is measured (duration in ms). A soft timeout prompt may appear when the configured timeout is unlimited.
 - The host computes the engine output directory and filters artifacts to files under that directory before passing them to plugins.
+- Scans and file operations in plugins are rooted in the output directory (SDK-enforced, see below).
 
 ## Output directory policy {#output-directory-policy}
 - The orchestrator (host) — not plugins — opens the output directory on success.
 - Resolution: the host queries the active engine (via `get_output_directory(gui)`) and common UI fields; see `acasl/acasl_loader.py`.
 - After ACASL ends (or when ACASL is disabled), the host attempts to open the resolved output folder.
 - Plugins must not open OS file browsers or paths. Log paths instead and leave folder opening to the host.
+
+## Filesystem scope enforcement (SDK) {#filesystem-scope-enforcement-sdk}
+To guarantee safety and consistency, the SDK enforces a strict scope for ACASL plugins:
+- The SDK context (sctx) carries an internal `allowed_dir` equal to the engine output directory.
+- All file helpers respect this scope:
+  - `sctx.safe_path(...)` raises if the resolved path is outside `allowed_dir` (and workspace).
+  - `sctx.iter_files(...)` and `sctx.iter_project_files(...)` are rooted at `allowed_dir`.
+  - `sctx.write_text_atomic`, `sctx.replace_in_file`, `sctx.batch_replace` refuse to touch files outside `allowed_dir`.
+- `wrap_post_context(ctx)` sets this scope automatically and filters `sctx.artifacts` to items under `allowed_dir`.
+- Practical advice:
+  - Prefer using the `sctx.artifacts` list and derive any additional paths relative to the output directory.
+  - Passing absolute paths under the output directory to `sctx.safe_path(...)` is supported and recommended when in doubt.
 
 ## Where to place your plugins (package layout) {#where-to-place-your-plugins-package-layout}
 Create Python packages under API/ (not loose .py files). Do not place ACASL plugins under acasl/ or bcasl/:
@@ -54,7 +69,7 @@ API/
   ├── hash_report/
   │   └── __init__.py
   ├── compress_zip/
-  │   └��─ __init__.py
+  │   └── __init__.py
   ├── signer_windows/
   │   └── __init__.py
   ├── codesign_macos/
@@ -132,14 +147,16 @@ def acasl_run(ctx):
 
 ## ACASL SDK facade and Context (available API) {#acasl-sdk-facade-and-context-available-api}
 Always import from `API_SDK.ACASL_SDK`. Core items:
-- `wrap_post_context(post_ctx) -> SDKContext` — converts host ACASLContext into SDKContext, loading workspace config and copying the artifacts list.
+- `wrap_post_context(post_ctx) -> SDKContext` — converts host ACASLContext into SDKContext, loading workspace config and copying the artifacts list. It also:
+  - resolves the engine output directory and sets `sctx.allowed_dir` to this path,
+  - filters `sctx.artifacts` to entries under `allowed_dir`.
 - SDKContext (sctx) provides:
-  - Attributes: `workspace_root`, `artifacts`, `engine_id` (None in ACASL), `config_view`
+  - Attributes: `workspace_root`, `artifacts`, `engine_id` (None in ACASL), `config_view`, `allowed_dir` (ACASL scope root)
   - Logging: `sctx.log_info/warn/error`
   - Messages: `sctx.msg_info/warn/error/question` (headless‑safe)
-  - File utils: `sctx.path/safe_path/is_within_workspace/require_files/open_text_safe`
-  - Scanning: `sctx.iter_files`, `sctx.iter_project_files(use_cache=True)`
-  - Replacement: `sctx.write_text_atomic`, `sctx.replace_in_file`, `sctx.batch_replace`
+  - File utils: `sctx.path/safe_path/is_within_workspace` (safe_path enforces `allowed_dir`), `require_files`, `open_text_safe`
+  - Scanning: `sctx.iter_files`, `sctx.iter_project_files(use_cache=True)` (both rooted at `allowed_dir` when set)
+  - Replacement: `sctx.write_text_atomic`, `sctx.replace_in_file`, `sctx.batch_replace` (refuse outside `allowed_dir`)
   - Parallelism: `sctx.parallel_map`, Timing: `sctx.time_step`
   - Subprocess: `sctx.run_command(cmd, timeout_s=60, cwd=None, env=None, shell=False)`
 - Additional helpers from the facade:
@@ -261,6 +278,7 @@ def _t(sctx, key, fr, en, **fmt):
 
 ## Best practices (security, UX, logs) {#best-practices-security-ux-logs}
 - Do not open folders or file explorers; the orchestrator opens the engine output directory.
+- Operate strictly within the engine output directory: rely on `sctx.artifacts`, `sctx.iter_files(...)`, `sctx.write_text_atomic(...)`, etc. The SDK ensures operations outside this directory are rejected.
 - Security: secrets only via environment or separate secure files; never commit secrets.
 - UX: reduce modal prompts; prefer logs and one final summary dialog; respect non‑interactive mode.
 - Logs: always log the output file paths you create.
@@ -371,4 +389,5 @@ def _t(sctx, key, fr, en, **fmt):
 - Use the “🔌 ACASL API Loader” to enable and order plugins; the config is saved to `acasl.json` (with `options.plugin_timeout_s` and `options.enabled`).
 - ACASL runs automatically after builds; plugins operate on `sctx.artifacts` (filtered to engine output dir).
 - Do not open output folders from plugins; the orchestrator opens the engine output directory.
+- Operate only within the output directory; the SDK enforces this scope for all file helpers.
 - Check cancellation, use timeouts, keep plugins idempotent, and leverage i18n via `load_plugin_translations` + `sctx.tr` fallback.
