@@ -165,7 +165,7 @@ We are committed to responding quickly to security reports:
 
 - **Security**: ague.samuel27@gmail.com
 - **General Contact**: ague.samuel27@gmail.com
-- **GitHub**: [@pycompiler-ark-security](https://github.com/pycompiler-ark-security)
+- **GitHub**: [@pycompiler-ark-security](https://github.com/raidos23)
 
 ## Acknowledgments
 
