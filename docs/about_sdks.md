@@ -35,7 +35,7 @@ Table of Contents
 
 ---
 
-1) Engine SDK — Capabilities
+## 1) Engine SDK — Capabilities {#1-engine-sdk--capabilities}
 
 1.1 Overview and Versioning
 - Purpose: stable façade for third‑party build engines to integrate with the GUI.
@@ -125,7 +125,7 @@ if vroot:
 
 ---
 
-2) API_SDK — Capabilities
+## 2) API_SDK — Capabilities {#2-api_sdk--capabilities}
 
 2.1 Overview, Versioning & get_capabilities
 - Purpose: modular kit for API plugins. Supports both BCASL (pre‑compile) and ACASL (post‑compile).
@@ -279,7 +279,7 @@ def acasl_run(ctx):
 
 ---
 
-Appendix: Capability Matrix (Quick Glance)
+## Appendix: Capability Matrix (Quick Glance) {#appendix-capability-matrix-quick-glance}
 
 Engine SDK
 - Process: QProcess/subprocess, callbacks, timeouts
@@ -297,7 +297,7 @@ API_SDK (BCASL + ACASL)
 - Bridges & Facades: plugin decorator (BCASL), wrap_context (BCASL), wrap_post_context (ACASL), set_selected_workspace; namespaced facades BCASL_SDK and ACASL_SDK
 
 For more context and step‑by‑step tutorials, see:
-- Engines how‑to: docs/how_to_creat_a_building_engine.md
-- BCASL plugins how‑to: docs/how_to_creat_a_bcasl_API.md
-- ACASL plugins how‑to: docs/how_to_creat_a_acasl_API.md
+- Engines how‑to: docs/how_to_create_a_building_engine.md
+- BCASL plugins how‑to: docs/how_to_create_a_bcasl_API.md
+- ACASL plugins how‑to: docs/how_to_create_an_acasl_API.md
 - Framework Reference: docs/REFERENCE.md

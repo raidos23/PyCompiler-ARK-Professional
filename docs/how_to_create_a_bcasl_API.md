@@ -305,11 +305,86 @@ if not ok:
 
 ## 8) i18n (async) {#8-i18n-async}
 
-- Place a languages/ folder in your package; load with API_SDK helpers:
+Goal
+- Ship a languages/ folder with your plugin so UI strings are localized.
+- Load translations at runtime with the SDK helper and always provide safe English fallbacks.
+- Use string placeholders and tr.get(...) consistently, as illustrated in API/cleaner.
+
+Folder layout
+```
+API/
+  └── my_plugin/
+      ├── __init__.py
+      └── languages/
+          ├── en.json
+          ├── fr.json
+          ├── es.json
+          └── de.json
+```
+
+Minimal en.json (example keys)
+```json
+{
+  "_meta": { "code": "en", "name": "English" },
+  "title": "MyPlugin",
+  "start": "Starting {plugin}…",
+  "done": "Done",
+  "confirm_run": "Run this step now?",
+  "canceled": "Canceled by user",
+  "error_fmt": "Error: {error}"
+}
+```
+
+Loading translations (async helper)
 ```python
 import asyncio
 from API_SDK.BCASL_SDK import load_plugin_translations
-tr = asyncio.run(load_plugin_translations(__file__, "System"))
+
+# Language can be a code ("en", "fr" …) or "System" for auto-detection
+tr = asyncio.run(load_plugin_translations(__file__, "System")) or {}
+```
+
+Using translations with robust fallbacks and placeholders
+```python
+# Always provide an English fallback when using tr.get
+sctx.log_info(tr.get("start", "Starting {plugin}…").format(plugin=BCASL_NAME))
+
+# Guarded prompt (respect non-interactive mode)
+noninteractive = bool(getattr(sctx, "noninteractive", False) or getattr(sctx, "is_noninteractive", False))
+if (not noninteractive):
+    if not sctx.msg_question(tr.get("title", BCASL_NAME), tr.get("confirm_run", "Run this step now?"), default_yes=False):
+        sctx.log_warn(tr.get("canceled", "Canceled by user"))
+        return
+
+# Formatting example for errors
+try:
+    ...
+except Exception as e:
+    sctx.log_warn(tr.get("error_fmt", "Error: {error}").format(error=e))
+```
+
+Keys and conventions (inspired by API/cleaner)
+- Use explicit, short keys: title, confirm_*, progress_*, *_fmt for formatted messages.
+- Keep placeholders explicit and named (e.g., {file}, {error}, {current}, {total}).
+- Provide a complete en.json as the baseline and add locales incrementally (fr, es, de …).
+- For progress handles, update text with translated strings and placeholders:
+  - tr.get("deleting_pyc", "Deleting .pyc ({current}/{total})").format(current=i, total=n)
+
+Best practices
+- Do not block UI for i18n; loading JSON is local I/O.
+- Normalize the language via the SDK helper (System auto-detect). Keep values UTF-8.
+- Keep English as the code fallback when a key is missing.
+- Avoid string concatenation; prefer .format with named placeholders.
+
+Complete pattern (typical flow)
+```python
+from API_SDK.BCASL_SDK import progress
+tr = asyncio.run(load_plugin_translations(__file__, "System")) or {}
+
+with progress(tr.get("title", BCASL_NAME), tr.get("start", "Starting {plugin}…").format(plugin=BCASL_NAME), maximum=1) as ph:
+    # … work …
+    ph.update(1, tr.get("done", "Done"))
+    sctx.log_info(tr.get("done", "Done"))
 ```
 
 ---
