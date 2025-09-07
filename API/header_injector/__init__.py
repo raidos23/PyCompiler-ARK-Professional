@@ -114,23 +114,48 @@ def _detect_license_from_pyproject(root: Path) -> Optional[str]:
 
 
 def _detect_license_from_files(root: Path) -> Optional[str]:
+    """Detect license text from common files and folders in a robust, case-insensitive way.
+    Looks for top-level files like LICENSE/LICENCE/COPYING/NOTICE (any case, with .txt/.md/.rst),
+    accepts prefixed variants (e.g., LICENSE-APACHE), and scans LICENSES/LICENCES/LEGAL directories.
+    Returns up to the first 8 KiB of detected license text.
+    """
     try:
-        candidates = [
-            "LICENSE",
-            "LICENSE.txt",
-            "LICENSE.md",
-            "LICENCE",
-            "LICENCE.txt",
-            "COPYING",
-            "COPYING.txt",
-        ]
-        for name in candidates:
-            p = root / name
-            if p.is_file():
+        names = ("license", "licence", "copying", "copyright", "unlicense", "notice")
+        exts = ("", ".txt", ".md", ".rst")
+        # Top-level files
+        try:
+            for p in sorted(root.iterdir()):
                 try:
-                    return p.read_text(encoding="utf-8", errors="ignore")[:8192]
+                    if not p.is_file():
+                        continue
+                    low = p.name.lower()
+                    stem = p.stem.lower()
+                    suf = p.suffix.lower()
+                    if (stem in names and (suf in exts)) or any(
+                        low.startswith(prefix + "-") for prefix in ("license", "licence")
+                    ):
+                        try:
+                            return p.read_text(encoding="utf-8", errors="ignore")[:8192]
+                        except Exception:
+                            continue
                 except Exception:
                     continue
+        except Exception:
+            pass
+        # Common license folders
+        for dname in ("licenses", "licences", "license", "licence", "legal", "LEGAL", "LICENSES", "LICENCES"):
+            d = root / dname
+            if not d.is_dir():
+                continue
+            # Prefer obvious files first
+            patterns = ("*LICENSE*", "*LICENCE*", "*COPYING*", "*NOTICE*", "*")
+            for pat in patterns:
+                for p in sorted(d.glob(pat)):
+                    try:
+                        if p.is_file():
+                            return p.read_text(encoding="utf-8", errors="ignore")[:8192]
+                    except Exception:
+                        continue
     except Exception:
         return None
     return None
@@ -210,7 +235,10 @@ class LicenseInjector(PluginBase):
         spdx_id, lic_name = _detect_workspace_license(sctx.workspace_root)
         if not spdx_id:
             sctx.log_info(
-                "license_injector: aucune licence détectée dans le workspace (pyproject/LICEN[SC]E/COPYING). Aucune injection."
+                sctx.tr(
+                    "license_injector: aucune licence détectée (pyproject ou fichiers LICENSE/LICENCE/COPYING/NOTICE). Aucune injection.",
+                    "license_injector: no license detected (pyproject or LICENSE/LICENCE/COPYING/NOTICE files). No injection performed.",
+                )
             )
             return
 
@@ -224,22 +252,30 @@ class LicenseInjector(PluginBase):
 
         # Demande confirmation
         if not sctx.msg_question(
-            "License Injector",
-            f"Injecter la licence (SPDX: {spdx_id}) dans les fichiers correspondant aux motifs: {patterns}?",
+            sctx.tr("License Injector", "License Injector"),
+            sctx.tr(
+                f"Injecter la licence (SPDX: {spdx_id}) dans les fichiers correspondant aux motifs: {patterns} ?",
+                f"Inject license (SPDX: {spdx_id}) into files matching: {patterns} ?",
+            ),
             default_yes=False,
         ):
-            sctx.log_warn("license_injector: opération annulée par l'utilisateur")
+            sctx.log_warn(sctx.tr("license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
             return
 
         # Phase 1: analyse des cibles
-        ph = API_SDK.progress("Injection de licence", "Analyse des fichiers cibles...", maximum=0, cancelable=True)
+        ph = API_SDK.progress(
+            sctx.tr("Injection de licence", "License Injection"),
+            sctx.tr("Analyse des fichiers cibles...", "Scanning target files..."),
+            maximum=0,
+            cancelable=True,
+        )
         try:
             to_modify: list[Path] = []
             found = 0
             skipped_dup = 0
             for p in sctx.iter_files(patterns, exclude=exclude, enforce_workspace=True):
                 if ph.canceled:
-                    sctx.log_warn("license_injector: opération annulée par l'utilisateur")
+                    sctx.log_warn(sctx.tr("license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
                     return
                 found += 1
                 try:
@@ -274,7 +310,7 @@ class LicenseInjector(PluginBase):
             changed = 0
             for i, p in enumerate(to_modify, start=1):
                 if ph.canceled:
-                    sctx.log_warn("license_injector: opération annulée par l'utilisateur")
+                    sctx.log_warn(sctx.tr("license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
                     return
                 rel = p.relative_to(sctx.workspace_root)
                 ph.update(i, f"{i}/{len(to_modify)}: {rel}")
@@ -292,7 +328,10 @@ class LicenseInjector(PluginBase):
                     sctx.log_warn(f"Écriture échouée pour {rel}: {e}")
 
             sctx.log_info(
-                f"license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped_dup}, total scannés={found}"
+                sctx.tr(
+                    f"license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped_dup}, total scannés={found}",
+                    f"license_injector: done. Changed={changed}, already SPDX={skipped_dup}, total scanned={found}",
+                )
             )
         finally:
             ph.close()
