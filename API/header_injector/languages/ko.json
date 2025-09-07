@@ -1,0 +1,10 @@
+{
+  "_meta": { "code": "ko", "name": "한국어" },
+  "title": "라이선스 인젝터",
+  "no_license": "license_injector: 라이선스가 감지되지 않았습니다 (pyproject 또는 LICENSE/LICENCE/COPYING/NOTICE 파일). 주입하지 않습니다.",
+  "confirm": "라이선스(SPDX: {spdx})를 다음 패턴에 일치하는 파일에 주입하시겠습니까: {patterns} ?",
+  "progress_title": "라이선스 주입",
+  "progress_scan": "대상 파일 스캔 중...",
+  "canceled": "license_injector: 사용자에 의해 작업이 취소되었습니다",
+  "done": "license_injector: 완료. 변경={changed}, 이미 SPDX={skipped}, 총 스캔={found}"
+}

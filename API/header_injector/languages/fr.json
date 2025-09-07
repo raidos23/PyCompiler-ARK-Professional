@@ -1,0 +1,10 @@
+{
+  "_meta": { "code": "fr", "name": "Français" },
+  "title": "Injecteur de licence",
+  "no_license": "license_injector: aucune licence détectée (pyproject ou fichiers LICENSE/LICENCE/COPYING/NOTICE). Aucune injection.",
+  "confirm": "Injecter la licence (SPDX: {spdx}) dans les fichiers correspondant aux motifs: {patterns} ?",
+  "progress_title": "Injection de licence",
+  "progress_scan": "Analyse des fichiers cibles...",
+  "canceled": "license_injector: opération annulée par l'utilisateur",
+  "done": "license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped}, total scannés={found}"
+}
