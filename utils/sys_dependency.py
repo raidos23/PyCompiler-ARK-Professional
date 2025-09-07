@@ -13,15 +13,15 @@ Provided helpers:
 - detect_linux_package_manager(): detect apt/dnf/pacman/zypper
 - ask_sudo_password(parent): masked input prompt for sudo
 - which(cmd): shutil.which wrapper
-- shell_run(cmd | str, cwd=None): run command, capture output (no sudo)
-- run_sudo_shell(cmd_str, password): run a shell command string with sudo -S (Linux)
+- shell_run(cmd | list[str], cwd=None, on_output=None, on_error=None, on_finished=None): non-blocking, headless
+- run_sudo_shell(cmd_str, password, cwd=None, on_output=None, on_error=None, on_finished=None): non-blocking, headless (Linux)
 - open_urls(urls): open URLs in default browser
 """
 
 import platform
 import shutil
-import subprocess
 import webbrowser
+from collections.abc import Callable
 from typing import Optional, Union
 
 from PySide6.QtCore import QProcess
@@ -168,33 +168,145 @@ class SysDependencyManager:
         """Wrapper around shutil.which."""
         return shutil.which(cmd)
 
-    def shell_run(self, cmd: Union[str, list[str]], cwd: Optional[str] = None) -> tuple[int, str, str]:
-        """Run a command (no sudo). Returns (rc, stdout, stderr)."""
+    def shell_run(
+        self,
+        cmd: Union[str, list[str]],
+        cwd: Optional[str] = None,
+        on_output: Optional[Callable[[str], None]] = None,
+        on_error: Optional[Callable[[str], None]] = None,
+        on_finished: Optional[Callable[[int, QProcess.ExitStatus], None]] = None,
+    ) -> Optional[QProcess]:
+        """
+        Non-blocking execution of a command without sudo using QProcess.
+        Does not display any dialog and streams output via callbacks.
+        Returns the QProcess instance or None on failure.
+        """
         try:
-            if isinstance(cmd, list):
-                proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
-            else:
-                proc = subprocess.run(cmd, cwd=cwd, shell=True, capture_output=True, text=True)
-            return proc.returncode, proc.stdout, proc.stderr
-        except Exception as e:
-            return 1, "", str(e)
+            proc = QProcess(self.parent_widget)
+            if cwd:
+                proc.setWorkingDirectory(cwd)
 
-    def run_sudo_shell(self, cmd_str: str, password: str) -> tuple[int, str, str]:
+            if isinstance(cmd, list) and cmd:
+                program, args = cmd[0], list(cmd[1:])
+                proc.setProgram(program)
+                proc.setArguments(args)
+            else:
+                # Use bash -lc for shell features when a string command is provided
+                proc.setProgram("/bin/bash")
+                proc.setArguments(["-lc", str(cmd)])
+
+            def _emit_output(p: QProcess, is_error: bool = False):
+                try:
+                    data = (
+                        p.readAllStandardError().data().decode()
+                        if is_error
+                        else p.readAllStandardOutput().data().decode()
+                    )
+                    if data:
+                        if is_error and callable(on_error):
+                            on_error(data)
+                        elif (not is_error) and callable(on_output):
+                            on_output(data)
+                except Exception:
+                    pass
+
+            def _on_finished(ec: int, es: QProcess.ExitStatus):
+                try:
+                    if callable(on_finished):
+                        on_finished(ec, es)
+                finally:
+                    self._unregister_task(proc)
+
+            proc.readyReadStandardOutput.connect(lambda p=proc: _emit_output(p, False))
+            proc.readyReadStandardError.connect(lambda p=proc: _emit_output(p, True))
+            proc.finished.connect(_on_finished)
+
+            # Register task for potential global coordination (dialog=None)
+            try:
+                self._register_task(proc, None, "commande système", "system command")
+            except Exception:
+                pass
+
+            proc.start()
+            self._last_process = proc
+            return proc
+        except Exception:
+            return None
+
+    def run_sudo_shell(
+        self,
+        cmd_str: str,
+        password: str,
+        cwd: Optional[str] = None,
+        on_output: Optional[Callable[[str], None]] = None,
+        on_error: Optional[Callable[[str], None]] = None,
+        on_finished: Optional[Callable[[int, QProcess.ExitStatus], None]] = None,
+    ) -> Optional[QProcess]:
         """
-        Run a shell command string that expects sudo -S on stdin. Linux only.
-        Returns (rc, stdout, stderr).
+        Non-blocking execution of a sudo-enabled shell command string on Linux using QProcess.
+        No dialog is shown. The sudo password is written to stdin when the process starts.
+        Streams output via callbacks and returns the QProcess instance or None on failure.
         """
         try:
-            proc = subprocess.run(
-                cmd_str,
-                shell=True,
-                input=(password or "") + "\n",
-                encoding="utf-8",
-                capture_output=True,
-            )
-            return proc.returncode, proc.stdout, proc.stderr
-        except Exception as e:
-            return 1, "", str(e)
+            if platform.system() != "Linux":
+                self.msg_error(
+                    "Plateforme non supportée",
+                    "Unsupported platform",
+                    "Cette opération sudo est supportée uniquement sous Linux.",
+                    "This sudo operation is supported on Linux only.",
+                )
+                return None
+
+            proc = QProcess(self.parent_widget)
+            if cwd:
+                proc.setWorkingDirectory(cwd)
+            proc.setProgram("/bin/bash")
+            proc.setArguments(["-lc", cmd_str])
+
+            def _emit_output(p: QProcess, is_error: bool = False):
+                try:
+                    data = (
+                        p.readAllStandardError().data().decode()
+                        if is_error
+                        else p.readAllStandardOutput().data().decode()
+                    )
+                    if data:
+                        if is_error and callable(on_error):
+                            on_error(data)
+                        elif (not is_error) and callable(on_output):
+                            on_output(data)
+                except Exception:
+                    pass
+
+            def _on_started():
+                try:
+                    if password:
+                        proc.write((password + "\n").encode("utf-8"))
+                except Exception:
+                    pass
+
+            def _on_finished(ec: int, es: QProcess.ExitStatus):
+                try:
+                    if callable(on_finished):
+                        on_finished(ec, es)
+                finally:
+                    self._unregister_task(proc)
+
+            proc.started.connect(_on_started)
+            proc.readyReadStandardOutput.connect(lambda p=proc: _emit_output(p, False))
+            proc.readyReadStandardError.connect(lambda p=proc: _emit_output(p, True))
+            proc.finished.connect(_on_finished)
+
+            try:
+                self._register_task(proc, None, "commande sudo", "sudo command")
+            except Exception:
+                pass
+
+            proc.start()
+            self._last_process = proc
+            return proc
+        except Exception:
+            return None
 
     def open_urls(self, urls: list[str]) -> None:
         for u in urls or []:
@@ -403,7 +515,7 @@ class SysDependencyManager:
                 self.msg_error(
                     "Plateforme non supportée",
                     "Unsupported platform",
-                    "Cette op��ration sudo est supportée uniquement sous Linux.",
+                    "Cette opération sudo est supportée uniquement sous Linux.",
                     "This sudo operation is supported on Linux only.",
                 )
                 return None

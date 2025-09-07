@@ -25,11 +25,31 @@ except Exception:  # pragma: no cover
 
 
 class ACASLContext:
-    def __init__(self, gui, artifacts: list[str]):
+    def __init__(self, gui, artifacts: list[str], output_dir: Optional[str] = None):
         self.gui = gui
         self.workspace_root = Path(getattr(gui, "workspace_dir", os.getcwd()) or os.getcwd())
         self.artifacts = [str(Path(a)) for a in artifacts]
+        self.output_dir = str(output_dir).strip() if output_dir else None
         self._closing_flag = lambda: bool(getattr(gui, "_closing", False))
+
+    def is_in_output_dir(self, p: str) -> bool:
+        try:
+            if not self.output_dir:
+                return False
+            rp = Path(p).resolve()
+            base = Path(self.output_dir).resolve()
+            _ = rp.relative_to(base)
+            return True
+        except Exception:
+            return False
+
+    def output_files(self) -> list[str]:
+        try:
+            if not self.output_dir:
+                return []
+            return [a for a in self.artifacts if self.is_in_output_dir(a)]
+        except Exception:
+            return []
 
     def _post_ui(self, fn) -> None:
         """Post a callable to the GUI thread in a safe, cross-version way.
@@ -144,18 +164,16 @@ def _acasl_try_open_engine_output(gui) -> None:
         if engine_id and file:
             try:
                 # ACASL-only policy: determine and open output folder without delegating to engines
+                # Open only the directory explicitly defined by the active engine in the UI.
+                out_dir = _resolve_engine_output_dir(gui)
                 try:
-                    from engine_sdk.utils import open_output_directory as _open_out  # type: ignore
-                except Exception:
-                    _open_out = None  # type: ignore
-                try:
-                    if _open_out:
-                        _open_out(
-                            gui,
-                            engine_id=str(engine_id),
-                            source_file=str(file),
-                            artifacts=getattr(gui, "_last_artifacts", None),
-                        )
+                    if out_dir and os.path.isdir(out_dir):
+                        try:
+                            from engine_sdk.utils import open_path as _open_path  # type: ignore
+                        except Exception:
+                            _open_path = None  # type: ignore
+                        if _open_path:
+                            _open_path(out_dir)
                 except Exception:
                     pass
                 # Mark as opened attempt to avoid duplicates
@@ -167,6 +185,106 @@ def _acasl_try_open_engine_output(gui) -> None:
                 pass
     except Exception:
         pass
+
+
+def _resolve_engine_output_dir(gui) -> Optional[str]:
+    """Resolve the output directory dynamically from the active engine using the engine registry.
+    Uses engine-specific output directory resolution methods when available.
+    """
+    try:
+        engine_id = getattr(gui, "_last_success_engine_id", None)
+        if not engine_id:
+            try:
+                import utils.engines_loader as engines_loader
+
+                idx = gui.compiler_tabs.currentIndex() if hasattr(gui, "compiler_tabs") and gui.compiler_tabs else 0
+                engine_id = engines_loader.registry.get_engine_for_tab(idx)
+            except Exception:
+                engine_id = None
+
+        if not engine_id:
+            return None
+
+        try:
+            import utils.engines_loader as engines_loader
+
+            engine_instance = engines_loader.registry.get_engine(str(engine_id))
+
+            # Try engine-specific output directory resolution
+            if engine_instance and hasattr(engine_instance, "get_output_directory"):
+                try:
+                    return engine_instance.get_output_directory(gui)
+                except Exception:
+                    pass
+
+            # Fallback: try common patterns based on engine registry metadata
+            ws = getattr(gui, "workspace_dir", None) or os.getcwd()
+
+            # Try engine-specific UI field patterns
+            engine_info = engines_loader.registry.get_engine_info(str(engine_id))
+            if engine_info:
+                # Look for output directory field hints in engine metadata
+                output_field = engine_info.get("output_field")
+                if output_field:
+                    try:
+                        w = getattr(gui, output_field, None)
+                        if w and hasattr(w, "text") and callable(w.text):
+                            v = str(w.text()).strip()
+                            if v:
+                                return v
+                    except Exception:
+                        pass
+
+                # Try objectName-based lookup for engine tabs
+                object_name = engine_info.get("output_object_name")
+                if object_name:
+                    try:
+                        from PySide6.QtWidgets import QWidget
+
+                        if hasattr(gui, "findChild") and callable(gui.findChild):
+                            le = gui.findChild(QWidget, object_name)
+                            if le and hasattr(le, "text") and callable(le.text):
+                                v = str(le.text()).strip()
+                                if v:
+                                    return v
+                    except Exception:
+                        pass
+
+            # Final fallback: global output_dir_input or workspace/dist
+            try:
+                w = getattr(gui, "output_dir_input", None)
+                if w and hasattr(w, "text") and callable(w.text):
+                    v = str(w.text()).strip()
+                    return v if v else os.path.join(ws, "dist")
+            except Exception:
+                pass
+            return os.path.join(ws, "dist")
+
+        except Exception:
+            # Ultimate fallback
+            ws = getattr(gui, "workspace_dir", None) or os.getcwd()
+            return os.path.join(ws, "dist")
+    except Exception:
+        return None
+
+
+def _filter_artifacts_to_output_dir(gui, artifacts: list[str]) -> list[str]:
+    try:
+        out_dir = _resolve_engine_output_dir(gui)
+        if not out_dir:
+            return []
+        base = Path(out_dir).resolve()
+        out: list[str] = []
+        for a in artifacts or []:
+            try:
+                rp = Path(a).resolve()
+                _ = rp.relative_to(base)
+                out.append(str(rp))
+            except Exception:
+                continue
+        return out
+    except Exception:
+        return []
 
 
 # Helper functions for robust discovery without executing plugin code
@@ -386,7 +504,8 @@ if QObject is not None and Signal is not None:
                     pass
                 # Run
                 report = {"status": "ok", "plugins": []}
-                ctx = ACASLContext(self.gui, self.artifacts)
+                out_dir = _resolve_engine_output_dir(self.gui)
+                ctx = ACASLContext(self.gui, self.artifacts, output_dir=out_dir)
                 try:
                     self.log.emit("🚀 ACASL: post‑compilation démarrée…")
                 except Exception:
@@ -669,8 +788,10 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
 
     # Context & workspace
     # Save artifacts reference on GUI for universal discovery (used by engine_sdk.utils.discover_output_candidates)
+    # Filter artifacts to the engine-defined output directory only
+    arts_filtered = _filter_artifacts_to_output_dir(gui, list(artifacts) if artifacts else [])
     try:
-        setattr(gui, "_last_artifacts", list(artifacts) if artifacts else [])
+        setattr(gui, "_last_artifacts", list(arts_filtered))
     except Exception:
         pass
     ctx = ACASLContext(gui, artifacts)
@@ -708,10 +829,44 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
     if not plugin_timeout or plugin_timeout <= 0:
         plugin_timeout = 0.0
 
+    # Global ACASL enabled switch
+    try:
+        _opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
+        _acasl_enabled = bool(_opt.get("enabled", True)) if isinstance(_opt, dict) else True
+    except Exception:
+        _acasl_enabled = True
+    if not _acasl_enabled:
+        try:
+            if hasattr(gui, "log") and gui.log:
+                gui.log.append("⏹️ ACASL désactivé dans la configuration. Exécution ignorée.")
+        except Exception:
+            pass
+        try:
+            # Still open engine output if possible, like successful ACASL end
+            from PySide6.QtCore import QTimer as _QT4
+
+            _QT4.singleShot(0, lambda: _acasl_try_open_engine_output(gui))
+        except Exception:
+            try:
+                _acasl_try_open_engine_output(gui)
+            except Exception:
+                pass
+        if callable(finished_cb):
+            try:
+                from PySide6.QtCore import QTimer as _QT5
+
+                _QT5.singleShot(0, lambda: finished_cb({"status": "disabled", "plugins": []}))
+            except Exception:
+                try:
+                    finished_cb({"status": "disabled", "plugins": []})
+                except Exception:
+                    pass
+        return
+
     # Qt worker path (BCASL-like)
     if QThread is not None and "_ACASLWorker" in globals():
         thread = QThread()
-        worker = _ACASLWorker(gui, workspace_root, api_dir, cfg, plugin_timeout, artifacts)  # type: ignore[name-defined]
+        worker = _ACASLWorker(gui, workspace_root, api_dir, cfg, plugin_timeout, arts_filtered)  # type: ignore[name-defined]
         # Keep references on gui to avoid premature deletion
         try:
             gui._acasl_thread = thread
@@ -917,6 +1072,8 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
     def _runner():
         report = {"status": "ok", "plugins": []}
         try:
+            out_dir = _resolve_engine_output_dir(gui)
+            ctx = ACASLContext(gui, arts_filtered, output_dir=out_dir)
             ctx.log_info("🚀 ACASL: post‑compilation démarrée…")
             # Log priorities similarly to BCASL when available
             try:
@@ -1128,6 +1285,7 @@ import json
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -1230,6 +1388,14 @@ def _read_acasl_cfg(path: Path) -> dict:
                     po = [x.strip() for x in raw.split(",") if x.strip()]
                 if po:
                     cfg["plugin_order"] = po
+                # general: enabled flag
+                try:
+                    if cp.has_option("general", "enabled"):
+                        val = cp.get("general", "enabled")
+                        en = str(val).strip().lower() in ("1", "true", "yes", "on")
+                        cfg.setdefault("options", {})["enabled"] = en
+                except Exception:
+                    pass
                 return cfg
             except Exception:
                 return {}
@@ -1244,7 +1410,7 @@ def _default_acasl_cfg(plugin_ids: list[str]) -> dict:
     return {
         "plugins": {pid: {"enabled": True, "priority": i} for i, pid in enumerate(plugin_ids)},
         "plugin_order": list(plugin_ids),
-        "options": {"plugin_timeout_s": 0.0},
+        "options": {"plugin_timeout_s": 0.0, "enabled": True},
         "_meta": {
             "schema": 1,
             "generated": True,
@@ -1314,14 +1480,20 @@ def _sanitize_acasl_cfg(plugin_ids: list[str], cfg_in: Any) -> tuple[dict, bool]
     if not isinstance(meta, dict) or meta.get("schema") != 1:
         out["_meta"] = {"schema": 1}
         changed = True
-    # Ensure options with default timeout
+    # Ensure options with defaults
     opts = out.get("options")
     if not isinstance(opts, dict):
-        out["options"] = {"plugin_timeout_s": 0.0}
+        out["options"] = {"plugin_timeout_s": 0.0, "enabled": True}
         changed = True
     else:
+        updated = False
         if "plugin_timeout_s" not in opts:
             opts["plugin_timeout_s"] = 0.0
+            updated = True
+        if "enabled" not in opts:
+            opts["enabled"] = True
+            updated = True
+        if updated:
             out["options"] = opts
             changed = True
     return out, changed
@@ -1357,6 +1529,11 @@ def _write_acasl_cfg(path: Path, cfg: dict) -> Path:
                 cp.add_section("general")
                 order = cfg.get("plugin_order", []) or []
                 cp.set("general", "plugin_order", ",".join(order))
+                try:
+                    en_flag = bool((cfg.get("options", {}) or {}).get("enabled", True))
+                except Exception:
+                    en_flag = True
+                cp.set("general", "enabled", "1" if en_flag else "0")
                 with path.open("w", encoding="utf-8") as f:
                     cp.write(f)
                 return path
@@ -1495,6 +1672,15 @@ def open_acasl_loader_dialog(self) -> None:
             "Activez/désactivez les plugins ACASL et définissez leur ordre d'exécution (haut = d'abord).\nEnable/disable ACASL plugins and set their order (top = first)."
         )
         layout.addWidget(info)
+        # Global ACASL enable/disable
+        chk_enable = QCheckBox("Activer ACASL / Enable ACASL", dlg)
+        try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
+            acasl_enabled_flag = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+        except Exception:
+            acasl_enabled_flag = True
+        chk_enable.setChecked(acasl_enabled_flag)
+        layout.addWidget(chk_enable)
         lst = QListWidget(dlg)
         lst.setSelectionMode(QAbstractItemView.SingleSelection)
         lst.setDragDropMode(QAbstractItemView.InternalMove)
@@ -1783,6 +1969,21 @@ def open_acasl_loader_dialog(self) -> None:
         btn_cancel = QPushButton("Annuler / Cancel")
         btn_save = QPushButton("Enregistrer / Save")
 
+        def _apply_enabled_state():
+            en = chk_enable.isChecked()
+            try:
+                lst.setEnabled(en)
+                btn_up.setEnabled(en)
+                btn_down.setEnabled(en)
+            except Exception:
+                pass
+
+        try:
+            chk_enable.toggled.connect(lambda _=None: _apply_enabled_state())
+            _apply_enabled_state()
+        except Exception:
+            pass
+
         def _move(delta: int):
             row = lst.currentRow()
             if row < 0:
@@ -1815,6 +2016,9 @@ def open_acasl_loader_dialog(self) -> None:
             cfg_out = dict(cfg) if isinstance(cfg, dict) else {}
             cfg_out["plugins"] = out_plugins
             cfg_out["plugin_order"] = order_ids
+            opts = cfg_out.get("options", {}) if isinstance(cfg_out.get("options"), dict) else {}
+            opts["enabled"] = bool(chk_enable.isChecked())
+            cfg_out["options"] = opts
             try:
                 cfg_norm, _ = _sanitize_acasl_cfg(plugin_ids, cfg_out)
                 new_path = _write_acasl_cfg(cfg_path, cfg_norm)

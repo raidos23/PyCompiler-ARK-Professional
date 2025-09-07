@@ -99,16 +99,14 @@ class PyInstallerEngine(CompilerEngine):
                                 try:
                                     gui.log.append(
                                         _tr(
-                                            "⏳ Installation des dépendances système… (attente de fin)",
-                                            "⏳ Installing system dependencies… (waiting to finish)",
+                                            "⏳ Installation des dépendances système en arrière‑plan… Relancez la compilation après l'installation.",
+                                            "⏳ Installing system dependencies in background… Relaunch the build after installation.",
                                         )
                                     )
                                 except Exception:
                                     pass
-                                try:
-                                    proc.waitForFinished(-1)
-                                except Exception:
-                                    pass
+                                # Ne pas bloquer l'UI: arrêter le préflight et relancer plus tard
+                                return False
                             else:
                                 try:
                                     gui.log.append(
@@ -246,6 +244,24 @@ class PyInstallerEngine(CompilerEngine):
             return pyinstaller_path, cmd[1:]
         except Exception:
             return None
+
+    def get_output_directory(self, gui) -> Optional[str]:
+        """Return the PyInstaller output directory for ACASL.
+        ACASL-only method: engines define their output directory but never open it themselves.
+        """
+        try:
+            # Try GUI output_dir_input field first
+            w = getattr(gui, "output_dir_input", None)
+            if w and hasattr(w, "text") and callable(w.text):
+                v = str(w.text()).strip()
+                if v:
+                    return v
+            # Fallback to workspace/dist
+            ws = getattr(gui, "workspace_dir", None) or os.getcwd()
+            return os.path.join(ws, "dist")
+        except Exception:
+            # Ultimate fallback
+            return os.path.join(os.getcwd(), "dist")
 
     def on_success(self, gui, file: str) -> None:
         # ACASL-only policy: engines must not open output directories. Use this hook only for lightweight metadata/logging if needed.
