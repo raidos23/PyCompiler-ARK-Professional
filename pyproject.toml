@@ -161,12 +161,12 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/pycompiler-ark"
+Homepage = "https://github.com/raidos23/pycompiler-ark"
 Documentation = "https://pycompiler-ark.readthedocs.io"
-Repository = "https://github.com/your-org/pycompiler-ark.git"
-Issues = "https://github.com/your-org/pycompiler-ark/issues"
-Changelog = "https://github.com/your-org/pycompiler-ark/blob/main/CHANGELOG.md"
-Security = "https://github.com/your-org/pycompiler-ark/security"
+Repository = "https://github.com/raidos23/pycompiler-ark.git"
+Issues = "https://github.com/raidos23/pycompiler-ark/issues"
+Changelog = "https://github.com/raidos23/pycompiler-ark/blob/main/CHANGELOG.md"
+Security = "https://github.com/raidos23/pycompiler-ark/security"
 
 [project.scripts]
 pycompiler-ark = "main:main"

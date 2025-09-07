@@ -198,3 +198,6 @@ security-*.json
 
 # Pre-commit
 .pre-commit-config.yaml.bak
+
+# Exclude tests folder
+tests/

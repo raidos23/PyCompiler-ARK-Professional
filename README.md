@@ -84,7 +84,7 @@ PyCompiler ARK++ Professional Edition provides a modular, extensible platform fo
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/pycompiler-ark-professional.git
+git clone https://github.com/raidos23/pycompiler-ark-professional.git
 cd pycompiler-ark-professional
 
 # Create virtual environment

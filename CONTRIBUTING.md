@@ -26,7 +26,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 ### Report Bugs
 
 Before opening an issue:
-- Check that the bug hasn’t already been reported in [Issues](https://github.com/your-org/pycompiler-ark/issues)
+- Check that the bug hasn’t already been reported in [Issues](https://github.com/raidos23/pycompiler-ark/issues)
 - Ensure you’re using a supported version (see [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md))
 
 To report a bug:
@@ -64,7 +64,7 @@ To report a bug:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/pycompiler-ark.git
+git clone https://github.com/raidos23/pycompiler-ark.git
 cd pycompiler-ark
 
 # Create a virtual environment
@@ -347,9 +347,9 @@ Reviewers will check:
 - [API Reference](docs/api_reference.md)
 
 ### Tools
-- [GitHub Issues](https://github.com/your-org/pycompiler-ark/issues)
-- [Project Board](https://github.com/your-org/pycompiler-ark/projects)
-- [Discussions](https://github.com/your-org/pycompiler-ark/discussions)
+- [GitHub Issues](https://github.com/raidos23/pycompiler-ark/issues)
+- [Project Board](https://github.com/raidos23/pycompiler-ark/projects)
+- [Discussions](https://github.com/raidos23/pycompiler-ark/discussions)
 
 ## Communication
 

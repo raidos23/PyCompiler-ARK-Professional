@@ -22,7 +22,7 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 Instead, please use one of these secure channels:
 
 1. **GitHub Security Advisories** (Preferred)
-   - Go to the [Security tab](https://github.com/your-org/pycompiler-ark/security) of our repository
+   - Go to the [Security tab](https://github.com/raidos23/pycompiler-ark/security) of our repository
    - Click "Report a vulnerability"
    - Fill out the form with detailed information
 
