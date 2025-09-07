@@ -503,7 +503,7 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
                 suggested_patterns = sorted(compressed)
             except Exception:
                 suggested_patterns = sorted(suggested_patterns_set)
-            from datetime import datetime
+            from datetime import datetime, timezone
 
             # Intégrer .gitignore dans exclude_patterns et préparer ordre/priorités
             # Élargir exclude_patterns de base
@@ -759,7 +759,11 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
                 pass
 
             default_cfg: dict[str, Any] = {
-                "_meta": {"generated": True, "generated_at": datetime.utcnow().isoformat() + "Z", "schema": "1.0"},
+                "_meta": {
+                    "generated": True,
+                    "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    "schema": "1.0",
+                },
                 "required_files": suggested_required,
                 "file_patterns": suggested_patterns,
                 "exclude_patterns": exclude_patterns,

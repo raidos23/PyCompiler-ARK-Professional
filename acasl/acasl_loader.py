@@ -1239,13 +1239,17 @@ def _read_acasl_cfg(path: Path) -> dict:
 
 
 def _default_acasl_cfg(plugin_ids: list[str]) -> dict:
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     return {
         "plugins": {pid: {"enabled": True, "priority": i} for i, pid in enumerate(plugin_ids)},
         "plugin_order": list(plugin_ids),
         "options": {"plugin_timeout_s": 0.0},
-        "_meta": {"schema": 1, "generated": True, "generated_at": datetime.utcnow().isoformat() + "Z"},
+        "_meta": {
+            "schema": 1,
+            "generated": True,
+            "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        },
     }
 
 
