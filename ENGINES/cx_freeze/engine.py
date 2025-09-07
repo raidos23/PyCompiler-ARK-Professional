@@ -22,6 +22,91 @@ class CxFreezeEngine(CompilerEngine):
     def _pip_exe(self, vroot: str) -> str:
         return pip_executable(vroot)
 
+    def _log(self, gui, fr: str, en: str) -> None:
+        try:
+            gui.log.append(gui.tr(fr, en))
+        except Exception:
+            pass
+
+    def _norm_path(self, gui, p: str) -> str:
+        try:
+            s = str(p).strip()
+        except Exception:
+            s = p
+        try:
+            s = os.path.expanduser(s)
+        except Exception:
+            pass
+        if not os.path.isabs(s):
+            try:
+                base = getattr(gui, "workspace_dir", None)
+                if base:
+                    s = os.path.join(base, s)
+            except Exception:
+                pass
+        try:
+            s = os.path.abspath(s)
+        except Exception:
+            pass
+        return s
+
+    def _dedupe_args(self, seq: list[str]) -> list[str]:
+        seen = set()
+        out: list[str] = []
+        for x in seq:
+            if x not in seen:
+                out.append(x)
+                seen.add(x)
+        return out
+
+    def _ensure_output_dir(self, gui, p: str) -> str:
+        """Normalize and ensure the output directory exists. Fallback to workspace/dist when needed."""
+        try:
+            ws = getattr(gui, "workspace_dir", None) or os.getcwd()
+        except Exception:
+            ws = os.getcwd()
+        try:
+            target = self._norm_path(gui, p or "")
+        except Exception:
+            target = os.path.join(ws, "dist")
+        # If path points to a file, use its parent
+        try:
+            if os.path.isfile(target):
+                self._log(
+                    gui,
+                    f"⚠️ Le chemin de sortie pointe vers un fichier: {target}. Utilisation du dossier parent.",
+                    f"⚠️ Output path points to a file: {target}. Using parent directory.",
+                )
+                target = os.path.dirname(target) or os.path.join(ws, "dist")
+        except Exception:
+            pass
+        # Try to create
+        try:
+            os.makedirs(target, exist_ok=True)
+            return target
+        except Exception as e:
+            self._log(
+                gui,
+                f"⚠️ Impossible de créer le dossier de sortie '{target}': {e}. Utilisation de workspace/dist.",
+                f"⚠️ Failed to create output directory '{target}': {e}. Using workspace/dist.",
+            )
+            fallback = os.path.join(ws, "dist")
+            try:
+                os.makedirs(fallback, exist_ok=True)
+                return fallback
+            except Exception as e2:
+                self._log(
+                    gui,
+                    f"❌ Échec de création du dossier fallback '{fallback}': {e2}",
+                    f"❌ Failed to create fallback directory '{fallback}': {e2}",
+                )
+                last = os.path.join(os.getcwd(), "dist")
+                try:
+                    os.makedirs(last, exist_ok=True)
+                except Exception:
+                    pass
+                return last
+
     def _ensure_tool_with_pip(self, gui, vroot: str, package: str) -> bool:
         pip = self._pip_exe(vroot)
         try:
@@ -397,6 +482,14 @@ class CxFreezeEngine(CompilerEngine):
             except Exception:
                 base = getattr(gui, "workspace_dir", None) or os.getcwd()
                 out_dir = os.path.join(base, "dist")
+        out_dir = self._ensure_output_dir(gui, out_dir)
+        try:
+            if getattr(self, "_output_dir_input", None) is not None:
+                self._output_dir_input.setText(out_dir)
+            if hasattr(gui, "output_dir_input") and getattr(gui, "output_dir_input", None):
+                gui.output_dir_input.setText(out_dir)
+        except Exception:
+            pass
         cmd = [sys.executable, "-m", "cx_Freeze", file, "--target-dir", out_dir]
         extra: list[str] = []
         # Apply base (Windows only for Win32GUI)
@@ -438,7 +531,14 @@ class CxFreezeEngine(CompilerEngine):
         try:
             p = self._icon_edit.text().strip() if hasattr(self, "_icon_edit") and self._icon_edit else ""
             if p:
-                extra += ["--icon", p]
+                try:
+                    p_norm = self._norm_path(gui, p)
+                except Exception:
+                    p_norm = p
+                if os.path.isfile(p_norm):
+                    extra += ["--icon", p_norm]
+                else:
+                    self._log(gui, f"⚠️ Icône introuvable: {p_norm}", f"⚠️ Icon not found: {p_norm}")
         except Exception:
             pass
         # Target name
@@ -537,11 +637,26 @@ class CxFreezeEngine(CompilerEngine):
             auto_args = _ap.compute_auto_for_engine(gui, "cx_freeze") or []
         except Exception:
             auto_args = []
+        try:
+            extra = self._dedupe_args(extra)
+        except Exception:
+            pass
         return cmd + extra + auto_args
 
     def program_and_args(self, gui, file: str) -> Optional[tuple[str, list[str]]]:
         # Resolve cxfreeze (or python -m cx_Freeze) in venv; we'll prefer module form using python from venv
         try:
+            # Validate script path
+            try:
+                if not os.path.isfile(file):
+                    try:
+                        gui.log.append(gui.tr("❌ Script introuvable: ", "❌ Script not found: ") + str(file))
+                        gui.show_error_dialog(os.path.basename(file))
+                    except Exception:
+                        pass
+                    return None
+            except Exception:
+                pass
             vm = getattr(gui, "venv_manager", None)
             vroot = vm.resolve_project_venv() if vm else None
             if not vroot:
@@ -562,6 +677,16 @@ class CxFreezeEngine(CompilerEngine):
             # Replace sys.executable with python_exe from venv
             if cmd and (cmd[0].endswith("python") or cmd[0].endswith("python.exe")):
                 cmd[0] = python_exe
+            # Ensure target directory exists and normalize it
+            try:
+                if "--target-dir" in cmd:
+                    idx = cmd.index("--target-dir")
+                    if idx + 1 < len(cmd):
+                        td = cmd[idx + 1]
+                        td_norm = self._ensure_output_dir(gui, td)
+                        cmd[idx + 1] = td_norm
+            except Exception:
+                pass
             return python_exe, cmd[1:]
         except Exception:
             return None
@@ -654,14 +779,31 @@ class CxFreezeEngine(CompilerEngine):
         self._cx_out_browse_btn = browse_btn
 
         def _browse():
+            # Open dialog with a sensible default directory and sync global output dir
             try:
+                start_dir = ""
+                try:
+                    cur = out_edit.text().strip()
+                    if cur:
+                        start_dir = cur
+                    else:
+                        ws = getattr(gui, "workspace_dir", None)
+                        if ws:
+                            start_dir = ws
+                except Exception:
+                    start_dir = ""
                 d = QFileDialog.getExistingDirectory(
-                    tab, gui.tr("Choisir le dossier de sortie", "Choose output directory"), ""
+                    tab, gui.tr("Choisir le dossier de sortie", "Choose output directory"), start_dir
                 )
             except Exception:
-                d = QFileDialog.getExistingDirectory(tab, "Choose output directory", "")
+                d = QFileDialog.getExistingDirectory(tab, "Choose output directory", start_dir if 'start_dir' in locals() else "")
             if d:
                 out_edit.setText(d)
+                try:
+                    if hasattr(gui, "output_dir_input") and gui.output_dir_input:
+                        gui.output_dir_input.setText(d)
+                except Exception:
+                    pass
 
         try:
             browse_btn.clicked.connect(_browse)
@@ -703,15 +845,18 @@ class CxFreezeEngine(CompilerEngine):
             cb_deps.setChecked(True)
         except Exception:
             pass
+        cb_enc = QCheckBox(gui.tr("Inclure encodings", "Include encodings"))
         row2.addWidget(base_label)
         row2.addWidget(base_combo)
         row2.addStretch(1)
         row2.addWidget(cb_deps)
+        row2.addWidget(cb_enc)
         row2.addStretch(1)
         layout.addLayout(row2)
         self._base_label = base_label
         self._base_combo = base_combo
         self._cb_include_deps = cb_deps
+        self._cb_enc = cb_enc
         # Icon picker
         row3 = QHBoxLayout()
         try:

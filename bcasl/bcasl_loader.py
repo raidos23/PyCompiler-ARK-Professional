@@ -986,6 +986,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
+    QCheckBox,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -1184,6 +1185,15 @@ def open_api_loader_dialog(self) -> None:
             )
         )
         layout.addWidget(info)
+        # Global BCASL enable/disable
+        chk_enable = QCheckBox("Activer BCASL / Enable BCASL", dlg)
+        try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
+            bcasl_enabled_flag = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+        except Exception:
+            bcasl_enabled_flag = True
+        chk_enable.setChecked(bcasl_enabled_flag)
+        layout.addWidget(chk_enable)
         # Liste réordonnable par glisser-déposer, avec cases à cocher
         lst = QListWidget(dlg)
         lst.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -1594,6 +1604,22 @@ def open_api_loader_dialog(self) -> None:
         btns.addWidget(btn_save)
         layout.addLayout(btns)
 
+        # Enable/disable list and move buttons based on global toggle
+        def _apply_enabled_state():
+            en = chk_enable.isChecked()
+            try:
+                lst.setEnabled(en)
+                btn_up.setEnabled(en)
+                btn_down.setEnabled(en)
+            except Exception:
+                pass
+
+        try:
+            chk_enable.toggled.connect(lambda _=None: _apply_enabled_state())
+            _apply_enabled_state()
+        except Exception:
+            pass
+
         def do_save():
             # Extraire ordre et états depuis la QListWidget
             new_plugins: dict[str, Any] = {}
@@ -1611,6 +1637,13 @@ def open_api_loader_dialog(self) -> None:
                 cfg_out = {}
             cfg_out["plugins"] = new_plugins
             cfg_out["plugin_order"] = order_ids
+            # Global enabled flag in options
+            try:
+                opts = cfg_out.get("options", {}) if isinstance(cfg_out.get("options"), dict) else {}
+                opts["enabled"] = bool(chk_enable.isChecked())
+                cfg_out["options"] = opts
+            except Exception:
+                pass
             # Écrire bcasl.json (toujours JSON, priorité sur autres formats)
             target = workspace_root / "bcasl.json"
             try:
@@ -1725,6 +1758,24 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             cfg_timeout = 0.0
         plugin_timeout_raw = cfg_timeout if cfg_timeout != 0.0 else env_timeout
         plugin_timeout = plugin_timeout_raw if plugin_timeout_raw and plugin_timeout_raw > 0 else 0.0
+        # Respect global enabled flag: skip BCASL when disabled
+        try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
+            bcasl_enabled = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+        except Exception:
+            bcasl_enabled = True
+        if not bcasl_enabled:
+            try:
+                if hasattr(self, "log") and self.log is not None:
+                    self.log.append(self.tr("⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n", "⏹️ BCASL disabled in configuration. Skipping execution\n"))
+            except Exception:
+                pass
+            if callable(on_done):
+                try:
+                    on_done({"status": "disabled"})
+                except Exception:
+                    pass
+            return
         # Lancer le worker thread (aucune boucle imbriquée)
         from PySide6.QtCore import QTimer
 
@@ -1948,6 +1999,19 @@ def run_pre_compile(self) -> Optional[object]:
             cfg_timeout = 0.0
         plugin_timeout_raw = cfg_timeout if cfg_timeout != 0.0 else env_timeout
         plugin_timeout = plugin_timeout_raw if plugin_timeout_raw and plugin_timeout_raw > 0 else 0.0
+        # Respect global enabled flag: skip BCASL when disabled
+        try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
+            bcasl_enabled = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+        except Exception:
+            bcasl_enabled = True
+        if not bcasl_enabled:
+            try:
+                if hasattr(self, "log") and self.log is not None:
+                    self.log.append("⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n")
+            except Exception:
+                pass
+            return None
         # Run BCASL in background to avoid blocking UI when plugins use no progress UI
         if QThread is not None and QEventLoop is not None and "_BCASLWorker" in globals():
             try:
