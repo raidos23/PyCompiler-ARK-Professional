@@ -5,30 +5,28 @@ All notable changes to PyCompiler ARK++ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
 
 ### Added
-- Enhanced CI/CD pipeline with separate lint, format, types, and tests jobs
-- Pre-commit hooks configuration with black, ruff, mypy, and bandit
-- Comprehensive dependency management with constraints.txt
-- SBOM (Software Bill of Materials) generation using cyclonedx-py
-- Security scanning with pip-audit, safety, and bandit
-- Supported platform matrix documentation
-- Release process documentation with code signing procedures
-- Governance documentation (SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md)
-- CODEOWNERS file for repository governance
+- BCASL: bouton global Activer/Désactiver dans le chargeur API, persistant dans `bcasl.json` (`options.enabled`).
+- cx_Freeze: case à cocher « Inclure encodings », normalisation des chemins, création automatique du dossier de sortie si invalide, amélioration du bouton target-dir (répertoire par défaut pertinent et synchro UI globale).
+- ACASL: ouverture du dossier de sortie centralisée via l’orchestrateur, avec `get_output_directory` fourni par les moteurs; amélioration de la résolution du dossier de sortie.
+- Documentation: mise à jour du guide de création de moteur et précisions i18n.
 
 ### Changed
-- Updated GitHub Actions workflows for better separation of concerns
-- Enhanced requirements.txt with version ranges and development dependencies
-- Improved pyproject.toml configuration for better tool integration
+- Installations de dépendances système (Linux/Windows) en arrière‑plan pour éviter le blocage de l’UI, messages utilisateur améliorés.
+- Les moteurs n’ouvrent plus directement les dossiers de sortie; responsabilité confiée à ACASL.
+- ACASL: logique de filtrage d’artifacts et d’ouverture de dossier rendue plus robuste.
+
+### Fixed
+- Bouton target-dir: chemin de départ du sélecteur et synchronisation avec le champ global corrigés.
+- Icône cx_Freeze: avertissement propre si le chemin est invalide; pas d’échec silencieux.
+- Réduction des doublons dans les arguments générés pour cx_Freeze.
 
 ### Security
-- Added automated security scanning in CI pipeline
-- Implemented dependency vulnerability checking
-- Added bandit security linting for Python code
+- Moins de risques de blocage grâce à l’exécution non bloquante des commandes système (QProcess asynchrone).
 
-## [3.2.3] - 2025-09-06
+## 3.2.3 - 2025-09-06
 
 ### Added
 - Modular architecture with BCASL and ACASL plugin systems
@@ -51,93 +49,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation improvements
 - Secure plugin loading mechanisms
 - Enhanced subprocess handling
-
-## [3.2.2] - 2023-12-01
-
-### Fixed
-- Critical bug in ACASL plugin execution
-- Memory management issues in long-running operations
-- UI responsiveness improvements
-
-### Security
-- Fixed potential code injection vulnerability in plugin system
-- Enhanced input sanitization
-
-## [3.2.1] - 2023-11-15
-
-### Added
-- Support for Python 3.12
-- New ACASL plugins for code signing and packaging
-
-### Changed
-- Improved plugin discovery mechanism
-- Better error messages and user feedback
-
-### Fixed
-- Plugin loading issues on Windows
-- Configuration file parsing edge cases
-
-## [3.2.0] - 2023-11-01
-
-### Added
-- ACASL (After Compilation Action Scripting Language) system
-- Enhanced BCASL with new built-in functions
-- Comprehensive plugin SDK
-- Multi-engine support architecture
-
-### Changed
-- Major refactoring of core compilation engine
-- Improved UI with better theme support
-- Enhanced documentation structure
-
-### Deprecated
-- Legacy plugin API (will be removed in 4.0.0)
-
-### Removed
-- Support for Python 3.9 and below
-
-### Fixed
-- Numerous stability and performance improvements
-
-### Security
-- Enhanced plugin sandboxing
-- Improved input validation across all modules
-
-## [3.1.0] - 2023-06-01
-
-### Added
-- BCASL (Before Compilation Action Scripting Language) system
-- Plugin architecture foundation
-- Basic GUI interface
-
-### Changed
-- Complete rewrite of compilation pipeline
-- Improved configuration management
-
-## [3.0.0] - 2023-01-01
-
-### Added
-- Initial release of PyCompiler ARK++ 3.x series
-- Core compilation functionality
-- Basic plugin support
-- Command-line interface
-
-### Changed
-- Complete architectural redesign from 2.x series
-
-### Removed
-- Legacy 2.x compatibility layer
-
----
-
-## Release Notes Format
-
-### Types of Changes
-- **Added** for new features
-- **Changed** for changes in existing functionality
-- **Deprecated** for soon-to-be removed features
-- **Removed** for now removed features
-- **Fixed** for any bug fixes
-- **Security** for vulnerability fixes
-
-### Version Links

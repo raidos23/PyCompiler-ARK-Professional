@@ -26,7 +26,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 ### Report Bugs
 
 Before opening an issue:
-- Check that the bug hasn’t already been reported in [Issues](https://github.com/raidos23/pycompiler-ark/issues)
+- Check that the bug hasn’t already been reported in [Issues](https://github.com/raidos23/PyCompiler-ARK-Professional/issues)
 - Ensure you’re using a supported version (see [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md))
 
 To report a bug:
@@ -64,8 +64,8 @@ To report a bug:
 
 ```bash
 # Clone the repository
-git clone https://github.com/raidos23/pycompiler-ark.git
-cd pycompiler-ark
+git clone https://github.com/raidos23/PyCompiler-ARK-Professional.git
+cd PyCompiler-ARK-Professional
 
 # Create a virtual environment
 python -m venv .venv
@@ -342,14 +342,16 @@ Reviewers will check:
 ## Resources
 
 ### Documentation
-- [Architecture Overview](docs/architecture.md)
-- [Plugin Development](docs/plugin_development.md)
-- [API Reference](docs/api_reference.md)
+- [About SDKs](docs/about_sdks.md)
+- [Create a Building Engine](docs/how_to_create_a_building_engine.md)
+- [Create an ACASL API](docs/how_to_create_an_acasl_API.md)
+- [Create a BCASL API](docs/how_to_create_a_bcasl_API.md)
+- [Create a Theme](docs/how_to_create_theme%20.md)
 
 ### Tools
-- [GitHub Issues](https://github.com/raidos23/pycompiler-ark/issues)
-- [Project Board](https://github.com/raidos23/pycompiler-ark/projects)
-- [Discussions](https://github.com/raidos23/pycompiler-ark/discussions)
+- [GitHub Issues](https://github.com/raidos23/PyCompiler-ARK-Professional/issues)
+- [Project Board](https://github.com/raidos23/PyCompiler-ARK-Professional/projects)
+- [Discussions](https://github.com/raidos23/PyCompiler-ARK-Professional/discussions)
 
 ## Communication
 

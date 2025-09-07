@@ -19,7 +19,7 @@
 - **Multi-platform testing**: Ubuntu, macOS, Windows with Python 3.10-3.12
 - **Pre-commit hooks**: Automatic code formatting and quality checks
 - **Reproducible builds**: Pinned dependencies with constraints.txt
-- **Automated releases**: Code signing, checksums, and artifact generation
+- **Automated artifacts**: Code signing, checksums, and artifact generation (no formal GitHub releases)
 
 ### 📋 **Enterprise Governance**
 - **Security policy** (SECURITY.md) with CVE tracking and disclosure timeline
@@ -172,19 +172,18 @@ See [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md) for detailed compatibility inform
 ## 📚 **Documentation**
 
 ### **User Guides**
-- [Getting Started](docs/getting_started.md) - First steps with PyCompiler ARK++
-- [User Manual](docs/user_manual.md) - Complete feature documentation
 - [Upgrade Guide](docs/UPGRADE_GUIDE.md) - Migration from previous versions
+- [About SDKs](docs/about_sdks.md) - Overview of available SDKs
+- [Create a Building Engine](docs/how_to_create_a_building_engine.md) - Engine development guide
+- [Create an ACASL API](docs/how_to_create_an_acasl_API.md) - Post-compile plugin guide
+- [Create a BCASL API](docs/how_to_create_a_bcasl_API.md) - Pre-compile plugin guide
+- [Create a Theme](docs/how_to_create_theme%20.md) - UI themes guide
 
 ### **Developer Documentation**
 - [Contributing](CONTRIBUTING.md) - How to contribute to the project
-- [Architecture](docs/architecture.md) - Technical architecture overview
-- [Plugin Development](docs/plugin_development.md) - Creating custom plugins
-- [API Reference](docs/api_reference.md) - Complete API documentation
 
 ### **Operations**
 - [Security Policy](SECURITY.md) - Security practices and reporting
-- [Release Process](RELEASE.md) - How releases are created and distributed
 - [Support Matrix](SUPPORTED_MATRIX.md) - Platform and version support
 
 ## 🤝 **Contributing**

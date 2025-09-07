@@ -1,246 +1,141 @@
-# Release Process - PyCompiler ARK++ 3.2.3
+# Distribution Process - PyCompiler ARK++ 3.2.3
 
 ## Overview
 
-This document outlines the complete release process for PyCompiler ARK++, including versioning, testing, building, signing, and distribution procedures.
+This document describes how to build, sign, verify, and distribute artifacts for PyCompiler ARK++ 3.2.3.
+There are no formal GitHub Releases or public tags; artifacts are produced and shared via internal channels.
 
-## Release Types
+## Versioning
 
-### Version Numbering
-We follow [Semantic Versioning](https://semver.org/) (SemVer):
-- **MAJOR.MINOR.PATCH** (e.g., 3.2.3)
-- **MAJOR**: Breaking changes
-- **MINOR**: New features, backward compatible
-- **PATCH**: Bug fixes, backward compatible
+- Canonical version: **3.2.3**
+- Semantic Versioning is followed conceptually (MAJOR.MINOR.PATCH), but public release channels are not used.
 
-### Release Channels
-- **Stable**: Production-ready releases (e.g., 3.2.3)
-- **Release Candidate**: Pre-release testing (e.g., 3.2.3-rc1)
-- **Beta**: Feature-complete testing (e.g., 3.2.3-beta1)
-- **Alpha**: Early development (e.g., 3.2.3-alpha1)
-
-## Pre-Release Checklist
+## Pre-Distribution Checklist
 
 ### Code Quality
 - [ ] All CI checks pass (lint, format, types, tests)
 - [ ] Code coverage ≥ 80%
 - [ ] Security audit clean (bandit, pip-audit, safety)
-- [ ] SBOM generated and reviewed
-- [ ] Documentation updated
+- [ ] SBOM generated and reviewed (optional)
+- [ ] Documentation updated (README, CHANGELOG, docs/)
 
 ### Testing
-- [ ] Unit tests pass on all supported platforms
-- [ ] Integration tests complete
-- [ ] Manual testing on primary platforms
-- [ ] Performance regression tests
-- [ ] Backward compatibility verified
+- [ ] Unit tests pass on supported platforms
+- [ ] Integration/smoke tests succeed
+- [ ] Manual verification on primary platforms (Ubuntu, Windows, macOS)
+- [ ] Backward compatibility validated where applicable
 
 ### Dependencies
-- [ ] All dependencies pinned in constraints.txt
-- [ ] Security vulnerabilities addressed
-- [ ] License compatibility verified
-- [ ] Third-party notices updated
+- [ ] Dependencies pinned via `constraints.txt`
+- [ ] No known vulnerabilities for production dependencies
+- [ ] License compatibility reviewed
 
-## Release Process
+## Build Process
 
-### 1. Preparation Phase
-
-#### Update Version
+### Environment Setup
 ```bash
-# Update version in relevant files
-# - pyproject.toml
-# - main.py
-# - docs/conf.py (if applicable)
-```
-
-#### Update Documentation
-- [ ] Update CHANGELOG.md with new features, fixes, breaking changes
-- [ ] Update README.md if needed
-- [ ] Review and update API documentation
-- [ ] Update SUPPORTED_MATRIX.md if platform support changed
-
-#### Create Release Branch
-```bash
-git checkout -b release/3.2.3
-git push origin release/3.2.3
-```
-
-### 2. Build Phase
-
-#### Environment Setup
-```bash
-# Set reproducible build environment
 export TZ=UTC
 export LANG=C.UTF-8
 export PYTHONHASHSEED=0
 export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
 ```
 
-#### Clean Build
+### Clean Build
 ```bash
-# Clean previous builds
 rm -rf dist/ build/ *.egg-info/
 python -m build --clean --sdist --wheel
 ```
 
-#### Verify Build
+### Verify Build
 ```bash
-# Test installation from built packages
 python -m pip install dist/*.whl
 python -c "import main; print('Build verification successful')"
 ```
 
-### 3. Code Signing
+## Code Signing (Optional)
 
-#### Windows Code Signing
+### Windows (AuthentiCode)
 ```bash
-# Using signtool (requires certificate)
 signtool sign /f certificate.p12 /p password /t http://timestamp.digicert.com dist/*.exe
 signtool verify /pa dist/*.exe
 ```
 
-#### macOS Code Signing
+### macOS (codesign + notarization)
 ```bash
-# Using codesign (requires Apple Developer certificate)
 codesign --sign "Developer ID Application: Your Name" dist/*.app
 codesign --verify --verbose dist/*.app
 
-# Notarization (requires Apple Developer account)
 xcrun notarytool submit dist/*.dmg --keychain-profile "notarytool-profile" --wait
 xcrun stapler staple dist/*.dmg
 ```
 
-#### Linux Code Signing (GPG)
+### Linux (GPG)
 ```bash
-# Sign with GPG
 gpg --detach-sign --armor dist/*.tar.gz
 gpg --verify dist/*.tar.gz.asc dist/*.tar.gz
 ```
 
-### 4. Testing Phase
+## Checksums
 
-#### Smoke Tests
+Generate and verify checksums for distribution:
 ```bash
-# Test on clean environments
-docker run --rm -v $(pwd):/app python:3.11-slim bash -c "cd /app && pip install dist/*.whl && python -c 'import main'"
+cd dist
+sha256sum * > SHA256SUMS.txt
+sha256sum -c SHA256SUMS.txt
 ```
 
-#### Platform Testing
-- [ ] Test on Ubuntu 22.04 LTS
-- [ ] Test on Windows 11
-- [ ] Test on macOS 13+ (Intel and Apple Silicon)
+## Distribution (No GitHub Releases)
 
-### 5. Release Phase
+- Artifacts are shared via internal channels (e.g., secure storage, internal package registry, or direct delivery).
+- Include the following in the delivery bundle:
+  - Built artifacts from `dist/`
+  - `SHA256SUMS.txt` and (if applicable) signature files (`.asc`)
+  - Minimal README with installation/usage notes if needed
 
-#### Create Git Tag
+Example packaging:
 ```bash
-git tag -a v3.2.3 -m "Release version 3.2.3"
-git push origin v3.2.3
+# Create a distributable archive
+cd dist
+zip -r ../pycompiler-arkpp-3.2.3-artifacts.zip .
 ```
 
-#### GitHub Release
-The release workflow will automatically:
-1. Build artifacts for all platforms
-2. Generate checksums (SHA256SUMS.txt)
-3. Create GitHub release with artifacts
-4. Upload signed binaries
-
-#### Manual Release Steps
-If manual release is needed:
-```bash
-# Create release notes
-gh release create v3.2.3 \
-  --title "PyCompiler ARK++ v3.2.3" \
-  --notes-file CHANGELOG.md \
-  --draft
-
-# Upload artifacts
-gh release upload v3.2.3 dist/*
-gh release upload v3.2.3 SHA256SUMS.txt
-```
-
-## Post-Release
+## Post-Distribution
 
 ### Verification
-- [ ] Download and verify release artifacts
-- [ ] Test installation from GitHub releases
-- [ ] Verify checksums match
-- [ ] Test on fresh systems
+- [ ] Consumer verifies checksums and signatures
+- [ ] Installation tests on clean environments
+- [ ] Smoke tests across target OSes
 
 ### Communication
-- [ ] Update project website/documentation
-- [ ] Announce on relevant channels
-- [ ] Update package managers (if applicable)
-- [ ] Close milestone in project management
-
-### Cleanup
-```bash
-# Merge release branch back to main
-git checkout main
-git merge release/3.2.3
-git branch -d release/3.2.3
-git push origin --delete release/3.2.3
-```
-
-## Hotfix Process
-
-For critical security or bug fixes:
-
-1. Create hotfix branch from latest release tag
-2. Apply minimal fix
-3. Follow abbreviated release process
-4. Increment PATCH version
-5. Release immediately after testing
-
-## Rollback Procedure
-
-If a release needs to be rolled back:
-
-1. Mark GitHub release as pre-release
-2. Create hotfix with revert
-3. Release new patch version
-4. Communicate rollback to users
-
-## Security Considerations
-
-### Code Signing Certificates
-- Store certificates securely (Azure Key Vault, AWS KMS)
-- Use time-stamping for long-term validity
-- Rotate certificates before expiration
-
-### Release Artifacts
-- Generate and verify checksums
-- Sign all release artifacts
-- Use HTTPS for all downloads
-- Maintain audit trail
+- [ ] Update internal documentation/portals
+- [ ] Notify stakeholders of availability and changes
 
 ## Automation
 
-### GitHub Actions
-- Automated builds on tag push
-- Multi-platform artifact generation
-- Automatic checksum generation
-- Security scanning integration
+### CI (optional but recommended)
+- Build and test on tag or main branch updates
+- Multi-platform artifact jobs (Ubuntu, Windows, macOS)
+- Security scanning integrated in pipeline
 
 ### ACASL Integration
-Code signing and packaging can be automated using ACASL plugins:
-- `code_sign_windows` - Windows Authenticode signing
-- `code_sign_macos` - macOS codesign and notarization
-- `generate_sbom` - Software Bill of Materials
-- `package_installer` - Create platform installers
+- Packaging, signing, or SBOM generation can be automated with ACASL plugins:
+  - `code_sign_windows` – Windows Authenticode signing
+  - `code_sign_macos` – macOS codesign and notarization
+  - `generate_sbom` – Software Bill of Materials
+  - `package_installer` – Create platform installers
 
 ## Troubleshooting
 
 ### Common Issues
-- **Build failures**: Check environment variables and dependencies
-- **Signing failures**: Verify certificate validity and permissions
-- **Upload failures**: Check network connectivity and authentication
+- Build failures: verify environment variables, toolchain, and pinned deps
+- Signing failures: check certificate validity, access rights, and timestamps
+- Verification failures: re-generate checksums and ensure no file corruption
 
-### Recovery Procedures
-- Keep previous release artifacts as backup
-- Document rollback procedures
-- Maintain emergency contact list
+### Recovery
+- Keep previous artifacts for rollback
+- Document remediation steps
+- Maintain emergency contacts
 
 ---
 
-*This document should be reviewed and updated with each major release.*
+*This document reflects a distribution workflow without public releases. Update as internal processes evolve.*
