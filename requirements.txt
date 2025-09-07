@@ -45,7 +45,8 @@ pip-audit>=2.6.0,<3.0.0
 safety>=2.3.0,<3.0.0
 
 # SBOM generation (dev)
-cyclonedx-py>=4.0.0,<5.0.0
+# Use cyclonedx-bom (CLI) instead of deprecated/obsolete cyclonedx-py
+cyclonedx-bom>=4.0.0,<6.0.0
 
 # Build tools (dev)
 build>=1.0.0,<2.0.0
