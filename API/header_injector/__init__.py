@@ -18,6 +18,7 @@ BCASL_LICENSE = "GPL-3.0-only"
 BCASL_TAGS = ["pre-compilation", "license", "SPDX"]
 
 import re
+import asyncio
 from pathlib import Path
 from typing import Optional
 
@@ -221,12 +222,47 @@ def _inject_license_for_file(path: Path, text: str, spdx_id: str) -> str:
     description="Injecte une ligne de licence (SPDX) en tête des fichiers ciblés",
 )
 class LicenseInjector(PluginBase):
+    _i18n: dict | None = None
+
+    def _ensure_i18n(self) -> None:
+        if self._i18n is not None:
+            return
+        try:
+            try:
+                self._i18n = asyncio.run(API_SDK.load_plugin_translations(Path(__file__)))
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                try:
+                    self._i18n = loop.run_until_complete(API_SDK.load_plugin_translations(Path(__file__)))
+                finally:
+                    try:
+                        loop.close()
+                    except Exception:
+                        pass
+        except Exception:
+            self._i18n = {}
+
+    def _t(self, sctx, key: str, fr: str, en: str, **fmt) -> str:
+        text = None
+        try:
+            if isinstance(self._i18n, dict):
+                text = self._i18n.get(key)
+        except Exception:
+            text = None
+        if not isinstance(text, str) or not text.strip():
+            text = sctx.tr(fr, en)
+        try:
+            return text.format(**fmt) if fmt else text
+        except Exception:
+            return text
+
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
             sctx = wrap_context(ctx)
         except RuntimeError as exc:
             print(f"[ERROR][license_injector] {exc}")
             return
+        self._ensure_i18n()
 
         cfg = sctx.config_view
         subcfg = cfg.for_plugin(getattr(self, "id", "license_injector"))
@@ -235,7 +271,9 @@ class LicenseInjector(PluginBase):
         spdx_id, lic_name = _detect_workspace_license(sctx.workspace_root)
         if not spdx_id:
             sctx.log_info(
-                sctx.tr(
+                self._t(
+                    sctx,
+                    "no_license",
                     "license_injector: aucune licence détectée (pyproject ou fichiers LICENSE/LICENCE/COPYING/NOTICE). Aucune injection.",
                     "license_injector: no license detected (pyproject or LICENSE/LICENCE/COPYING/NOTICE files). No injection performed.",
                 )
@@ -252,20 +290,24 @@ class LicenseInjector(PluginBase):
 
         # Demande confirmation
         if not sctx.msg_question(
-            sctx.tr("License Injector", "License Injector"),
-            sctx.tr(
-                f"Injecter la licence (SPDX: {spdx_id}) dans les fichiers correspondant aux motifs: {patterns} ?",
-                f"Inject license (SPDX: {spdx_id}) into files matching: {patterns} ?",
+            self._t(sctx, "title", "License Injector", "License Injector"),
+            self._t(
+                sctx,
+                "confirm",
+                "Injecter la licence (SPDX: {spdx}) dans les fichiers correspondant aux motifs: {patterns} ?",
+                "Inject license (SPDX: {spdx}) into files matching: {patterns} ?",
+                spdx=spdx_id,
+                patterns=patterns,
             ),
             default_yes=False,
         ):
-            sctx.log_warn(sctx.tr("license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
+            sctx.log_warn(self._t(sctx, "canceled", "license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
             return
 
         # Phase 1: analyse des cibles
         ph = API_SDK.progress(
-            sctx.tr("Injection de licence", "License Injection"),
-            sctx.tr("Analyse des fichiers cibles...", "Scanning target files..."),
+            self._t(sctx, "progress_title", "Injection de licence", "License Injection"),
+            self._t(sctx, "progress_scan", "Analyse des fichiers cibles...", "Scanning target files..."),
             maximum=0,
             cancelable=True,
         )
@@ -275,7 +317,7 @@ class LicenseInjector(PluginBase):
             skipped_dup = 0
             for p in sctx.iter_files(patterns, exclude=exclude, enforce_workspace=True):
                 if ph.canceled:
-                    sctx.log_warn(sctx.tr("license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
+                    sctx.log_warn(self._t(sctx, "canceled", "license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
                     return
                 found += 1
                 try:
@@ -310,7 +352,7 @@ class LicenseInjector(PluginBase):
             changed = 0
             for i, p in enumerate(to_modify, start=1):
                 if ph.canceled:
-                    sctx.log_warn(sctx.tr("license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
+                    sctx.log_warn(self._t(sctx, "canceled", "license_injector: opération annulée par l'utilisateur", "license_injector: operation canceled by user"))
                     return
                 rel = p.relative_to(sctx.workspace_root)
                 ph.update(i, f"{i}/{len(to_modify)}: {rel}")
@@ -328,9 +370,14 @@ class LicenseInjector(PluginBase):
                     sctx.log_warn(f"Écriture échouée pour {rel}: {e}")
 
             sctx.log_info(
-                sctx.tr(
-                    f"license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped_dup}, total scannés={found}",
-                    f"license_injector: done. Changed={changed}, already SPDX={skipped_dup}, total scanned={found}",
+                self._t(
+                    sctx,
+                    "done",
+                    "license_injector: terminé. Modifiés={changed}, déjà avec SPDX={skipped}, total scannés={found}",
+                    "license_injector: done. Changed={changed}, already SPDX={skipped}, total scanned={found}",
+                    changed=changed,
+                    skipped=skipped_dup,
+                    found=found,
                 )
             )
         finally:

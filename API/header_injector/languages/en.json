@@ -1,0 +1,10 @@
+{
+  "_meta": { "code": "en", "name": "English" },
+  "title": "License Injector",
+  "no_license": "license_injector: no license detected (pyproject or LICENSE/LICENCE/COPYING/NOTICE files). No injection performed.",
+  "confirm": "Inject license (SPDX: {spdx}) into files matching: {patterns} ?",
+  "progress_title": "License Injection",
+  "progress_scan": "Scanning target files...",
+  "canceled": "license_injector: operation canceled by user",
+  "done": "license_injector: done. Changed={changed}, already SPDX={skipped}, total scanned={found}"
+}
