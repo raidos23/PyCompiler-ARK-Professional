@@ -136,8 +136,8 @@ fi
 # --- Python discovery & version check -------------------------------------
 choose_python(){
   if [[ -n "$PY_CMD_OVERRIDE" ]]; then echo "$PY_CMD_OVERRIDE"; return; fi
-  # Prefer highest available Python 3.x (13..8) even if not default
-  for cand in python3.13 python3.12 python3.11 python3.10 python3.9 python3.8; do
+  # Prefer Python 3.12 by default, then fallback to 3.13 and lower (11..8)
+  for cand in python3.12 python3.13 python3.11 python3.10 python3.9 python3.8; do
     if command -v "$cand" >/dev/null 2>&1; then echo "$cand"; return; fi
   done
   if command -v python3 >/dev/null 2>&1; then echo python3; return; fi
