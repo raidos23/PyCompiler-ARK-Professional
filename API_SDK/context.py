@@ -42,6 +42,8 @@ class SDKContext:
     engine_id: Optional[str] = None
     plugin_id: Optional[str] = None
     artifacts: list[str] = field(default_factory=list)
+    # ACASL-only scope: when set, all file operations are restricted to this directory
+    allowed_dir: Optional[Path] = None
     redact_logs: bool = True
     debug_enabled: bool = False
     _iter_cache: dict[tuple[tuple[str, ...], tuple[str, ...]], list[Path]] = field(
@@ -181,10 +183,27 @@ class SDKContext:
         except Exception:
             return False
 
+    def is_within_allowed(self, p: Path) -> bool:
+        """Return True if path is within the allowed_dir (ACASL scope) when set; otherwise True."""
+        try:
+            if self.allowed_dir is None:
+                return True
+            _ = p.resolve().relative_to(self.allowed_dir.resolve())
+            return True
+        except Exception:
+            return False
+
+    def is_within_scope(self, p: Path) -> bool:
+        """Scope check used by file helpers: within workspace and, when set, within allowed_dir."""
+        try:
+            return self.is_within_workspace(p) and self.is_within_allowed(p)
+        except Exception:
+            return False
+
     def safe_path(self, *parts: Pathish) -> Path:
         p = self.path(*parts).resolve()
-        if not self.is_within_workspace(p):
-            raise ValueError(f"Path escapes workspace: {p}")
+        if not self.is_within_scope(p):
+            raise ValueError(f"Path not allowed (outside output_dir/workspace): {p}")
         return p
 
     def require_files(self, paths: Sequence[Pathish]) -> list[Path]:
@@ -220,14 +239,14 @@ class SDKContext:
         enforce_workspace: bool = True,
         max_files: Optional[int] = None,
     ) -> Iterable[Path]:
-        root = self.workspace_root
+        root = self.allowed_dir or self.workspace_root
         ex_patterns = list(exclude or [])
         count = 0
         for p in root.rglob("*"):
             try:
                 if not p.is_file():
                     continue
-                if enforce_workspace and not self.is_within_workspace(p):
+                if enforce_workspace and not self.is_within_scope(p):
                     continue
                 rel = p.relative_to(root).as_posix()
                 if ex_patterns and any(fnmatch.fnmatch(rel, ex) for ex in ex_patterns):
@@ -263,14 +282,14 @@ class SDKContext:
                     return
             except Exception:
                 key = None
-        root = self.workspace_root
+        root = self.allowed_dir or self.workspace_root
         matches: list[Path] = []
         count = 0
         for p in root.rglob("*"):
             try:
                 if not p.is_file():
                     continue
-                if not self.is_within_workspace(p):
+                if not self.is_within_scope(p):
                     continue
                 rel = p.relative_to(root).as_posix()
                 if exc and any(fnmatch.fnmatch(rel, ex) for ex in exc):

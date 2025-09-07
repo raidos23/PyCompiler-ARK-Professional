@@ -188,6 +188,7 @@ def wrap_post_context(post_ctx: PostCompileContext, *, log_fn: Optional[Any] = N
     """Wrap an ACASL PostCompileContext into SDKContext for reuse of the same helpers.
     - Copies workspace root and artifacts
     - Loads workspace config
+    - Enforces ACASL scope: restrict file operations to engine output directory when provided
     """
     try:
         ws = Path(getattr(post_ctx, "workspace_root", "."))
@@ -195,11 +196,42 @@ def wrap_post_context(post_ctx: PostCompileContext, *, log_fn: Optional[Any] = N
         ws = Path(".")
     root = ws.resolve()
     cfg = load_workspace_config(root)
+    # Resolve allowed output directory (ACASL scope)
+    allowed_dir = None
     try:
-        arts = list(getattr(post_ctx, "artifacts", []) or [])
+        od = getattr(post_ctx, "output_dir", None)
+        if od:
+            try:
+                allowed_dir = Path(str(od)).resolve()
+            except Exception:
+                allowed_dir = None
     except Exception:
-        arts = []
-    return SDKContext(workspace_root=root, config_view=ConfigView(cfg), log_fn=log_fn, engine_id=None, artifacts=arts)
+        allowed_dir = None
+    # Artifacts: best-effort ensure they are within allowed_dir when set
+    try:
+        arts_in = list(getattr(post_ctx, "artifacts", []) or [])
+    except Exception:
+        arts_in = []
+    arts: list[str] = []
+    if allowed_dir is not None:
+        for a in arts_in:
+            try:
+                rp = Path(a).resolve()
+                _ = rp.relative_to(allowed_dir)
+                arts.append(str(rp))
+            except Exception:
+                # skip artifacts outside of allowed scope
+                continue
+    else:
+        arts = list(arts_in)
+    return SDKContext(
+        workspace_root=root,
+        config_view=ConfigView(cfg),
+        log_fn=log_fn,
+        engine_id=None,
+        artifacts=arts,
+        allowed_dir=allowed_dir,
+    )
 
 
 # -----------------------------
