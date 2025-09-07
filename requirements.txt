@@ -46,7 +46,7 @@ safety
 
 # SBOM generation (dev)
 # Use cyclonedx-bom (CLI) instead of deprecated/obsolete cyclonedx-py
-cyclonedx-bom>=
+cyclonedx-bom
 
 # Build tools (dev)
 build
