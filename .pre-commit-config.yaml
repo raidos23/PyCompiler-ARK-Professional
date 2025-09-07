@@ -41,7 +41,7 @@ repos:
     hooks:
       - id: bandit
         args: ['-c', 'pyproject.toml']
-        additional_dependencies: ['bandit[toml]']
+        additional_dependencies: ['bandit[toml]', 'pbr']
         exclude: ^(ui/|languages/|\.github/|tests/)
 
 ci:
