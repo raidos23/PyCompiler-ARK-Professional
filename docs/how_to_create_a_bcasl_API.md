@@ -68,7 +68,7 @@ Table of contents
 
 ---
 
-0) TL;DR (copy‑paste template)
+## 0) TL;DR (copy‑paste template) {#0-tldr-copy-paste-template}
 
 ```python
 # API/my_plugin/__init__.py
@@ -116,7 +116,7 @@ def bcasl_register(manager):
 
 ---
 
-1) Quick checklist
+## 1) Quick checklist {#1-quick-checklist}
 - [ ] Package under API/<plugin_id>/ with __init__.py
 - [ ] BCASL signature: BCASL_PLUGIN=True, BCASL_ID, BCASL_DESCRIPTION
 - [ ] Extended metadata (recommended): NAME, VERSION, AUTHOR, CREATED, LICENSE, COMPATIBILITY, TAGS
@@ -129,7 +129,7 @@ def bcasl_register(manager):
 
 ---
 
-2) Folder layout
+## 2) Folder layout {#2-folder-layout}
 
 Place plugins exclusively under API/<plugin_id>/ (never under acasl/ or bcasl/):
 ```
@@ -141,7 +141,7 @@ Place plugins exclusively under API/<plugin_id>/ (never under acasl/ or bcasl/):
 
 ---
 
-3) Minimal plugin (with metadata)
+## 3) Minimal plugin (with metadata) {#3-minimal-plugin-with-metadata}
 
 ```python
 from __future__ import annotations
@@ -183,7 +183,7 @@ def bcasl_register(manager):
 
 ---
 
-4) Tag taxonomy and default ordering (minify before obfuscation)
+## 4) Tag taxonomy and default ordering (minify before obfuscation) {#4-tag-taxonomy-and-default-ordering-minify-before-obfuscation}
 
 The host computes a default order from BCASL_TAGS (no IDs are hard‑coded):
 - clean, cleanup, sanitize, prune, tidy → earliest
@@ -221,7 +221,7 @@ Recommended baseline tags by stage:
 
 ---
 
-5) Progress and non‑interactive considerations
+## 5) Progress and non‑interactive considerations {#5-progress-and-non-interactive-considerations}
 
 - Always use progress(...) for long operations; it is non‑blocking and UI‑safe.
 - Ask confirmation only when interactive. Detect non‑interactive mode (best‑effort):
@@ -245,7 +245,7 @@ if ask and not sctx.msg_question("Proceed?", "Run heavy step now?", default_yes=
 
 ---
 
-6) Configuration patterns
+## 6) Configuration patterns {#6-configuration-patterns}
 
 - Workspace config (bcasl.*) can be JSON/YAML/TOML/INI/CFG; the UI can create and edit it.
 - Per‑plugin settings: use ensure_settings_file(...) to materialize a user‑editable file under the workspace.
@@ -257,7 +257,7 @@ settings = ensure_settings_file(sctx, subdir="config", basename="my_plugin", fmt
 
 ---
 
-6.1) System install helpers (pip global + package managers)
+## 6.1) System install helpers (pip global + package managers) {#61-system-install-helpers-pip-global--package-managers}
 
 - Use the standardized helpers to request consent and install dependencies system‑wide.
 - In non‑interactive mode these helpers return False and skip installation safely.
@@ -294,7 +294,7 @@ if not ok:
 
 ---
 
-7) Context essentials
+## 7) Context essentials {#7-context-essentials}
 
 - Safe paths: sctx.safe_path(rel_or_abs) and sctx.is_within_workspace(Path)
 - Scans: sctx.iter_files(patterns=[...], exclude=[...], enforce_workspace=True)
@@ -303,7 +303,7 @@ if not ok:
 
 ---
 
-8) i18n (async)
+## 8) i18n (async) {#8-i18n-async}
 
 - Place a languages/ folder in your package; load with API_SDK helpers:
 ```python
@@ -314,7 +314,7 @@ tr = asyncio.run(load_plugin_translations(__file__, "System"))
 
 ---
 
-9) Workspace switching (safe)
+## 9) Workspace switching (safe) {#9-workspace-switching-safe}
 
 ```python
 from API_SDK import set_selected_workspace
@@ -325,7 +325,7 @@ if ok:
 
 ---
 
-10) Examples
+## 10) Examples {#10-examples}
 
 A) Minifier (minify before obfuscation via tags)
 ```python
@@ -472,7 +472,7 @@ def bcasl_register(manager):
 
 ---
 
-11) Troubleshooting
+## 11) Troubleshooting {#11-troubleshooting}
 - Plugin not visible → ensure BCASL_PLUGIN/ID/DESCRIPTION exist; it's under API/<plugin_id>/ (not under acasl/ or bcasl/); use @plugin; register via bcasl_register; open API Loader; check logs
 - Config invalid → use UI raw editor; validate formats; fall back to JSON
 - Long operations → use progress; split work; no modal blocking in background

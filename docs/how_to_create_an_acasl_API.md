@@ -83,16 +83,16 @@ Table of Contents
 
 ---
 
-## What is ACASL?
+## What is ACASL? {#what-is-acasl}
 ACASL is the post‑compilation counterpart to BCASL. It runs automatically after builds finish and lets you handle distribution: signing, notarization, packaging, integrity checks, SBOM, hashing, smoke tests, publishing, etc.
 
-## Execution flow and integration
+## Execution flow and integration {#execution-flow-and-integration}
 - ACASL is triggered after all builds complete.
 - The default artifact collector scans `<workspace>/dist` and `<workspace>/build` and passes the file list to plugins.
 - Plugins are discovered exclusively under API/ at the project root (never under acasl/ or bcasl/). Only Python packages that declare ACASL_PLUGIN = True and expose acasl_run(ctx) are considered. The runtime further validates ACASL_ID/ACASL_DESCRIPTION; extended metadata are optional but recommended.
 - ACASL runs asynchronously (non‑blocking UI). A soft timeout can be configured; each plugin run is measured (duration in ms).
 
-## Where to place your plugins (package layout)
+## Where to place your plugins (package layout) {#where-to-place-your-plugins-package-layout}
 Create Python packages under API/ (not loose .py files). Do not place ACASL plugins under acasl/ or bcasl/:
 ```
 API/
@@ -117,7 +117,7 @@ Rules for each package (__init__.py):
 - Use imports from API_SDK.ACASL_SDK
 - Optional: define extended metadata keys (NAME/VERSION/AUTHOR/CREATED/LICENSE/COMPATIBILITY/TAGS)
 
-## Plugin templates
+## Plugin templates {#plugin-templates}
 ### Minimal plugin (facade‑based)
 ```python
 # API/hello/__init__.py
@@ -177,7 +177,7 @@ def acasl_run(ctx):
     sctx.msg_info("Sample", "Processing complete.")
 ```
 
-## ACASL SDK facade and Context (available API)
+## ACASL SDK facade and Context (available API) {#acasl-sdk-facade-and-context-available-api}
 Always import from API_SDK.ACASL_SDK. Core items:
 - wrap_post_context(post_ctx) -> SDKContext
   - Converts host ACASLContext (ctx) into SDKContext, loading workspace config and copying the artifacts list.
@@ -197,7 +197,7 @@ Always import from API_SDK.ACASL_SDK. Core items:
 
 Note: API_SDK version 3.2.3 or newer is required for ACASL facade features.
 
-## Configuration (acasl.json)
+## Configuration (acasl.json) {#configuration-acasljson}
 The ACASL Loader UI writes configuration to `<workspace>/acasl.json`:
 ```json
 {
@@ -213,7 +213,7 @@ The ACASL Loader UI writes configuration to `<workspace>/acasl.json`:
 
 If your plugin needs options, read your own config file (e.g. `config/my_plugin.yaml`) from the workspace via sctx.safe_path. Prefer sctx.write_text_atomic for writes.
 
-## System installs (pip global and OS package managers)
+## System installs (pip global and OS package managers) {#system-installs-pip-global-and-os-package-managers}
 - Use these helpers to request user consent and install dependencies system‑wide.
 - In non‑interactive mode the helpers return False and do not attempt installation.
 
@@ -264,13 +264,13 @@ def acasl_run(ctx):
     sctx.log_info("Native tools available")
 ```
 
-## UI: ACASL Loader (enable and order plugins)
+## UI: ACASL Loader (enable and order plugins) {#ui-acasl-loader-enable-and-order-plugins}
 - Open via the sidebar button “🔌 ACASL API Loader”.
 - Enable/disable plugins and reorder via drag & drop.
 - Save: writes `acasl.json` in the workspace root.
 - Discovery is strict: only packages with ACASL_PLUGIN = True are listed (extended metadata enrich tooltips/UI).
 
-## Cancellation and robustness
+## Cancellation and robustness {#cancellation-and-robustness}
 - If the user clicks “Cancel” during ACASL:
   - The ACASL thread is stopped best‑effort.
 - In your plugin:
@@ -278,14 +278,14 @@ def acasl_run(ctx):
   - Always set timeouts when using sctx.run_command.
   - Favor atomic writes (sctx.write_text_atomic) and idempotent operations.
 
-## Best practices (security, UX, logs)
+## Best practices (security, UX, logs) {#best-practices-security-ux-logs}
 - Security: secrets only via environment or separate secure files; never commit secrets.
 - UX: reduce modal prompts; prefer logs and one final summary dialog, and respect non‑interactive mode.
 - Logs: always log the output file paths you create.
 - Idempotency: running twice should not corrupt artifacts; write side‑artifacts to distinct files.
 - Licensing: declare ACASL_LICENSE (e.g., GPL‑3.0‑only) consistently across your plugins.
 
-## Troubleshooting
+## Troubleshooting {#troubleshooting}
 - “ACASL Loader unavailable”
   - Ensure `acasl/__init__.py` points to `acasl/acasl_loader.py`.
   - Ensure UI connects to `from acasl import open_acasl_loader_dialog`.
@@ -300,7 +300,7 @@ def acasl_run(ctx):
 
 ---
 
-## Extended examples (rich collection)
+## Extended examples (rich collection) {#extended-examples-rich-collection}
 These examples favor clarity. Add proper error handling, path validations, and security for production use. Each example is a package __init__.py.
 
 ### 0) Zip bundle (compress main executable or app dir)
@@ -802,7 +802,7 @@ def acasl_run(ctx):
 
 ---
 
-## Recap
+## Recap {#recap}
 - Put your plugin in `API/<plugin_id>/__init__.py` as a Python package (folder + __init__.py).
 - Declare `ACASL_PLUGIN = True`, provide metadata (ACASL_ID, ACASL_DESCRIPTION, optional extended fields), and define `acasl_run(ctx)`.
 - Always import from API_SDK.ACASL_SDK and wrap the context: `sctx = wrap_post_context(ctx)`.

@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "code": "fr",
+    "name": "Français"
+  },
+  "title": "Nettoyeur",
+  "confirm_delete": "Supprimer tous les fichiers .pyc et les dossiers __pycache__ du workspace ?",
+  "progress_title": "Nettoyage du workspace",
+  "analysis_text": "Analyse des éléments à supprimer...",
+  "cleanup_cancelled": "Nettoyage annulé par l'utilisateur",
+  "nothing_to_delete": "Rien à supprimer",
+  "no_files_to_delete": "Aucun fichier .pyc ou dossier __pycache__ à supprimer.",
+  "delete_error": "Erreur lors de la suppression de {file} : {error}",
+  "deleting_pyc": "Suppression .pyc ({current}/{total})",
+  "deleting_pycache": "Suppression __pycache__ ({current}/{total})",
+  "cleanup_completed": "🗑️ Nettoyage terminé : {pyc_count} fichier(s) .pyc et {pycache_count} dossier(s) __pycache__ supprimés."
+}

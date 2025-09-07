@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "code": "es",
+    "name": "Español"
+  },
+  "title": "Limpiador",
+  "confirm_delete": "¿Eliminar todos los archivos .pyc y carpetas __pycache__ del workspace?",
+  "progress_title": "Limpieza del workspace",
+  "analysis_text": "Analizando elementos a eliminar...",
+  "cleanup_cancelled": "Limpieza cancelada por el usuario",
+  "nothing_to_delete": "Nada que eliminar",
+  "no_files_to_delete": "No hay archivos .pyc o carpetas __pycache__ para eliminar.",
+  "delete_error": "Error al eliminar {file}: {error}",
+  "deleting_pyc": "Eliminando .pyc ({current}/{total})",
+  "deleting_pycache": "Eliminando __pycache__ ({current}/{total})",
+  "cleanup_completed": "🗑️ Limpieza completada: {pyc_count} archivo(s) .pyc y {pycache_count} carpeta(s) __pycache__ eliminadas."
+}

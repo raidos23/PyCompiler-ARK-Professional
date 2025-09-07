@@ -19,7 +19,7 @@ Quick Navigation
 
 This guide explains, in depth, how the theming system of PyCompiler Pro++ works, where to put your theme files, how the app loads and applies them, and how to build a prime‑quality theme that covers virtually every Qt widget and state.
 
-## Overview
+## Overview {#overview}
 
 - Theme format: Qt Style Sheets (QSS), a CSS‑like language for Qt widgets.
 - Theme location: place .qss files in the project-level folder: `themes/`
@@ -31,7 +31,7 @@ This guide explains, in depth, how the theming system of PyCompiler Pro++ works,
   - The app detects if the applied QSS is dark via a heuristic, and updates the sidebar logo accordingly.
 - Logging: on theme load, the app logs which theme was applied.
 
-## Directory Structure
+## Directory Structure {#directory-structure}
 
 ```
 PyCompiler_ARK++_3.2.3/
@@ -41,13 +41,13 @@ PyCompiler_ARK++_3.2.3/
 │  └─ ...
 ```
 
-## How the App Chooses a Theme
+## How the App Chooses a Theme {#how-the-app-chooses-a-theme}
 
 - Manual selection: The file you pick in the theme dialog (by its display name derived from the filename) is applied.
 - System mode: The app detects OS color scheme, then scans `themes/` for a file whose filename contains `dark` or `light`. If none is found, it falls back to the first available theme.
 - Dark detection: A heuristic checks typical background/`window`/`base` color declarations. If the average luminance is low, the theme is considered dark; this also influences the sidebar logo used.
 
-## QSS Basics (Crash Course)
+## QSS Basics (Crash Course) {#qss-basics-crash-course}
 
 Qt Style Sheets are similar to CSS with Qt‑specific selectors:
 - Widget selectors: `QPushButton`, `QLabel`, `QLineEdit`, etc.
@@ -58,7 +58,7 @@ Qt Style Sheets are similar to CSS with Qt‑specific selectors:
 
 Useful docs: https://doc.qt.io/qt-6/stylesheet-reference.html
 
-## Prime-Quality Theme Principles
+## Prime-Quality Theme Principles {#prime-quality-theme-principles}
 
 - Consistency: keep radii, borders, paddings, and typography consistent across widgets.
 - Contrast: ensure accessible color contrast (AA/AAA when possible).
@@ -67,7 +67,7 @@ Useful docs: https://doc.qt.io/qt-6/stylesheet-reference.html
 - Coverage: ensure every commonly used widget and subcontrol has a baseline style.
 - Performance: avoid unnecessary wildcards or deep overrides that affect all widgets when not needed.
 
-## Coverage Checklist (Recommended Selectors)
+## Coverage Checklist (Recommended Selectors) {#coverage-checklist-recommended-selectors}
 
 Start with these blocks to reach comprehensive coverage:
 
@@ -110,7 +110,7 @@ Start with these blocks to reach comprehensive coverage:
   - `QGraphicsView` (background)
   - Links via `QLabel { link-color: ... }`
 
-## Theme Skeleton (Starter Template)
+## Theme Skeleton (Starter Template) {#theme-skeleton-starter-template}
 
 Copy this into a new file like `themes/MyNewTheme.qss` and adjust colors.
 
@@ -172,18 +172,18 @@ QProgressBar { background: #182034; border: 1px solid rgba(255,255,255,0.14); bo
 QProgressBar::chunk { background: #4aa8ff; border-radius: 8px; }
 ```
 
-## Naming and Display Name
+## Naming and Display Name {#naming-and-display-name}
 
 - The theme selector presents a display name computed from the file name: underscores and dashes are converted to spaces, then title‑cased.
 - Example: `my_super-dark_theme.qss` appears as "My Super Dark Theme".
 
-## Dark vs Light Themes (Recommendations)
+## Dark vs Light Themes (Recommendations) {#dark-vs-light-themes-recommendations}
 
 - If you want "System" mode to pick your theme automatically:
   - Include `dark` or `light` in the file name.
   - Ensure your QSS includes a base background (e.g., `QWidget { background: #... }`) so the heuristic can detect darkness.
 
-## Testing Your Theme
+## Testing Your Theme {#testing-your-theme}
 
 1. Place your `.qss` in `themes/`.
 2. Start the app and open the theme dialog; select your theme.
@@ -193,33 +193,33 @@ QProgressBar::chunk { background: #4aa8ff; border-radius: 8px; }
 
 Tip: keep your QSS structured by sections (Base, Buttons, Inputs, Views, Tabs, Scrollbars, Menus, Toolbars, DockWidgets, Dialogs, Misc) for maintainability.
 
-## Troubleshooting
+## Troubleshooting {#troubleshooting}
 
 - No effect? Ensure the QSS compiles: a stray brace/semicolon can stop parsing. Test smaller chunks.
 - A widget ignores styles? Some native platform widgets or properties might not be stylable; try an alternative subcontrol or parent selector.
 - Specificity conflicts: declare general styles first, override with specific selectors later.
 - Performance: avoid overly broad `* { ... }` rules and prefer per‑widget selectors.
 
-## Accessibility and Quality Tips
+## Accessibility and Quality Tips {#accessibility-and-quality-tips}
 
 - Maintain a minimum contrast ratio of 4.5:1 for body text, 3:1 for UI elements and large text.
 - Always provide visible `:focus` states for keyboard navigation.
 - Keep padding and hit targets generous (at least 36–40px height for primary buttons).
 - Use a consistent border radius (e.g., 8–12px) for a coherent visual language.
 
-## Reusing and Extending Existing Themes
+## Reusing and Extending Existing Themes {#reusing-and-extending-existing-themes}
 
 - Start from an existing theme (e.g., `Techno2.qss`) and adjust the palette.
 - Replace only the blocks you need; leave other coverage in place to retain comprehensive styling.
 
-## Logo Considerations
+## Logo Considerations {#logo-considerations}
 
 - The app switches the sidebar logo depending on the detected dark/light mode of the applied QSS.
 - If you use custom branding, ensure your logo is readable on dark and light backgrounds.
 
 ---
 
-## Comprehensive Example (Broad Coverage)
+## Comprehensive Example (Broad Coverage) {#comprehensive-example-broad-coverage}
 
 Below is a single QSS file example designed to cover a very broad set of Qt widgets and subcontrols. Use it as a reference and adapt the palette to your brand.
 

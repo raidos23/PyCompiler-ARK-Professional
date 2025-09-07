@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "code": "de",
+    "name": "Deutsch"
+  },
+  "title": "Bereiniger",
+  "confirm_delete": "Alle .pyc-Dateien und __pycache__-Ordner aus dem Workspace löschen?",
+  "progress_title": "Workspace-Bereinigung",
+  "analysis_text": "Analysiere zu löschende Elemente...",
+  "cleanup_cancelled": "Bereinigung vom Benutzer abgebrochen",
+  "nothing_to_delete": "Nichts zu löschen",
+  "no_files_to_delete": "Keine .pyc-Dateien oder __pycache__-Ordner zu löschen.",
+  "delete_error": "Fehler beim Löschen von {file}: {error}",
+  "deleting_pyc": "Lösche .pyc ({current}/{total})",
+  "deleting_pycache": "Lösche __pycache__ ({current}/{total})",
+  "cleanup_completed": "🗑️ Bereinigung abgeschlossen: {pyc_count} .pyc-Datei(en) und {pycache_count} __pycache__-Ordner gelöscht."
+}

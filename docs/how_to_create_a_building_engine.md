@@ -43,7 +43,7 @@ Table of contents
 
 ---
 
-0) TL;DR (copy‑paste template)
+## 0) TL;DR (copy‑paste template) {#0-tldr-copy-paste-template}
 ```python
 from engine_sdk import CompilerEngine, registry
 from engine_sdk.utils import (
@@ -70,7 +70,7 @@ registry.register(MyEngine)
 
 ---
 
-1) Folder layout and discovery
+## 1) Folder layout and discovery {#1-folder-layout-and-discovery}
 
 ```
 <project root>
@@ -87,7 +87,7 @@ Tip: If your engine also ships mapping.json (for auto‑plugins), place it next 
 
 ---
 
-2) Minimal engine implementation
+## 2) Minimal engine implementation {#2-minimal-engine-implementation}
 
 ```python
 from __future__ import annotations
@@ -121,7 +121,7 @@ Notes
 
 ---
 
-3) UI tab (create_tab) example
+## 3) UI tab (create_tab) example {#3-ui-tab-create_tab-example}
 
 ```python
 from engine_sdk import CompilerEngine, registry
@@ -158,7 +158,7 @@ Notes
 
 ---
 
-4) Full engine shape and lifecycle hooks
+## 4) Full engine shape and lifecycle hooks {#4-full-engine-shape-and-lifecycle-hooks}
 
 A production engine typically implements some of the following:
 - id: str — stable identifier (required)
@@ -175,7 +175,7 @@ See ENGINES/pyinstaller/engine.py and ENGINES/nuitka/engine.py for robust real�
 
 ---
 
-5) Engine‑owned venv/tool management (async, non‑blocking)
+## 5) Engine‑owned venv/tool management (async, non‑blocking) {#5-engine-owned-venvtool-management-async-non-blocking}
 
 Principles
 - The UI never auto‑installs engine tools; engines decide when to verify and install.
@@ -232,7 +232,7 @@ Notes
 
 ---
 
-6) Environment and process execution
+## 6) Environment and process execution {#6-environment-and-process-execution}
 
 The SDK exposes safe helpers:
 
@@ -286,7 +286,7 @@ Recommendations for engine authors
 
 ---
 
-7) Auto‑plugins mapping (plug‑and‑play)
+## 7) Auto‑plugins mapping (plug‑and‑play) {#7-auto-plugins-mapping-plug-and-play}
 
 Concept
 - Engines may ship mapping.json to declare automatic flags/plugins based on detected packages (requirements/imports).
@@ -392,7 +392,7 @@ Notes
 
 ---
 
-8) CI considerations and non‑interactive setups
+## 8) CI considerations and non‑interactive setups {#8-ci-considerations-and-non-interactive-setups}
 - Keep engines non‑interactive; always pass flags to external tools rather than prompting.
 - Respect timeouts; surface stderr/stdout to logs.
 - Resolve executables deterministically (prefer venv‑local tools when applicable).
@@ -400,7 +400,7 @@ Notes
 
 ---
 
-9) Developer checklist and anti‑patterns
+## 9) Developer checklist and anti‑patterns {#9-developer-checklist-and-anti-patterns}
 
 Checklist
 - [ ] Package under ENGINES/<engine_id>/ with __init__.py
@@ -422,7 +422,7 @@ Anti‑patterns
 
 ---
 
-10) Troubleshooting (decision tree)
+## 10) Troubleshooting (decision tree) {#10-troubleshooting-decision-tree}
 - Engine not visible
   - Ensure ENGINES/<engine_id>/ exists with __init__.py
   - Ensure registry.register(MyEngine) executes at import
@@ -445,7 +445,7 @@ Anti‑patterns
 - Tool not installed in venv
   - Follow the preflight pattern: heuristic → async check → async install; return False while async ops run
 
-11) Localizing your engine (languages/)
+## 11) Localizing your engine (languages/) {#11-localizing-your-engine-languages}
 
 Purpose
 - Ship your engine with its own translations so the final application has a languages folder out of the box (no user setup).
@@ -526,7 +526,7 @@ Troubleshooting
   - Confirm the app’s language selector/system language matches a file code in languages/*.json.
   - Verify _meta.code in your JSON matches the filename (e.g., fr.json → "fr").
 
-11.1) Recommended i18n implementation template (synchronized with app)
+## 11.1) Recommended i18n implementation template (synchronized with app) {#111-recommended-i18n-implementation-template-synchronized-with-app}
 
 Goal
 - Provide a ready-to-use apply_i18n implementation that:
@@ -710,7 +710,7 @@ Troubleshooting (i18n)
 - Missing keys in your JSON: add robust fallbacks to gui.tr("Fr", "En") as in the template above so your UI still updates in the app language.
 - Locale variants not picked: ensure your normalization map includes common aliases and try candidates in order [mapped, base, lower, raw, "en"].
 
-12) Adapter engine (external CLI) — complete example
+## 12) Adapter engine (external CLI) — complete example {#12-adapter-engine-external-cli--complete-example}
 
 Purpose
 - Wrap an external CLI binary (any language) with a Python engine package that integrates perfectly with the host UI and lifecycle.
@@ -951,7 +951,7 @@ Tests (suggested)
 - Integration: preflight with missing CLI (return False, log message)
 - E2E (CI): run with a sample project using a mock ext-cli that prints a manifest.json
 
-13) Linux-first adapter example
+## 13) Linux-first adapter example {#13-linux-first-adapter-example}
 
 Context
 - This section shows a Linux-focused engine adapter that pilots an external CLI with Linux‑aware defaults (headless detection, parallel jobs, locale, LD_LIBRARY_PATH hints).

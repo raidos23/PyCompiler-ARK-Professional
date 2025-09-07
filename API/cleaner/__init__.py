@@ -60,11 +60,11 @@ class Cleaner(PluginBase):
 
         # Demande de confirmation avant une opération potentiellement destructive
         if not sctx.msg_question(
-            tr.get("title", "Nettoyeur"),
-            tr.get("confirm_delete", "Supprimer tous les fichiers .pyc et les dossiers __pycache__ du workspace ?"),
+            tr.get("title", "Cleaner"),
+            tr.get("confirm_delete", "Delete all .pyc files and __pycache__ folders from the workspace?"),
             default_yes=False,
         ):
-            sctx.log_warn("Nettoyage annulé par l'utilisateur")
+            sctx.log_warn(tr.get("cleanup_cancelled", "Cleanup cancelled by user"))
             return
 
         # 1) Analyse (comptage des éléments à supprimer) avec progression indéterminée
@@ -89,8 +89,8 @@ class Cleaner(PluginBase):
                             total += 1
 
             if total == 0:
-                ph.update(text="Rien à supprimer")
-                sctx.log_info("Aucun fichier .pyc ou dossier __pycache__ à supprimer.")
+                ph.update(text=tr.get("nothing_to_delete", "Nothing to delete"))
+                sctx.log_info(tr.get("no_files_to_delete", "No .pyc files or __pycache__ folders to delete."))
                 return
 
             # 2) Suppression avec progression déterminée
@@ -107,16 +107,23 @@ class Cleaner(PluginBase):
                         if _is_excluded(path):
                             continue
                         if ph.canceled:
-                            sctx.log_warn("Nettoyage annulé par l'utilisateur")
+                            sctx.log_warn(tr.get("cleanup_cancelled", "Cleanup cancelled by user"))
                             return
                         try:
                             os.remove(path)
                             pyc_count += 1
                         except Exception as e:
-                            sctx.log_warn(f"Erreur suppression {file}: {e}")
+                            sctx.log_warn(
+                                tr.get("delete_error", "Error deleting {file}: {error}").format(file=file, error=e)
+                            )
                         finally:
                             current += 1
-                            ph.update(current, f"Suppression .pyc ({current}/{total})")
+                            ph.update(
+                                current,
+                                tr.get("deleting_pyc", "Deleting .pyc ({current}/{total})").format(
+                                    current=current, total=total
+                                ),
+                            )
 
                 # Supprimer les dossiers __pycache__
                 for d in dirs:
@@ -125,20 +132,30 @@ class Cleaner(PluginBase):
                         if _is_excluded(path):
                             continue
                         if ph.canceled:
-                            sctx.log_warn("Nettoyage annulé par l'utilisateur")
+                            sctx.log_warn(tr.get("cleanup_cancelled", "Cleanup cancelled by user"))
                             return
                         try:
                             shutil.rmtree(path)
                             pycache_count += 1
                         except Exception as e:
-                            sctx.log_warn(f"Erreur suppression {d}: {e}")
+                            sctx.log_warn(
+                                tr.get("delete_error", "Error deleting {file}: {error}").format(file=d, error=e)
+                            )
                         finally:
                             current += 1
-                            ph.update(current, f"Suppression __pycache__ ({current}/{total})")
+                            ph.update(
+                                current,
+                                tr.get("deleting_pycache", "Deleting __pycache__ ({current}/{total})").format(
+                                    current=current, total=total
+                                ),
+                            )
 
             # 3) Logs UI
             sctx.log_info(
-                f"🗑️ Nettoyage terminé : {pyc_count} fichier(s) .pyc et {pycache_count} dossier(s) __pycache__ supprimés."
+                tr.get(
+                    "cleanup_completed",
+                    "🗑️ Cleanup completed: {pyc_count} .pyc file(s) and {pycache_count} __pycache__ folder(s) deleted.",
+                ).format(pyc_count=pyc_count, pycache_count=pycache_count)
             )
         finally:
             ph.close()
