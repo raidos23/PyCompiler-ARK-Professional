@@ -44,13 +44,63 @@ BCASL_TAGS = ["obfuscation", "protect"]
 
 
 DEFAULT_SETTINGS = {
+    # Inputs can be explicit paths OR discovered via globbing when glob_mode=True
     "inputs": ["main.py"],
+    "inputs_glob": ["**/*.py"],  # evaluated within the workspace when glob_mode=True
+    "glob_mode": False,
+
+    # Output directory (relative to workspace by default)
     "out_dir": "obfuscated",
+
+    # Recursion and symlink handling
     "recursive": True,
-    "exclude_patterns": ["venv/**", "build/**", "dist/**", "tests/**", "__pycache__/**"],
+    "follow_symlinks": False,
+
+    # Exclusions (broad by default; keep overkill to avoid polluting the output)
+    "exclude_patterns": [
+        "venv/**",
+        "build/**",
+        "dist/**",
+        "tests/**",
+        "__pycache__/**",
+        ".git/**",
+        ".hg/**",
+        ".svn/**",
+        ".idea/**",
+        ".vscode/**",
+        "node_modules/**",
+        "*.egg-info/**",
+    ],
+
+    # Manifest file path; when manifest_auto=True a manifest may be generated from inputs/excludes
     "manifest": "",
-    "advanced": {},
+    "manifest_auto": False,
+
+    # Advanced options forwarded to `pyarmor gen` (None values are ignored)
+    # Keep keys here for convenience; they are not applied unless set by the user.
+    "advanced": {
+        "platform": None,            # e.g., "linux.x86_64", "windows.x86_64" or comma-separated
+        "obf-code": None,            # 0|1|2
+        "obf-module": None,          # 0|1
+        "restrict-mode": None,       # 0|1|2
+        "mix-str": None,             # True to enable string mixing
+        "keep-runtime": None,        # True to keep runtime package alongside outputs
+        "no-cross-protection": None, # True to disable cross protection
+        "bootstrap-code": None,      # Python statements injected at startup
+        "enable-suffix": None,       # True to append obfuscated suffix
+        "enable-assert-hook": None,  # True to protect assert
+        "plugin": None,              # Optional PyArmor plugin name
+    },
+
+    # Dry run will only log the command and not execute
     "dry_run": False,
+
+    # Execution controls
+    "timeout_s": 1800,               # Max seconds for obfuscation command
+
+    # Workspace controls
+    "workspace": "",                # Optional: override selected workspace (absolute or relative)
+    "post_switch_workspace": True,   # Switch to out_dir on success
 }
 
 # -----------------------------
@@ -215,6 +265,12 @@ class PyArmorPlugin(PluginBase):
         manifest: str = subcfg.get("manifest", DEFAULT_SETTINGS["manifest"]) or ""
         advanced: dict[str, Any] = subcfg.get("advanced", DEFAULT_SETTINGS["advanced"]) or {}
         dry_run: bool = bool(subcfg.get("dry_run", DEFAULT_SETTINGS["dry_run"]))
+        # Overkill/versatile options
+        glob_mode: bool = bool(subcfg.get("glob_mode", DEFAULT_SETTINGS.get("glob_mode", False)))
+        inputs_glob: list[str] = subcfg.get("inputs_glob", DEFAULT_SETTINGS.get("inputs_glob", ["**/*.py"])) or DEFAULT_SETTINGS.get("inputs_glob", ["**/*.py"]) 
+        follow_symlinks: bool = bool(subcfg.get("follow_symlinks", DEFAULT_SETTINGS.get("follow_symlinks", False)))
+        timeout_s: int = int(subcfg.get("timeout_s", DEFAULT_SETTINGS.get("timeout_s", 1800)))
+        post_switch_workspace: bool = bool(subcfg.get("post_switch_workspace", DEFAULT_SETTINGS.get("post_switch_workspace", True)))
 
         # Sanitize and resolve paths relative to workspace
         ws = sctx.workspace_root
@@ -228,6 +284,43 @@ class PyArmorPlugin(PluginBase):
                     sctx.log_warn(f"[pyarmor] Input does not exist: {it}")
             except Exception:
                 sctx.log_warn(f"[pyarmor] Invalid input: {it}")
+        # Optional: discover inputs by globbing inside the workspace
+        if glob_mode:
+            discovered: list[str] = []
+            try:
+                # Prefer SDK iter_files when available
+                try:
+                    it = sctx.iter_files(patterns=list(inputs_glob or ["**/*.py"]), exclude=list(exclude_patterns or []), enforce_workspace=True)
+                    for p in it:
+                        try:
+                            if p and getattr(p, "is_file", lambda: False)():
+                                discovered.append(str(p))
+                        except Exception:
+                            pass
+                except Exception:
+                    # Fallback to pathlib globbing
+                    for pat in list(inputs_glob or ["**/*.py"]):
+                        try:
+                            for p in ws.glob(pat):
+                                try:
+                                    if p.is_file():
+                                        rp = str(p)
+                                        # Exclude patterns match on full path
+                                        if not any(p.match(ex) for ex in (exclude_patterns or [])):
+                                            discovered.append(rp)
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            if discovered:
+                # Deduplicate while keeping order
+                seen = set()
+                for x in discovered:
+                    if x not in seen:
+                        seen.add(x)
+                        abs_inputs.append(x)
         if not abs_inputs:
             sctx.log_warn("[pyarmor] No valid inputs to obfuscate; skipping")
             return
@@ -308,7 +401,7 @@ class PyArmorPlugin(PluginBase):
                 manifest=(str(sctx.safe_path(manifest)) if manifest else None) if manifest else None,
                 advanced=advanced,
                 cwd=str(ws),
-                timeout_s=1800,
+                timeout_s=timeout_s,
             )
             try:
                 ph.update(1, "Done")
@@ -328,8 +421,8 @@ class PyArmorPlugin(PluginBase):
             sctx.log_info(f"[pyarmor] Report saved: {rpt}")
         except Exception:
             pass
-        # On success, switch the selected workspace to the obfuscated output directory
-        if ok:
+        # On success, optionally switch the selected workspace to the obfuscated output directory
+        if ok and post_switch_workspace:
             try:
                 switched = set_selected_workspace(str(out_path))
                 if switched:
@@ -338,6 +431,8 @@ class PyArmorPlugin(PluginBase):
                     sctx.log_warn(f"[pyarmor] Workspace switch refused: {out_path}")
             except Exception as e:
                 sctx.log_warn(f"[pyarmor] Failed to switch workspace: {e}")
+        elif ok:
+            sctx.log_info("[pyarmor] post_switch_workspace=False; keeping current workspace")
         if not ok:
             try:
                 out = (report.get("stdout") or "") + "\n" + (report.get("stderr") or "")
