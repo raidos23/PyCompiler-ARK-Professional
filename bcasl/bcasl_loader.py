@@ -884,6 +884,12 @@ if QObject is not None and Signal is not None:
                         order_list = list(self.cfg.get("plugin_order", [])) if isinstance(self.cfg, dict) else []
                     except Exception:
                         order_list = []
+                    if not order_list:
+                        try:
+                            meta_en = _discover_bcasl_meta(enabled_dir)
+                            order_list = list(_compute_tag_order(meta_en))
+                        except Exception:
+                            order_list = []
                     # Priorité par 'plugin_order' en premier
                     if order_list:
                         for idx, pid in enumerate(order_list):
@@ -1135,6 +1141,53 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     return meta
 
 
+def _compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
+    """Compute a default execution order based solely on BCASL_TAGS.
+    Returns a list of plugin ids (keys of meta_map) sorted by tag priority.
+    Lower score means earlier execution. Unknown/missing tags default to 100.
+    """
+    try:
+        tag_score = {
+            # Clean early
+            "clean": 0, "cleanup": 0, "sanitize": 0, "prune": 0, "tidy": 0,
+            # Validation / security
+            "validation": 10, "presence": 10, "sanity": 10, "policy": 10, "requirements": 10,
+            "check": 10, "audit": 10, "scan": 10, "security": 10, "sast": 10, "compliance": 10, "license-check": 10,
+            # Tests
+            "test": 15, "tests": 15, "unit-test": 15, "integration-test": 15, "pytest": 15,
+            # Prepare / generate
+            "prepare": 20, "codegen": 20, "generate": 20, "fetch": 20, "resources": 20,
+            "download": 20, "install": 20, "bootstrap": 20, "configure": 20,
+            # Conformity / headers
+            "license": 30, "header": 30, "normalize": 30, "inject": 30, "spdx": 30, "banner": 30, "copyright": 30,
+            # Lint / format / typing
+            "lint": 40, "format": 40, "typecheck": 40, "mypy": 40, "flake8": 40, "ruff": 40, "pep8": 40, "black": 40, "isort": 40, "sort-imports": 40,
+            # Minification (before obfuscation)
+            "minify": 45, "uglify": 45, "shrink": 45, "compress-code": 45,
+            # Obfuscation / protect / transpile
+            "obfuscation": 50, "obfuscate": 50, "transpile": 50, "protect": 50, "encrypt": 50,
+            # Packaging / bundling
+            "package": 55, "packaging": 55, "bundle": 55, "archive": 55, "compress": 55, "zip": 55,
+            # Manifest / version / metadata
+            "manifest": 60, "version": 60, "metadata": 60, "bump": 60, "changelog": 60,
+            # Docs
+            "docs": 70, "documentation": 70, "doc": 70, "generate-docs": 70,
+            # Publish / deploy
+            "publish": 80, "deploy": 80, "release": 80,
+        }
+        def _score(pid: str) -> int:
+            try:
+                tags = meta_map.get(pid, {}).get("tags") or []
+                if isinstance(tags, list) and tags:
+                    return int(min((tag_score.get(str(t).lower(), 100) for t in tags), default=100))
+            except Exception:
+                pass
+            return 100
+        return sorted(meta_map.keys(), key=lambda x: (_score(x), x))
+    except Exception:
+        return sorted(meta_map.keys())
+
+
 def open_api_loader_dialog(self) -> None:
     """Ouvre une fenêtre permettant d'activer/désactiver les plugins API (BCASL).
     - Source des plugins: <repo_root>/API (packages Python)
@@ -1205,6 +1258,11 @@ def open_api_loader_dialog(self) -> None:
             order = [pid for pid in order if pid in plugin_ids]
         except Exception:
             order = []
+        if not order:
+            try:
+                order = [pid for pid in _compute_tag_order(meta_map) if pid in plugin_ids]
+            except Exception:
+                order = []
         remaining = [pid for pid in plugin_ids if pid not in order]
         ordered_ids = order + remaining
         for pid in ordered_ids:
@@ -1904,6 +1962,12 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                     order_list = list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
                 except Exception:
                     order_list = []
+                if not order_list:
+                    try:
+                        meta_en = _discover_bcasl_meta(enabled_dir)
+                        order_list = list(_compute_tag_order(meta_en))
+                    except Exception:
+                        order_list = []
                 if order_list:
                     for idx, pid in enumerate(order_list):
                         try:
@@ -2069,6 +2133,12 @@ def run_pre_compile(self) -> Optional[object]:
                 order_list = list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
             except Exception:
                 order_list = []
+            if not order_list:
+                try:
+                    meta_en = _discover_bcasl_meta(enabled_dir)
+                    order_list = list(_compute_tag_order(meta_en))
+                except Exception:
+                    order_list = []
             if order_list:
                 for idx, pid in enumerate(order_list):
                     try:
