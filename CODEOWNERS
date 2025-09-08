@@ -1,6 +1,6 @@
-# CODEOWNERS - PyCompiler ARK++ 3.2.3
-# Teams have been removed. Ownership is managed by a single author.
-# Owner: Samuel Amen Ague
+# CODEOWNERS - PyCompiler ARK++
+# Single-owner repository. All files are owned and maintained by the author.
+# Owner: Samuel Amen Ague (@raidos23)
 
-# No team-based ownership rules are defined.
-# Add GitHub usernames here if you want automatic review requests in the future.
+# Global ownership: every file in the repository
+* @raidos23
