@@ -1125,9 +1125,6 @@ QLineEdit:disabled, QTextEdit:disabled {
          <layout class="QVBoxLayout" name="layout_options">
           <item>
            <widget class="QTabWidget" name="compiler_tabs">
-            <property name="toolTip">
-             <string>Choisissez le compilateur et configurez ses options</string>
-            </property>
             <property name="currentIndex">
              <number>0</number>
             </property>
