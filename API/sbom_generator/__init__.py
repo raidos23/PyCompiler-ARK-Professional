@@ -17,7 +17,7 @@ ACASL_ID = "sbom_generator"
 ACASL_DESCRIPTION = "Generate Software Bill of Materials (SBOM) for compiled artifacts"
 ACASL_VERSION = "1.0.0"
 ACASL_AUTHOR = "Samuel Amen Ague"
-ACASL_PRIORITY = 75  # After compilation and signing, before final packaging
+ACASL_TAGS = ["signing"]  # After compilation and signing, before final packaging
 
 
 def acasl_run(sctx) -> None:

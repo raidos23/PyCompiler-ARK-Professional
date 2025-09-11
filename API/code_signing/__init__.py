@@ -16,7 +16,7 @@ ACASL_ID = "code_signing"
 ACASL_DESCRIPTION = "Cross-platform code signing for compiled artifacts"
 ACASL_VERSION = "1.0.0"
 ACASL_AUTHOR = "Samuel Amen Ague"
-ACASL_PRIORITY = 70  # After compilation, before packaging
+ACASL_TAGS = ["signing"] # After compilation, before packaging
 
 
 def acasl_run(sctx: Any) -> bool:
