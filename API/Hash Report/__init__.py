@@ -5,7 +5,7 @@ from __future__ import annotations
 acasl_example — Example ACASL plugin (package form)
 
 Conforms to the ACASL loader contract:
-- Package under API/acasl_example/ with __init__.py
+- Package under API
 - Declares ACASL_PLUGIN = True
 - Exposes acasl_run(ctx)
 - Uses API_SDK.ACASL_SDK facade and wrap_post_context

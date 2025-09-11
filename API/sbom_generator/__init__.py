@@ -20,7 +20,7 @@ ACASL_AUTHOR = "Samuel Amen Ague"
 ACASL_TAGS = ["sbom"]  # After compilation and signing, before final packaging
 
 
-def acasl_run(sctx) -> None:
+def acasl_run(ctx) -> None:
     """
     Main ACASL entry point for SBOM generation.
 
@@ -30,6 +30,8 @@ def acasl_run(sctx) -> None:
     Returns:
         bool: True if SBOM generation successful, False otherwise
     """
+    sctx = wrap_post_context(ctx)
+    
     try:
         print(f"[{ACASL_ID}] Starting SBOM generation...")
 
