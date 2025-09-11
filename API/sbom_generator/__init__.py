@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from API_SDK.ACASL_SDK import wrap_post_context
 
 # ACASL Plugin Metadata
 ACASL_PLUGIN = True
@@ -19,7 +20,7 @@ ACASL_AUTHOR = "Samuel Amen Ague"
 ACASL_PRIORITY = 75  # After compilation and signing, before final packaging
 
 
-def acasl_main(sctx: Any) -> bool:
+def acasl_run(sctx) -> None:
     """
     Main ACASL entry point for SBOM generation.
 
