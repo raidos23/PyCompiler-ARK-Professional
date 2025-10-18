@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Samuel Amen Ague
 # Author: Samuel Amen Ague
 """
-BCASL - Before-Compilation Actions System & Loader
+BCASL - Before-Compilation Actions System Loader
 
 Point d'entrée du package: expose l'API publique minimale et stable.
 

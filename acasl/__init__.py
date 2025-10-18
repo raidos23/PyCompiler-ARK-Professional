@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 """
-ACASL (After Compilation Advanced System Loader)
+ACASL (After Compilation Action System Loader)
 
 This package exposes the public ACASL API for post‑compilation steps.
 Primary exports:
