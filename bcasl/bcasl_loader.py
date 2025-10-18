@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Optional parsers
+# TODO[SIMPLIFY]: YAML/TOML support is optional and adds maintenance/weight. Consider dropping to JSON-only.
 try:
     import tomllib as _toml  # Python 3.11+
 except Exception:
@@ -39,15 +40,10 @@ from bcasl import BCASL, PreCompileContext
 
 
 def _has_bcasl_marker(pkg_dir: Path) -> bool:
-    """Return True if plugin package declares BCASL_PLUGIN = True in its __init__.py."""
+    """Simplified: any directory with an __init__.py is considered a BCASL plugin package."""
     try:
         init_py = pkg_dir / "__init__.py"
-        if not init_py.exists():
-            return False
-        txt = init_py.read_text(encoding="utf-8", errors="ignore")
-        import re as _re
-
-        return _re.search(r"(?m)^\s*BCASL_PLUGIN\s*=\s*True\s*(#.*)?$", txt) is not None
+        return init_py.exists()
     except Exception:
         return False
 
@@ -104,6 +100,10 @@ def _write_json_atomic(path: Path, data: dict[str, Any]) -> bool:
     except Exception:
         return False
 
+
+# TODO[SIMPLIFY]: _load_workspace_config is heavy (multi-format parsing, heuristics for patterns, monorepo scanning).
+#  - Minimal viable default: JSON-only, file_patterns=["**/*.py"], basic exclude_patterns, all plugins enabled.
+#  - Keep advanced heuristics behind a flag if really needed.
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     def _parse_text_config(p: Path) -> dict[str, Any]:
@@ -231,6 +231,8 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             except Exception:
                 pass
             # Déterminer des motifs de fichiers pertinents à partir de la structure du workspace
+            # TODO[SIMPLIFY]: Heuristics block below is heavy (pyproject/setup.cfg/setup.py, imports inference, monorepo).
+            # Replace with defaults unless a strict mode is enabled.
             suggested_patterns_set: set[str] = set()
             try:
                 # 1) Heuristique pyproject.toml (poetry / setuptools)
@@ -507,6 +509,7 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
 
             # Intégrer .gitignore dans exclude_patterns et préparer ordre/priorités
             # Élargir exclude_patterns de base
+            # TODO[SIMPLIFY]: Consider using a minimal static exclude list; current integration of .gitignore is optional.
             exclude_patterns = [
                 "**/__pycache__/**",
                 "**/*.pyc",
@@ -549,187 +552,13 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
                 meta_map = _discover_bcasl_meta(api_dir)
             except Exception:
                 meta_map = {}
-            tag_score = {
-                # Nettoyage
-                "clean": 0,
-                "cleanup": 0,
-                "sanitize": 0,
-                "prune": 0,
-                "tidy": 0,
-                # Vérifications / sécurité
-                "validation": 10,
-                "presence": 10,
-                "sanity": 10,
-                "policy": 10,
-                "requirements": 10,
-                "check": 10,
-                "audit": 10,
-                "scan": 10,
-                "security": 10,
-                "sast": 10,
-                "compliance": 10,
-                "license-check": 10,
-                # Tests rapides (avant lourdes transformations)
-                "test": 15,
-                "tests": 15,
-                "unit-test": 15,
-                "integration-test": 15,
-                "pytest": 15,
-                # Préparation / génération / provisioning
-                "prepare": 20,
-                "codegen": 20,
-                "generate": 20,
-                "fetch": 20,
-                "resources": 20,
-                "download": 20,
-                "install": 20,
-                "bootstrap": 20,
-                "configure": 20,
-                # Conformité / entêtes / normalisation
-                "license": 30,
-                "header": 30,
-                "normalize": 30,
-                "inject": 30,
-                "spdx": 30,
-                "banner": 30,
-                "copyright": 30,
-                # Lint / format / typage
-                "lint": 40,
-                "format": 40,
-                "black": 40,
-                "isort": 40,
-                "sort-imports": 40,
-                "typecheck": 40,
-                "mypy": 40,
-                "flake8": 40,
-                "ruff": 40,
-                "pep8": 40,
-                # Minification (avant obfuscation)
-                "minify": 45,
-                "uglify": 45,
-                "shrink": 45,
-                "compress-code": 45,
-                # Obfuscation / transpilation / protection
-                "obfuscation": 50,
-                "obfuscate": 50,
-                "transpile": 50,
-                "protect": 50,
-                "encrypt": 50,
-                # Packaging / bundling / archives
-                "package": 55,
-                "packaging": 55,
-                "bundle": 55,
-                "archive": 55,
-                "compress": 55,
-                "zip": 55,
-                # Manifest / version / metadata
-                "manifest": 60,
-                "version": 60,
-                "metadata": 60,
-                "bump": 60,
-                "changelog": 60,
-                # Documentation
-                "docs": 70,
-                "documentation": 70,
-                "doc": 70,
-                "generate-docs": 70,
-                # Publication / déploiement (rare en BCASL mais supporté)
-                "publish": 80,
-                "deploy": 80,
-                "release": 80,
-            }
-
-            def _score_for(pid: str) -> int:
-                try:
-                    meta = meta_map.get(pid) or {}
-                    tags = meta.get("tags") or []
-                    # 1) Priorité par tags explicites
-                    if isinstance(tags, list) and tags:
-                        return int(min((tag_score.get(str(t).lower(), 100) for t in tags), default=100))
-                    # 2) Heuristique sémantique basée sur nom/description (pas d'id codé en dur)
-                    text = (str(meta.get("name") or "") + " " + str(meta.get("description") or "")).lower()
-                    kw_groups = [
-                        # Nettoyage
-                        ({"clean", "cleanup", "sanitize", "prune", "tidy"}, 0),
-                        # Vérifications / sécurité
-                        (
-                            {
-                                "validation",
-                                "validate",
-                                "presence",
-                                "sanity",
-                                "policy",
-                                "requirement",
-                                "requirements",
-                                "check",
-                                "audit",
-                                "scan",
-                                "security",
-                                "sast",
-                                "compliance",
-                                "license-check",
-                            },
-                            10,
-                        ),
-                        # Tests
-                        ({"test", "tests", "unit", "unit-test", "integration", "integration-test", "pytest"}, 15),
-                        # Préparation / génération
-                        (
-                            {
-                                "prepare",
-                                "codegen",
-                                "generate",
-                                "fetch",
-                                "resource",
-                                "resources",
-                                "download",
-                                "install",
-                                "bootstrap",
-                                "configure",
-                            },
-                            20,
-                        ),
-                        # Conformité / entêtes
-                        ({"license", "header", "normalize", "inject", "spdx", "banner", "copyright"}, 30),
-                        # Lint / format / typage
-                        (
-                            {
-                                "lint",
-                                "format",
-                                "black",
-                                "isort",
-                                "sort-imports",
-                                "typecheck",
-                                "mypy",
-                                "flake8",
-                                "ruff",
-                                "pep8",
-                            },
-                            40,
-                        ),
-                        # Minification
-                        ({"minify", "uglify", "shrink", "compress-code"}, 45),
-                        # Obfuscation / transpilation
-                        ({"obfuscation", "obfuscate", "transpile", "protect", "encrypt"}, 50),
-                        # Packaging / bundling
-                        ({"package", "packaging", "bundle", "archive", "compress", "zip"}, 55),
-                        # Manifest / version
-                        ({"manifest", "version", "metadata", "bump", "changelog"}, 60),
-                        # Documentation
-                        ({"docs", "documentation", "doc", "generate-docs"}, 70),
-                        # Publication / déploiement
-                        ({"publish", "deploy", "release"}, 80),
-                    ]
-                    for kws, score in kw_groups:
-                        if any(k in text for k in kws):
-                            return score
-                except Exception:
-                    pass
-                # 3) Défaut neutre
-                return 100
-
-            # Tri stable par (score, id)
-            plugin_order = sorted(detected_ids, key=lambda x: (_score_for(x), x))
+            
+            # Ordre basé sur _compute_tag_order (centralisé); fallback à l'ordre détecté
+            try:
+                order_from_tags = _compute_tag_order(meta_map)
+                plugin_order = [pid for pid in order_from_tags if pid in detected_ids] + [pid for pid in detected_ids if pid not in order_from_tags]
+            except Exception:
+                plugin_order = sorted(detected_ids)
             plugins_out: dict[str, Any] = {}
             for idx, pid in enumerate(plugin_order):
                 try:
@@ -794,6 +623,9 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         pass
     return {}
 
+
+# TODO[SIMPLIFY]: This symlink/copy mirror adds I/O complexity. Simpler path: load all plugins and disable via manager.
+# Keep only if the import cost is critical.
 
 def _prepare_enabled_plugins_dir(api_dir: Path, cfg: dict[str, Any], workspace_root: Path) -> Path:
     """Construit un dossier éphémère qui ne contient que les plugins activés.
@@ -868,7 +700,7 @@ if QObject is not None and Signal is not None:
         def run(self) -> None:
             try:
                 manager = BCASL(self.workspace_root, config=self.cfg, plugin_timeout_s=self.plugin_timeout)
-                enabled_dir = _prepare_enabled_plugins_dir(self.api_dir, self.cfg, self.workspace_root)
+                enabled_dir = self.api_dir
                 loaded, errors = manager.load_plugins_from_directory(enabled_dir)
                 try:
                     self.log.emit(f"🧩 BCASL: {loaded} package(s) de plugins chargé(s) depuis API/\n")
@@ -879,6 +711,15 @@ if QObject is not None and Signal is not None:
                 # Appliquer activation/désactivation et priorités depuis la config
                 try:
                     pmap = self.cfg.get("plugins", {}) if isinstance(self.cfg, dict) else {}
+                    # Désactiver les plugins selon la configuration
+                    if isinstance(pmap, dict):
+                        for _pid, _val in pmap.items():
+                            try:
+                                _en = (_val if isinstance(_val, bool) else bool((_val or {}).get("enabled", True)))
+                                if not _en:
+                                    manager.disable_plugin(_pid)
+                            except Exception:
+                                pass
                     order_list = []
                     try:
                         order_list = list(self.cfg.get("plugin_order", [])) if isinstance(self.cfg, dict) else []
@@ -987,6 +828,7 @@ if QObject is not None and Signal is not None:
                     pass
 
 
+# TODO[SIMPLIFY]: Global import of QtWidgets can break headless usage. Move inside UI functions or guard like QtCore above.
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -1068,7 +910,7 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     Returns a mapping plugin_dir_name -> metadata dict including:
       - id (BCASL_ID or folder name), description (BCASL_DESCRIPTION)
       - optional: name, version, author, created, license, compatibility (list), tags (list)
-    Only packages with BCASL_PLUGIN = True are considered.
+    Only packages with an __init__.py are considered.
     """
     meta: dict[str, dict[str, Any]] = {}
     try:
@@ -1431,6 +1273,7 @@ def open_api_loader_dialog(self) -> None:
 
         btn_reload_raw.clicked.connect(_reload_raw)
 
+        # TODO[SIMPLIFY]: Raw config editor supports many formats. Prefer JSON-only write to reduce code and errors.
         def _save_raw():
             nonlocal target_path, target_name
             txt = raw_editor.toPlainText()
@@ -1948,7 +1791,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
         # Fallback: si pas de Qt threading, exécuter rapidement et rappeler on_done
         try:
             manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
-            enabled_dir = _prepare_enabled_plugins_dir(api_dir, cfg, workspace_root)
+            enabled_dir = api_dir
             loaded, errors = manager.load_plugins_from_directory(enabled_dir)
             if hasattr(self, "log") and self.log is not None:
                 self.log.append(f"🧩 BCASL: {loaded} package(s) de plugins chargé(s) depuis API/\n")
@@ -1957,6 +1800,15 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             # Appliquer activation/désactivation et priorités depuis la config
             try:
                 pmap = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
+                # Désactiver les plugins selon la configuration
+                if isinstance(pmap, dict):
+                    for _pid, _val in pmap.items():
+                        try:
+                            _en = (_val if isinstance(_val, bool) else bool((_val or {}).get("enabled", True)))
+                            if not _en:
+                                manager.disable_plugin(_pid)
+                        except Exception:
+                            pass
                 order_list = []
                 try:
                     order_list = list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
@@ -2119,7 +1971,7 @@ def run_pre_compile(self) -> Optional[object]:
                 pass
         # Synchronous fallback (no Qt available)
         manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
-        enabled_dir = _prepare_enabled_plugins_dir(api_dir, cfg, workspace_root)
+        enabled_dir = api_dir
         loaded, errors = manager.load_plugins_from_directory(enabled_dir)
         if hasattr(self, "log") and self.log is not None:
             self.log.append(f"🧩 BCASL: {loaded} package(s) de plugins chargé(s) depuis API/\n")
@@ -2128,6 +1980,15 @@ def run_pre_compile(self) -> Optional[object]:
         # Appliquer activation/désactivation et priorités depuis la config
         try:
             pmap = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
+            # Désactiver les plugins selon la configuration
+            if isinstance(pmap, dict):
+                for _pid, _val in pmap.items():
+                    try:
+                        _en = (_val if isinstance(_val, bool) else bool((_val or {}).get("enabled", True)))
+                        if not _en:
+                            manager.disable_plugin(_pid)
+                    except Exception:
+                        pass
             order_list = []
             try:
                 order_list = list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []

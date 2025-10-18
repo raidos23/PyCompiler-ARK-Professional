@@ -83,6 +83,12 @@ class PluginMeta:
     description: str = ""
     author: str = ""
 
+    def __post_init__(self) -> None:
+        nid = (self.id or "").strip()
+        if not nid:
+            raise ValueError("PluginMeta invalide: 'id' requis")
+        object.__setattr__(self, "id", nid)
+
 
 class PluginBase:
     """Classe de base minimale que doivent étendre les plugins BCASL.
@@ -109,7 +115,6 @@ class PluginBase:
         norm_id = meta.id.strip()
         if not norm_id:
             raise ValueError("PluginMeta invalide: 'id' vide")
-        object.__setattr__(meta, "id", norm_id)  # type: ignore[misc]
         self.meta = meta
         self.requires = tuple(str(r).strip() for r in requires if str(r).strip())
         self.priority = int(priority)
@@ -351,7 +356,7 @@ def _plugin_worker(module_path: str, plugin_id: str, project_root: str, config: 
                 _set(_res.RLIMIT_NOFILE, _nofile, _nofile)
             if _fsize_mb > 0:
                 _set(
-                    _res.RIMIT_FSIZE if hasattr(_res, "RLIMIT_FSIZE") else _res.RLIMIT_FSIZE,
+                    _res.RLIMIT_FSIZE,
                     _fsize_mb * 1024 * 1024,
                     _fsize_mb * 1024 * 1024,
                 )
@@ -431,6 +436,8 @@ class BCASL:
 
     # API publique
     def add_plugin(self, plugin: PluginBase) -> None:
+        if not isinstance(plugin, PluginBase):
+            raise TypeError("Le plugin doit être une instance de PluginBase")
         pid = plugin.meta.id
         if pid in self._registry:
             raise ValueError(f"Plugin id déjà enregistré: {pid}")
@@ -507,26 +514,11 @@ class BCASL:
                 sys.modules[mod_name] = module
                 spec.loader.exec_module(module)  # type: ignore[attr-defined]
 
-                # Enforce explicit BCASL package signature (similar to ACASL)
-                sig_ok = bool(getattr(module, "BCASL_PLUGIN", False))
-                sig_id = getattr(module, "BCASL_ID", "") or ""
-                sig_desc = getattr(module, "BCASL_DESCRIPTION", "") or ""
-                if (
-                    not sig_ok
-                    or not isinstance(sig_id, str)
-                    or not sig_id.strip()
-                    or not isinstance(sig_desc, str)
-                    or not sig_desc.strip()
-                ):
-                    raise AttributeError(
-                        f"Le package '{pkg_dir.name}' doit définir BCASL_PLUGIN=True, BCASL_ID et BCASL_DESCRIPTION"
-                    )
-                # Rechercher la fonction d'enregistrement
+                # Recherche et appel de la fonction d'enregistrement si présente
                 reg = getattr(module, BCASL_PLUGIN_REGISTER_FUNC, None)
                 if not callable(reg):
-                    raise AttributeError(
-                        f"Le package '{pkg_dir.name}' ne définit pas {BCASL_PLUGIN_REGISTER_FUNC}(manager)"
-                    )
+                    _logger.debug("Package %s: aucune fonction %s, ignoré", pkg_dir.name, BCASL_PLUGIN_REGISTER_FUNC)
+                    continue
                 # Appeler l'enregistrement
                 before_ids = set(self._registry.keys())
                 reg(self)  # le package appelle self.add_plugin(...)
@@ -536,17 +528,7 @@ class BCASL:
                     if rec is not None:
                         rec.module_path = init_file
                         rec.module_name = mod_name
-                # Validation: l'id enregistré devrait correspondre à BCASL_ID
-                try:
-                    if new_ids and sig_id.strip() and new_ids[0] != sig_id.strip():
-                        _logger.warning(
-                            "BCASL_ID ('%s') ne correspond pas à l'id enregistré ('%s') pour le package %s",
-                            sig_id.strip(),
-                            new_ids[0],
-                            pkg_dir.name,
-                        )
-                except Exception:
-                    pass
+                # Validation de signature supprimée (simplification)
                 added = len(new_ids)
                 if added <= 0:
                     _logger.warning("Aucun plugin enregistré par package %s", pkg_dir.name)
