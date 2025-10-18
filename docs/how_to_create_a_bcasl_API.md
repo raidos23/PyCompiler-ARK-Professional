@@ -4,7 +4,7 @@ Author: Samuel Amen Ague
 License: GPL-3.0-only
 
 Quick Navigation
-- [TL;DR](#0-tldr-copy-paste-template)
+- [TL;DR](#tldr-copy-paste-template)
 - [Checklist](#1-quick-checklist)
 - [Layout](#2-folder-layout)
 - [Minimal plugin](#3-minimal-plugin-with-metadata)
