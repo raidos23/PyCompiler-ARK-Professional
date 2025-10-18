@@ -40,7 +40,7 @@ try:  # préférence: nouveau chemin dans le package bcasl
 except Exception:
     # Repli: ancien chemin historique
     try:
-        from utils.api_loader import (
+        from utils.api_loader import ( # pyright: ignore[reportMissingImports]
             ensure_bcasl_thread_stopped,
             open_api_loader_dialog,
             resolve_bcasl_timeout,
