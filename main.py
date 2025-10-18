@@ -113,7 +113,7 @@ from PySide6.QtWidgets import QApplication, QSplashScreen
 try:
     QCoreApplication.setOrganizationName("PyCompiler")
     QCoreApplication.setOrganizationDomain("pycompiler.local")
-    QCoreApplication.setApplicationName("PyCompiler Pro++")
+    QCoreApplication.setApplicationName("PyCompiler ARK++")
     QCoreApplication.setApplicationVersion(APP_VERSION)
     # Qt 6 enables high-DPI scaling by default; avoid deprecated attributes
     # Environment variables QT_AUTO_SCREEN_SCALE_FACTOR/QT_ENABLE_HIGHDPI_SCALING are set above
