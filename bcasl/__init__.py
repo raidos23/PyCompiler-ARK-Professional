@@ -36,6 +36,13 @@ from .bcasl_loader import (
     run_pre_compile_async,
 )
 
+# Dialog helpers (for plugins)
+from .dialog_creator import (
+    ask_yes_no,
+    request_permissions,
+    request_text_input,
+)
+
 __all__ = [
     # Coeur
     "BCASL",
@@ -51,6 +58,10 @@ __all__ = [
     "ensure_bcasl_thread_stopped",
     "open_api_loader_dialog",
     "resolve_bcasl_timeout",
+    # Dialog helpers
+    "ask_yes_no",
+    "request_permissions",
+    "request_text_input",
 ]
 
 __version__ = "1.1.0"
