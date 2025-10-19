@@ -1,51 +1,52 @@
-# 🚀 PyCompiler ARK++ Professional Edition
+# 🚀 PyCompiler ARK++
 
-> **Industrial-grade Python compilation toolkit** with enterprise security, professional CI/CD, and comprehensive governance.
+> **Comprehensive Python compilation toolkit** with modular architecture, security features, and extensible plugin system.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-## 🎯 What Makes This "Professional"?
+## 🎯 Key Features
 
-### 🔒 **Security-First Architecture**
+### 🔒 **Security & Quality**
 - **Automated vulnerability scanning** with bandit, pip-audit, and safety
-- **SBOM generation** for complete supply chain transparency
-- **Cross-platform code signing** (Windows Authenticode, macOS codesign, Linux GPG)
-- **Secure plugin sandboxing** with resource limits and timeouts
-- **Comprehensive security policy** with responsible disclosure process
-
-### ⚡ **CI/CD Excellence**
-- **Separated quality jobs**: lint, format, types, tests run independently
-- **Multi-platform testing**: Ubuntu, macOS, Windows with Python 3.10-3.12
-- **Pre-commit hooks**: Automatic code formatting and quality checks
-- **Reproducible builds**: Pinned dependencies with constraints.txt
-- **Automated artifacts**: Code signing, checksums, and artifact generation (no formal GitHub releases)
-
-### 📋 **Enterprise Governance**
-- **Security policy** (SECURITY.md) with CVE tracking and disclosure timeline
-- **Code of conduct** (CODE_OF_CONDUCT.md) for inclusive community
-- **Contribution guidelines** (CONTRIBUTING.md) with structured review process
-- **CODEOWNERS** configuration for systematic code reviews
-- **Supported platform matrix** with official LTS policy
-
-### 🛠️ **Professional Developer Experience**
-- **Type checking** with mypy for enhanced code reliability
-- **Automated formatting** with black and ruff for consistent style
+- **Plugin sandboxing** with resource limits and timeouts
+- **Type checking** with mypy for code reliability
+- **Automated code formatting** with black and ruff
 - **Comprehensive testing** with pytest and coverage reporting
-- **Professional documentation** with upgrade guides and best practices
-- **Development environment** setup with virtual environment management
+
+### 🔧 **Modular Plugin System**
+- **BCASL**: Pre-compilation plugins for validation, preparation, and code transformation
+- **ACASL**: Post-compilation automation (packaging, signing, publishing)
+- **Sandboxed execution** with isolated environments
+- **Dependency management** with topological sorting
+- **Parallel execution** for independent plugins
+
+### 🏭 **Multi-Engine Compilation**
+- **PyInstaller**: Standard Python compilation with advanced options
+- **Nuitka**: High-performance compilation with optimization flags
+- **cx_Freeze**: Cross-platform support with minimal configuration
+- **Extensible architecture**: Add custom compilation engines
+
+### 🛠️ **Developer-Friendly SDKs**
+- **Plugins_SDK**: Complete plugin development framework
+- **Configuration management**: Multi-format support (JSON/YAML/TOML/INI)
+- **Progress tracking**: Non-blocking UI updates with detailed metrics
+- **Context management**: Secure workspace and resource handling
+- **Internationalization**: Async i18n with plugin overlay support
 
 ## 🏗️ **Architecture Overview**
 
-PyCompiler ARK++ Professional Edition provides a modular, extensible platform for Python compilation with enterprise-grade quality and security.
+PyCompiler ARK++ provides a modular, extensible platform for Python compilation with comprehensive tooling and security features.
 
 ### **Core Components**
 
 #### 🔧 **BCASL (Before Compilation Advanced System Loader)**
-- **Purpose**: Pre-compilation plugins for validation, preparation, and code transformation
-- **Location**: `API/<plugin_id>/` with `__init__.py`
-- **Security**: Sandboxed execution with resource limits and timeouts
-- **Quality**: Type-checked plugin interfaces with comprehensive error handling
+- **Pre-compilation plugins** for validation, preparation, and code transformation
+- **Location**: `Plugins/<plugin_id>/` with `__init__.py`
+- **Sandboxed execution** with resource limits and timeouts
+- **Type-checked interfaces** with comprehensive error handling
+- **Dependency resolution** with topological sorting
+- **Parallel execution** for independent plugins
 
 #### 🏭 **Multi-Engine Compilation**
 - **PyInstaller**: Industry-standard with advanced options and auto-plugin detection
@@ -54,18 +55,19 @@ PyCompiler ARK++ Professional Edition provides a modular, extensible platform fo
 - **Extensible**: Plugin architecture for additional compilation engines
 
 #### 📦 **ACASL (After Compilation Advanced System Loader)**
-- **Purpose**: Post-compilation automation (packaging, signing, publishing)
+- **Post-compilation automation** (packaging, signing, publishing)
 - **Built-in plugins**: Code signing, SBOM generation, integrity checking
-- **Security**: Isolated execution environment with audit logging
-- **Enterprise**: Support for CI/CD integration and automated workflows
+- **Isolated execution** environment with audit logging
+- **CI/CD integration** and automated workflows
 
-### **Professional SDKs**
+### **SDKs & Utilities**
 
-#### 🛠️ **API_SDK**
+#### 🛠️ **Plugins_SDK**
 - **Configuration management**: Multi-format support (JSON/YAML/TOML/INI)
 - **Progress tracking**: Non-blocking UI updates with detailed metrics
 - **Context management**: Secure workspace and resource handling
 - **Internationalization**: Async i18n with plugin overlay support
+- **Dialog helpers**: User interaction utilities
 
 #### 🔌 **Engine_SDK**
 - **Base classes**: Standardized `CompilerEngine` interface
@@ -126,7 +128,7 @@ mypy .                         # Type checking
 bandit -r .                    # Security scanning
 
 # Run tests with coverage
-pytest --cov=utils --cov=API_SDK --cov=engine_sdk --cov=bcasl --cov=acasl
+pytest --cov=utils --cov=Plugins_SDK --cov=engine_sdk --cov=bcasl --cov=acasl
 
 # Generate SBOM
 cyclonedx-py -r requirements.txt -o sbom.json
@@ -134,12 +136,14 @@ cyclonedx-py -r requirements.txt -o sbom.json
 
 ## 🌍 **Platform Support**
 
-### **Officially Supported**
+### **Officially Supported Platforms**
 | Platform | Versions | Architecture | Status |
 |----------|----------|--------------|--------|
 | **Ubuntu** | 20.04, 22.04, 24.04 LTS | x64 | ✅ Fully Supported |
 | **Windows** | 10, 11 | x64 | ✅ Fully Supported |
-| **macOS** | 12+, 13+, 14+ | x64, ARM64 | ✅ Fully Supported |
+
+### **Not Supported**
+- **macOS**: Not officially supported (code contains macOS-specific utilities for future compatibility, but no active support)
 
 ### **Python Versions**
 - **3.10**: ✅ Minimum supported version
@@ -175,9 +179,9 @@ See [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md) for detailed compatibility inform
 - [Upgrade Guide](docs/UPGRADE_GUIDE.md) - Migration from previous versions
 - [About SDKs](docs/about_sdks.md) - Overview of available SDKs
 - [Create a Building Engine](docs/how_to_create_a_building_engine.md) - Engine development guide
-- [Create an ACASL API](docs/how_to_create_an_acasl_API.md) - Post-compile plugin guide
-- [Create a BCASL API](docs/how_to_create_a_bcasl_API.md) - Pre-compile plugin guide
-- [Create a Theme](docs/how_to_create_theme%20.md) - UI themes guide
+- [Create an ACASL Plugin](docs/how_to_create_an_acasl_plugin.md) - Post-compile plugin guide
+- [Create a BCASL Plugin](docs/how_to_create_a_bcasl_plugin.md) - Pre-compile plugin guide
+- [Create a Theme](docs/how_to_create_theme.md) - UI themes guide
 
 ### **Developer Documentation**
 - [Contributing](CONTRIBUTING.md) - How to contribute to the project
@@ -188,7 +192,7 @@ See [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md) for detailed compatibility inform
 
 ## 🤝 **Contributing**
 
-We welcome contributions from the community! PyCompiler ARK++ Professional Edition follows enterprise-grade development practices.
+We welcome contributions from the community! PyCompiler ARK++ follows structured development practices.
 
 ### **Development Process**
 1. **Fork** the repository and create a feature branch
@@ -217,31 +221,26 @@ This project is licensed under the **GNU General Public License v3.0 only (GPL-3
 - **GitHub Discussions**: Community questions and ideas
 - **Documentation**: Comprehensive guides and references
 
-### **Enterprise Support**
-- **Priority Support**: Dedicated support channels
-- **Custom Development**: Feature development and integration
-- **Training**: Training and best practices
-- **Consulting**: Architecture and deployment guidance
-
 ### **Security Issues**
 For security vulnerabilities, please follow our [Security Policy](SECURITY.md):
 - **Email**: ague.samuel27@gmail.com
 - **GitHub Security**: Private vulnerability reporting
 - **Response Time**: 48 hours for initial response
 
-## 🎉 **Migration from Previous Versions**
+## 🎉 **What's New**
 
-PyCompiler ARK++ Professional Edition represents a complete architectural upgrade:
+PyCompiler ARK++ represents a comprehensive upgrade with:
 
-### **What's New**
-- **Industrial-grade quality**: Enterprise CI/CD and governance
+### **Key Improvements**
+- **Modular architecture**: Extensible plugin system with BCASL and ACASL
 - **Enhanced security**: Comprehensive scanning and code signing
-- **Professional documentation**: Complete guides and references
+- **Complete documentation**: Guides for all major features
 - **Modern tooling**: Latest Python practices and tools
+- **Multi-platform support**: Ubuntu, Windows
 
 ### **Breaking Changes**
 - **Python 3.10+**: Dropped support for Python 3.9 and below
-- **New governance**: Security and contribution requirements
+- **New plugin system**: BCASL/ACASL replaces legacy plugin architecture
 - **Enhanced APIs**: Backward compatibility with deprecation warnings
 
 ### **Migration Path**
@@ -251,8 +250,17 @@ PyCompiler ARK++ Professional Edition represents a complete architectural upgrad
 4. **Configure** new quality and security tools
 5. **Test** existing plugins and configurations
 
+## 🎯 **Project Goals**
+
+- **Reliability**: Comprehensive testing and type checking
+- **Security**: Automated scanning and secure defaults
+- **Extensibility**: Plugin architecture for custom functionality
+- **Usability**: Clear documentation and intuitive interfaces
+- **Performance**: Optimized compilation and parallel execution
+- **Maintainability**: Clean code with comprehensive documentation
+
 ---
 
-**PyCompiler ARK++ Professional Edition** - *Transforming Python compilation from functional to industrial-grade.*
+**PyCompiler ARK++** - *Comprehensive Python compilation toolkit with modular architecture and security features.*
 
 Copyright (C) 2025 Samuel Amen Ague. Licensed under GPL-3.0-only.

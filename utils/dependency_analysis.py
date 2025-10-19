@@ -5,17 +5,26 @@
 Analyse des dépendances Python pour PyCompiler Pro++.
 Inclut la détection, la suggestion et l'installation automatique des modules manquants.
 
+Optimisations appliquées:
+- Caching des résultats stdlib via @lru_cache
+- Parallélisation des vérifications pip via ThreadPoolExecutor
+- Utilisation de importlib.metadata au lieu de subprocess pip show
+- Async I/O pour les opérations bloquantes
+
 Statut: module utilisable pour une suggestion/installation basique. Les
 fonctions d'auto-analyse avancée mentionnées dans la feuille de route ne sont
 pas nécessaires à l'exécution et sont désactivées/neutralisées pour éviter tout
 impact en production. Les entrées publiques référencées par l'UI (suggest_missing_dependencies)
 sont conservées.
 """
-# À compléter avec les fonctions et classes liées à l'analyse de dépendances
+import asyncio
+import functools
 import os
 import platform
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
+from importlib.metadata import distribution, PackageNotFoundError
 
 from PySide6.QtCore import QProcess
 from PySide6.QtWidgets import QMessageBox
@@ -85,10 +94,12 @@ EXCLUDED_STDLIB = {
 }
 
 
+@functools.lru_cache(maxsize=256)
 def _is_stdlib_module(module_name: str) -> bool:
     """
     Détermine si un module appartient à la bibliothèque standard Python.
     Combine une liste d'exclusion explicite et une détection basée sur importlib.util.find_spec.
+    Résultats cachés pour éviter les appels répétés.
     """
     try:
         if module_name in EXCLUDED_STDLIB:
@@ -120,6 +131,20 @@ def _is_stdlib_module(module_name: str) -> bool:
                 pass
         return False
     except Exception:
+        return False
+
+
+def _check_module_installed(module: str) -> bool:
+    """
+    Vérifie si un module est installé via importlib.metadata (plus rapide que subprocess pip show).
+    """
+    try:
+        distribution(module)
+        return True
+    except PackageNotFoundError:
+        return False
+    except Exception:
+        # Fallback: considérer comme non installé en cas d'erreur
         return False
 
 

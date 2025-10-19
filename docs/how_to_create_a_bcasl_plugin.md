@@ -5,8 +5,8 @@ BCASL (Before-Compilation Actions System & Loader) is a modular plugin system fo
 ## Architecture Overview
 
 BCASL provides:
-- **Plugin Discovery**: Automatic loading from `API/` directory at project root
-- **Metadata & Decorators**: Attach metadata to plugins via `@plugin` decorator
+- **Plugin Discovery**: Automatic loading from `Plugins/` directory at project root
+- **Metadata & Decorators**: Attach metadata to plugins via `@plugin` decorator (optional)
 - **Dependency Management**: Specify plugin dependencies and execution order
 - **Priority-Based Execution**: Control execution order via priority values
 - **Sandboxing**: Optional process isolation for plugin execution
@@ -16,10 +16,10 @@ BCASL provides:
 
 ## Plugin Structure
 
-Each BCASL plugin is a Python package in `API/<plugin_id>/` with:
+Each BCASL plugin is a Python package in `Plugins/<plugin_id>/` with:
 
 ```
-API/
+Plugins/
 └── my_plugin/
     ├── __init__.py          # Plugin implementation
     └── languages/           # Optional: i18n translations
@@ -31,22 +31,21 @@ API/
 
 ### 1. Basic Plugin Template
 
-Create `API/my_plugin/__init__.py`:
+Create `Plugins/my_plugin/__init__.py`:
 
 ```python
 # SPDX-License-Identifier: GPL-3.0-only
 from __future__ import annotations
 
-from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, wrap_context
 
 
-# Define plugin metadata using decorator
+# Define plugin metadata
 BCASL_ID = "my_plugin"
 BCASL_VERSION = "1.0.0"
 BCASL_DESCRIPTION = "Does something useful before compilation"
 
 
-@plugin(id=BCASL_ID, version=BCASL_VERSION, description=BCASL_DESCRIPTION)
 class MyPlugin(Bc_PluginBase):
     """My BCASL plugin."""
 
@@ -90,14 +89,15 @@ def bcasl_register(manager):
     manager.add_plugin(PLUGIN)
 ```
 
-### 2. Alternative: Manual Metadata
+### 2. Alternative: Using the @plugin Decorator
 
-If you prefer not to use the `@plugin` decorator:
+If you prefer to use the `@plugin` decorator for quick metadata:
 
 ```python
-from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, wrap_context
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
 
 
+@plugin(id="my_plugin", version="1.0.0", description="Does something useful")
 class MyPlugin(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -187,10 +187,10 @@ class PreCompileContext:
 
 ### 6. Wrapped Context (SDKContext)
 
-Use `wrap_context()` to get a unified SDK context:
+Use `wrap_context()` to get a unified SDK context with helpers:
 
 ```python
-from API_SDK import wrap_context
+from Plugins_SDK import wrap_context
 
 sctx = wrap_context(ctx)
 
@@ -202,6 +202,8 @@ sctx.msg_info("Title", "Message")
 sctx.msg_question("Title", "Question?", default_yes=True)
 sctx.run_command(["ls", "-la"])
 sctx.require_files(["main.py", "config.json"])
+sctx.iter_files(["**/*.py"])
+sctx.workspace_root  # Path to workspace
 ```
 
 ## Plugin Dependencies & Ordering
@@ -234,10 +236,9 @@ The system uses topological sorting to resolve execution order while respecting 
 ## Example: Dependency Checker Plugin
 
 ```python
-from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, wrap_context
 
 
-@plugin(id="dep_checker", version="1.0.0", description="Check project dependencies")
 class DependencyChecker(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -280,11 +281,10 @@ def bcasl_register(manager):
 ## Example: Code Generator Plugin
 
 ```python
-from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, wrap_context
 from pathlib import Path
 
 
-@plugin(id="codegen", version="1.0.0", description="Generate code from templates")
 class CodeGenerator(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -334,10 +334,9 @@ def bcasl_register(manager):
 ## Example: Validator Plugin
 
 ```python
-from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, plugin, wrap_context
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, wrap_context
 
 
-@plugin(id="validator", version="1.0.0", description="Validate project structure")
 class Validator(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -394,7 +393,7 @@ def on_pre_compile(self, ctx: PreCompileContext) -> None:
     cfg = sctx.config_view
     
     # Get plugin-specific config
-    subcfg = cfg.for_plugin(self.id)
+    subcfg = cfg.for_plugin(self.meta.id)
     my_option = subcfg.get("my_option", "default_value")
     
     # Get global config
@@ -404,10 +403,10 @@ def on_pre_compile(self, ctx: PreCompileContext) -> None:
 
 ## Internationalization (i18n)
 
-Create `API/my_plugin/languages/` with translation files:
+Create `Plugins/my_plugin/languages/` with translation files:
 
 ```
-API/my_plugin/
+Plugins/my_plugin/
 ├── __init__.py
 └── languages/
     ├── en.json
@@ -426,7 +425,7 @@ API/my_plugin/
 Load translations:
 
 ```python
-from API_SDK import load_plugin_translations
+from Plugins_SDK import load_plugin_translations
 import asyncio
 
 
@@ -455,20 +454,23 @@ bcasl = BCASL(
 )
 
 # Load plugins
-bcasl.load_plugins_from_directory(project_root / "API")
+bcasl.load_plugins_from_directory(project_root / "Plugins")
 
 # Run with parallelism
 ctx = PreCompileContext(project_root)
 report = bcasl.run_pre_compile(ctx)
 ```
 
-Configuration via `pyproject.toml` or environment:
+Configuration via `bcasl.json` or environment:
 
-```toml
-[tool.pycompiler.bcasl]
-sandbox = true
-plugin_parallelism = 4
-plugin_timeout_s = 3.0
+```json
+{
+  "options": {
+    "sandbox": true,
+    "plugin_parallelism": 4,
+    "plugin_timeout_s": 3.0
+  }
+}
 ```
 
 Environment variables:
@@ -491,7 +493,7 @@ Environment variables:
 
 BCASL automatically discovers plugins:
 
-1. Scans `API/` directory for subdirectories
+1. Scans `Plugins/` directory for subdirectories
 2. Looks for `__init__.py` in each subdirectory
 3. Imports the module and calls `bcasl_register(manager)`
 4. Registers plugins via `manager.add_plugin(plugin)`
@@ -507,7 +509,7 @@ from bcasl import BCASL, PreCompileContext
 bcasl = BCASL(project_root, sandbox=True)
 
 # Load plugins
-count, errors = bcasl.load_plugins_from_directory(project_root / "API")
+count, errors = bcasl.load_plugins_from_directory(project_root / "Plugins")
 
 # List plugins
 plugins = bcasl.list_plugins()
@@ -568,6 +570,9 @@ rc, out, err = sctx.run_command(["python", "--version"])
 cfg = sctx.config_view
 subcfg = cfg.for_plugin("my_plugin")
 value = subcfg.get("key", "default")
+
+# Workspace access
+workspace = sctx.workspace_root
 ```
 
 ## Troubleshooting
@@ -576,6 +581,7 @@ value = subcfg.get("key", "default")
 - Check `__init__.py` exists in plugin directory
 - Verify `bcasl_register()` function is defined
 - Check logs for import errors
+- Ensure plugin is in `Plugins/` directory, not `API/`
 
 ### Plugin not executing
 - Verify plugin is enabled in configuration
@@ -595,6 +601,6 @@ value = subcfg.get("key", "default")
 ## See Also
 
 - [ACASL Plugin Development](how_to_create_an_acasl_plugin.md)
-- [API_SDK Documentation](about_sdks.md)
+- [Plugins_SDK Documentation](../Plugins_SDK/__init__.py)
 - [Building Engines](how_to_create_a_building_engine.md)
 - [Configuration Guide](../README.md)

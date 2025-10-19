@@ -1,0 +1,8 @@
+{
+  "_meta": {"code": "en", "name": "English"},
+  "title": "Example ACASL Plugin",
+  "starting_analysis": "🔍 Example ACASL Plugin: Starting post-compilation analysis",
+  "artifacts_found": "📦 Found {count} artifact(s)",
+  "python_files_found": "📄 Found {count} Python file(s)",
+  "analysis_complete": "✅ Example ACASL Plugin: Post-compilation analysis complete"
+}

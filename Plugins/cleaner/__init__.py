@@ -1,17 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2025 Samuel Amen Ague
 # Author: Samuel Amen Ague
-import asyncio
 import fnmatch
 import os
 import shutil
 
 import Plugins_SDK
-from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, load_plugin_translations, wrap_context
-
-# BCASL package signature (required)
-
-
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, wrap_context
+from Plugins_SDK.BCASL_SDK import apply_plugin_i18n
 
 # Métadonnées et instance du plugin pour BCASL
 META = PluginMeta(
@@ -30,11 +26,12 @@ class Cleaner(Bc_PluginBase):
             return
         root = sctx.workspace_root
 
+        # Charger les traductions locales du plugin
+        tr = apply_plugin_i18n(self, __file__, getattr(sctx, '_tr', {}))
+
         # Préparer exclusions (globales + spécifiques au plugin)
         cfg = sctx.config_view
         subcfg = cfg.for_plugin(getattr(self, "id", "cleaner"))
-        lang_code = subcfg.get("language", "System")
-        tr = asyncio.run(load_plugin_translations(__file__, lang_code))
         exclude = list(cfg.exclude_patterns) + list(subcfg.get("exclude_patterns", []))
         include_venv = bool(subcfg.get("include_venv", False))
         if not include_venv:

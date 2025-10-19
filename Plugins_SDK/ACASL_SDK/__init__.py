@@ -66,6 +66,143 @@ from Plugins_SDK import (
     Permission,
 )
 
+# --- Unified i18n helper for BCASL/ACASL plugins ---
+
+
+def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fallback_to_core: bool = True) -> dict:
+    """Load and apply plugin-local i18n translations (async internally, sync interface).
+
+    This helper provides a unified i18n system for BCASL/ACASL plugins, matching the engine pattern.
+    Internally asynchronous for I/O efficiency, but wrapped for synchronous use.
+
+    Args:
+        plugin_instance: The plugin instance (self)
+        plugin_file_or_dir: __file__ or plugin directory path
+        tr_dict: Current app translations dict (from gui._tr or similar)
+        fallback_to_core: If True, merge with core translations
+
+    Returns:
+        Loaded translation dict for the plugin
+
+    Usage in plugin:
+        from Plugins_SDK.ACASL_SDK import apply_plugin_i18n
+
+        class MyPlugin(Ac_PluginBase):
+            def on_post_compile(self, ctx):
+                sctx = wrap_post_context(ctx)
+                tr = apply_plugin_i18n(self, __file__, getattr(sctx, '_tr', {}))
+                msg = tr.get('my_key', 'fallback text')
+    """
+    import asyncio
+    
+    async def _load_async() -> dict:
+        """Asynchronous i18n loading implementation."""
+        import json
+        import os
+        from pathlib import Path
+
+        try:
+            import importlib.resources as ilr
+        except ImportError:
+            ilr = None  # type: ignore
+
+        # Resolve plugin directory
+        try:
+            p = Path(plugin_file_or_dir)
+            plugin_dir = p if p.is_dir() else p.parent
+        except Exception:
+            plugin_dir = Path(".")
+
+        # Get language code from app translations
+        code = "en"
+        try:
+            if isinstance(tr_dict, dict):
+                meta = tr_dict.get("_meta", {})
+                if isinstance(meta, dict) and "code" in meta:
+                    code = meta["code"]
+        except Exception:
+            pass
+
+        # Build candidate list
+        candidates = [code]
+        if "-" in code:
+            base = code.split("-")[0]
+            if base not in candidates:
+                candidates.append(base)
+        if code.lower() != code:
+            candidates.append(code.lower())
+        if "en" not in candidates:
+            candidates.append("en")
+
+        # Load plugin translations asynchronously
+        data = {}
+        lang_dir = plugin_dir / "languages"
+
+        async def _load_json_async(path: Path) -> dict:
+            """Load JSON file asynchronously."""
+            try:
+                # Run file I/O in thread pool to avoid blocking
+                loop = asyncio.get_event_loop()
+                def _read():
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            return json.load(f) or {}
+                    except Exception:
+                        return {}
+                return await loop.run_in_executor(None, _read)
+            except Exception:
+                return {}
+
+        # Try each candidate
+        for cand in candidates:
+            try:
+                # Direct file path
+                json_file = lang_dir / f"{cand}.json"
+                if json_file.exists():
+                    data = await _load_json_async(json_file)
+                    if data:
+                        break
+            except Exception:
+                pass
+
+            # Try importlib.resources if available
+            if ilr and hasattr(plugin_instance, "__module__"):
+                try:
+                    pkg = plugin_instance.__module__.rsplit(".", 1)[0]
+                    with ilr.as_file(ilr.files(pkg).joinpath("languages", f"{cand}.json")) as p:
+                        if os.path.isfile(str(p)):
+                            data = await _load_json_async(Path(str(p)))
+                            if data:
+                                break
+                except Exception:
+                    pass
+
+        # Merge with core translations if requested
+        if fallback_to_core and isinstance(tr_dict, dict):
+            merged = dict(tr_dict)
+            try:
+                merged.update(data)
+            except Exception:
+                pass
+            return merged
+        return data
+
+    # Run async function synchronously
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If already in async context, create task
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(asyncio.run, _load_async())
+                return future.result()
+        else:
+            return asyncio.run(_load_async())
+    except Exception:
+        # Fallback: return empty dict on error
+        return tr_dict if isinstance(tr_dict, dict) else {}
+
+
 # --- System installation helpers for ACASL plugins ---
 
 
@@ -339,6 +476,7 @@ __all__ = [
     "resolve_system_language",
     "get_translations",
     "load_plugin_translations",
+    "apply_plugin_i18n",
     # Subprocess
     "run_command",
     # System installs
