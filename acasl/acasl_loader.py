@@ -4,7 +4,7 @@ ACASL loader (simplifié, découverte via acasl_register uniquement)
 
 Objectifs de simplification (parité avec BCASL):
 - Config JSON uniquement (acasl.json ou .acasl.json)
-- Découverte minimale: packages dans Plugins/ ayant __init__.py et exposant acasl_register(manager)
+- Découverte FORCÉE: packages dans Plugins/ UNIQUEMENT ayant __init__.py et exposant acasl_register(manager)
   Le manager temporaire collecte des objets plugins avec métadonnées et un runner (callable).
 - Ordre: plugin_order depuis config sinon alphabétique
 - UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
@@ -400,7 +400,6 @@ def open_acasl_loader_dialog(self) -> None:
     try:
         from PySide6.QtWidgets import (
             QAbstractItemView,
-            QCheckBox,
             QDialog,
             QHBoxLayout,
             QLabel,
@@ -418,19 +417,30 @@ def open_acasl_loader_dialog(self) -> None:
         if not getattr(self, "workspace_dir", None):
             QMessageBox.warning(self, "ACASL", "Sélectionnez un dossier workspace / Select a workspace folder first.")
             return
+        
         workspace_root = Path(self.workspace_dir).resolve()
         repo_root = Path(__file__).resolve().parents[1]
         plugins_dir = repo_root / "Plugins"
+        
         if not plugins_dir.exists():
             QMessageBox.information(self, "ACASL", "Aucun répertoire Plugins trouvé / No Plugins directory found.")
             return
-        meta_map = _discover_acasl_meta(plugins_dir)
-        plugin_ids = list(sorted(meta_map.keys()))
-        if not plugin_ids:
+        
+        # Utiliser le système ACASL complet pour découvrir les plugins
+        from acasl import ACASL
+        manager = ACASL(workspace_root)
+        loaded, errors = manager.load_plugins_from_directory(plugins_dir)
+        
+        if loaded == 0:
             QMessageBox.information(self, "ACASL", "Aucun plugin ACASL détecté / No ACASL plugin detected.")
             return
+        
         cfg = _load_workspace_config(workspace_root)
         plugins_cfg = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
+        
+        # Récupérer les IDs des plugins chargés
+        plugin_ids = list(manager.list_plugins(include_inactive=True))
+        plugin_ids_only = [pid for pid, _, _, _ in plugin_ids]
 
         dlg = QDialog(self)
         dlg.setWindowTitle("ACASL Loader")
@@ -443,24 +453,37 @@ def open_acasl_loader_dialog(self) -> None:
 
         order = []
         try:
-            order = [pid for pid in (cfg.get("plugin_order", []) or []) if pid in plugin_ids]
+            order = [pid for pid in (cfg.get("plugin_order", []) or []) if pid in plugin_ids_only]
         except Exception:
             order = []
-        remaining = [pid for pid in plugin_ids if pid not in order]
+        
+        remaining = [pid for pid in plugin_ids_only if pid not in order]
+        
         for pid in order + remaining:
-            meta = meta_map.get(pid, {})
-            label = (meta.get("name") or pid) + (f" v{meta.get('version')}" if meta.get("version") else "")
+            # Récupérer les métadonnées du plugin
+            plugin_info = next((p for p in plugin_ids if p[0] == pid), None)
+            if not plugin_info:
+                continue
+            
+            _, meta, _, _ = plugin_info
+            label = f"{meta.name} ({pid})"
+            if meta.version:
+                label += f" v{meta.version}"
+            
             item = QListWidgetItem(label)
             item.setData(0x0100, pid)
+            
             en = True
             try:
                 entry = plugins_cfg.get(pid, {})
                 en = bool(entry.get("enabled", True)) if isinstance(entry, dict) else bool(entry) if isinstance(entry, bool) else True
             except Exception:
                 en = True
+            
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled)
             item.setCheckState(Qt.Checked if en else Qt.Unchecked)
             lst.addItem(item)
+        
         layout.addWidget(lst)
 
         btns = QHBoxLayout()
@@ -526,21 +549,30 @@ def open_acasl_loader_dialog(self) -> None:
                     dlg.exec()
                 except Exception:
                     pass
-    except Exception:
-        pass
+    except Exception as e:
+        try:
+            if hasattr(self, "log") and self.log:
+                self.log.append(f"❌ ACASL Loader Error: {e}")
+        except Exception:
+            pass
 
 
 def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Callable[[dict], None]] = None) -> None:
     """Exécute les plugins ACASL en arrière-plan (Qt) ou de façon synchrone en repli."""
     try:
+        from acasl import ACASL, PostCompileContext
+        
         try:
             ws = getattr(gui, "workspace_dir", None)
             workspace_root = Path(ws if ws else os.getcwd()).resolve()
         except Exception:
             workspace_root = Path(os.getcwd()).resolve()
+        
         repo_root = Path(__file__).resolve().parents[1]
         plugins_dir = repo_root / "Plugins"
+        
         cfg = _load_workspace_config(workspace_root)
+        
         # Timeout (<=0 illimité)
         try:
             env_timeout = float(os.environ.get("PYCOMPILER_ACASL_PLUGIN_TIMEOUT", "0"))
@@ -553,12 +585,14 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
             cfg_timeout = 0.0
         plugin_timeout = cfg_timeout if cfg_timeout != 0.0 else env_timeout
         plugin_timeout = plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
+        
         # Global enabled flag
         try:
             opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
             acasl_enabled = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
         except Exception:
             acasl_enabled = True
+        
         if not acasl_enabled:
             try:
                 if hasattr(gui, "log") and gui.log:
@@ -571,6 +605,7 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
                 except Exception:
                     pass
             return
+        
         # Qt worker
         if QThread is not None and "_ACASLWorker" in globals():
             thread = QThread()
@@ -602,68 +637,39 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
             thread.started.connect(worker.run)
             thread.start()
             return
+        
         # Repli synchrone
-        meta_map = _discover_acasl_meta(plugins_dir)
-        available = list(meta_map.keys())
-        pmap = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
-        order = []
+        manager = ACASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
+        loaded, errors = manager.load_plugins_from_directory(plugins_dir)
+        
         try:
-            order = [pid for pid in (cfg.get("plugin_order", []) or []) if pid in available]
+            if hasattr(gui, "log") and gui.log:
+                gui.log.append(f"🧩 ACASL: {loaded} plugin(s) chargé(s) depuis Plugins/\n")
+                for mod, msg in errors or []:
+                    gui.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
         except Exception:
-            order = []
-        if not order:
-            order = sorted(available)
-        final_ids = []
-        for pid in order:
-            try:
-                v = pmap.get(pid, {})
-                en = (bool(v.get("enabled", True)) if isinstance(v, dict) else bool(v) if isinstance(v, bool) else True)
-            except Exception:
-                en = True
-            if en:
-                final_ids.append(pid)
-        report = {"status": "ok", "plugins": []}
-        ctx = ACASLContext(gui, list(artifacts or []), output_dir=None)
-        import time as _time
-        for pid in final_ids:
-            meta = meta_map.get(pid) or {}
-            runner = meta.get("runner")
-            name = meta.get("name") or pid
-            if not callable(runner):
-                report["plugins"].append({"id": pid, "name": name, "ok": False, "error": "runner missing", "duration_ms": 0.0})
-                continue
-            start = _time.perf_counter()
-            ok = False
-            err: Optional[str] = None
-            try:
-                if plugin_timeout > 0:
-                    holder = {"err": None}
-
-                    def _call():
-                        try:
-                            runner(ctx)
-                        except Exception as e:
-                            holder["err"] = e
-
-                    th = threading.Thread(target=_call, name=f"ACASL-{pid}", daemon=True)
-                    th.start()
-                    th.join(plugin_timeout)
-                    if th.is_alive():
-                        err = f"timeout après {plugin_timeout:.1f}s"
-                    else:
-                        ok = holder["err"] is None
-                        if not ok:
-                            err = str(holder["err"]) or repr(holder["err"])  # type: ignore
-                else:
-                    runner(ctx)
-                    ok = True
-            except Exception as e:
-                err = str(e)
-            dur_ms = (_time.perf_counter() - start) * 1000.0
-            if ok:
-                report["plugins"].append({"id": pid, "name": name, "ok": True, "duration_ms": dur_ms})
-            else:
-                report["plugins"].append({"id": pid, "name": name, "ok": False, "error": err or "unknown", "duration_ms": dur_ms})
+            pass
+        
+        # Appliquer config
+        pmap = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
+        if isinstance(pmap, dict):
+            for pid, val in pmap.items():
+                try:
+                    enabled = (val if isinstance(val, bool) else bool((val or {}).get("enabled", True)))
+                    if not enabled:
+                        manager.disable_plugin(pid)
+                except Exception:
+                    pass
+                try:
+                    if isinstance(val, dict) and "priority" in val:
+                        manager.set_priority(pid, int(val.get("priority", 0)))
+                except Exception:
+                    pass
+        
+        # Exécuter
+        ctx = PostCompileContext(workspace_root, artifacts=list(artifacts or []), config=cfg)
+        report = manager.run_post_compile(ctx)
+        
         if callable(finished_cb):
             try:
                 finished_cb(report)

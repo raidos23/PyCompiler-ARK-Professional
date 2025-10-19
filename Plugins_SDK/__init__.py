@@ -63,6 +63,12 @@ from .progress import (  # noqa: E402
     show_msgbox,
     sys_msgbox_for_installing,
 )
+from .dialog_creator import (  # noqa: E402
+    ask_yes_no,
+    request_permissions,
+    request_text_input,
+    Permission,
+)
 
 # -----------------------------
 # Plugin base (BCASL) and decorator
@@ -545,6 +551,11 @@ __all__ = [
     "progress",
     "show_msgbox",
     "sys_msgbox_for_installing",
+    # Dialog creator
+    "ask_yes_no",
+    "request_permissions",
+    "request_text_input",
+    "Permission",
     # Config
     "ConfigView",
     "load_workspace_config",

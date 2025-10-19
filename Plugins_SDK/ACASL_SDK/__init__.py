@@ -30,8 +30,8 @@ import platform
 import shutil
 from collections.abc import Sequence
 from typing import Any, Optional
-from acasl import PluginMeta
-# Re-export from the main API_SDK to keep a single source of truth
+from acasl import Ac_PluginBase, PluginMeta
+# Re-export from the main Plugins_SDK to keep a single source of truth
 from Plugins_SDK import (
     # Config
     ConfigView,
@@ -59,6 +59,11 @@ from Plugins_SDK import (
     show_msgbox,
     sys_msgbox_for_installing,
     wrap_post_context,
+    # Dialog creator
+    ask_yes_no,
+    request_permissions,
+    request_text_input,
+    Permission,
 )
 
 # --- System installation helpers for ACASL plugins ---
@@ -297,41 +302,7 @@ def ensure_system_packages(
     return bool(ok_all)
 
 
-# --- ACASL Plugin Base Class ---
-
-
-class Ac_PluginBase:
-    """Base class for ACASL (post-compile) plugins.
-    
-    ACASL plugins are executed after compilation to perform post-processing tasks
-    such as cleanup, optimization, or artifact transformation.
-    
-    Subclasses should implement one of the following methods:
-    - on_post_compile(ctx: PostCompileContext) -> None
-    - run(ctx: PostCompileContext) -> None
-    - execute(ctx: PostCompileContext) -> None
-    - acasl_run(ctx: PostCompileContext) -> None
-    
-    Metadata can be provided via:
-    - Instance attributes: id, name, version, description
-    - Nested meta object: meta.id, meta.name, meta.version, meta.description
-    
-    Example:
-        class MyPlugin(Ac_PluginBase):
-            def __init__(self):
-                self.id = "my_plugin"
-                self.name = "My Plugin"
-                self.version = "1.0.0"
-                self.description = "Does something useful"
-            
-            def on_post_compile(self, ctx):
-                sctx = wrap_post_context(ctx)
-                sctx.log_info("Post-compile processing...")
-    """
-    
-    def __init__(self) -> None:
-        """Initialize the plugin. Override to set metadata."""
-        pass
+# Ac_PluginBase is imported from acasl module above
 
 
 __all__ = [
@@ -349,6 +320,11 @@ __all__ = [
     "progress",
     "show_msgbox",
     "sys_msgbox_for_installing",
+    # Dialog creator
+    "ask_yes_no",
+    "request_permissions",
+    "request_text_input",
+    "Permission",
     # Config
     "ConfigView",
     "load_workspace_config",

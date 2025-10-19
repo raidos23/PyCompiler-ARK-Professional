@@ -54,7 +54,7 @@ class ExampleAcaslPlugin(Ac_PluginBase):
 
 # Create plugin instance
 PLUGIN = ExampleAcaslPlugin(
-    meta=META,
+    META,
     requires=[],  # No dependencies
     priority=100,  # Standard priority
 )

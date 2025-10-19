@@ -32,7 +32,7 @@ import shutil
 from collections.abc import Sequence
 from typing import Optional
 
-# Re-export from the main API_SDK
+# Re-export from the main Plugins_SDK
 from Plugins_SDK import (
     BCASL,
     BCASL_PLUGIN_REGISTER_FUNC,
@@ -69,6 +69,11 @@ from Plugins_SDK import (
     show_msgbox,
     sys_msgbox_for_installing,
     wrap_context,
+    # Dialog creator
+    ask_yes_no,
+    request_permissions,
+    request_text_input,
+    Permission,
 )
 
 # --- System installation helper for BCASL plugins ---
@@ -327,6 +332,11 @@ __all__ = [
     "progress",
     "show_msgbox",
     "sys_msgbox_for_installing",
+    # Dialog creator
+    "ask_yes_no",
+    "request_permissions",
+    "request_text_input",
+    "Permission",
     # Config
     "ConfigView",
     "load_workspace_config",

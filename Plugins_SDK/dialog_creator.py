@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """
-Dialog Creator (ACASL) - Boîtes de dialogue sûres pour plugins
+Dialog Creator - Boîtes de dialogue sûres pour plugins BCASL et ACASL
 
 Objectif
 - Fournir aux plugins une façade simple pour demander une autorisation utilisateur,
@@ -14,7 +14,7 @@ Fonctions
 - request_permissions(title, description, permissions, default_grant=False) -> dict
 
 Note
-- Aucune fenêtre n’est affichée en mode non interactif; les valeurs par défaut sont renvoyées.
+- Aucune fenêtre n'est affichée en mode non interactif; les valeurs par défaut sont renvoyées.
 - Un QApplication minimal est créé à la demande si nécessaire et absent.
 """
 from __future__ import annotations
