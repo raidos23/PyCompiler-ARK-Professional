@@ -5,16 +5,18 @@ API_SDK.ACASL_SDK — Convenience facade for ACASL plugin development
 This subpackage exposes a focused set of utilities tailored for post‑compile
 (ACASL) plugins so developers can import from a single, stable location.
 
-Typical usage in API/acasl/*.py:
+Typical usage in Plugins/acasl/*.py:
 
-    from API_SDK.ACASL_SDK import wrap_post_context
+    from API_SDK.ACASL_SDK import Ac_PluginBase, wrap_post_context
 
-    def acasl_run(ctx):
-        sctx = wrap_post_context(ctx)
-        # sctx.artifacts -> list of produced files
-        # Use helpers: sctx.run_command(...), sctx.safe_path(...), etc.
+    class MyPlugin(Ac_PluginBase):
+        def on_post_compile(self, ctx):
+            sctx = wrap_post_context(ctx)
+            # sctx.artifacts -> list of produced files
+            # Use helpers: sctx.run_command(...), sctx.safe_path(...), etc.
 
 Exports include:
+- Plugin base: Ac_PluginBase
 - Version & capabilities: __version__, ensure_min_sdk, sdk_info, get_capabilities
 - Progress & messages: ProgressHandle, create_progress, progress, show_msgbox, sys_msgbox_for_installing
 - Config: ConfigView, load_workspace_config, ensure_settings_file
@@ -27,7 +29,7 @@ from __future__ import annotations
 import platform
 import shutil
 from collections.abc import Sequence
-from typing import Optional
+from typing import Any, Optional
 
 # Re-export from the main API_SDK to keep a single source of truth
 from API_SDK import (
@@ -295,7 +297,46 @@ def ensure_system_packages(
     return bool(ok_all)
 
 
+# --- ACASL Plugin Base Class ---
+
+
+class Ac_PluginBase:
+    """Base class for ACASL (post-compile) plugins.
+    
+    ACASL plugins are executed after compilation to perform post-processing tasks
+    such as cleanup, optimization, or artifact transformation.
+    
+    Subclasses should implement one of the following methods:
+    - on_post_compile(ctx: PostCompileContext) -> None
+    - run(ctx: PostCompileContext) -> None
+    - execute(ctx: PostCompileContext) -> None
+    - acasl_run(ctx: PostCompileContext) -> None
+    
+    Metadata can be provided via:
+    - Instance attributes: id, name, version, description
+    - Nested meta object: meta.id, meta.name, meta.version, meta.description
+    
+    Example:
+        class MyPlugin(Ac_PluginBase):
+            def __init__(self):
+                self.id = "my_plugin"
+                self.name = "My Plugin"
+                self.version = "1.0.0"
+                self.description = "Does something useful"
+            
+            def on_post_compile(self, ctx):
+                sctx = wrap_post_context(ctx)
+                sctx.log_info("Post-compile processing...")
+    """
+    
+    def __init__(self) -> None:
+        """Initialize the plugin. Override to set metadata."""
+        pass
+
+
 __all__ = [
+    # Plugin base
+    "Ac_PluginBase",
     # Version & caps
     "__version__",
     "ensure_min_sdk",

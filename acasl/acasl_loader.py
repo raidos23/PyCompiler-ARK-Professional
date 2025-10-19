@@ -4,7 +4,7 @@ ACASL loader (simplifié, découverte via acasl_register uniquement)
 
 Objectifs de simplification (parité avec BCASL):
 - Config JSON uniquement (acasl.json ou .acasl.json)
-- Découverte minimale: packages dans API/ ayant __init__.py et exposant acasl_register(manager)
+- Découverte minimale: packages dans Plugins/ ayant __init__.py et exposant acasl_register(manager)
   Le manager temporaire collecte des objets plugins avec métadonnées et un runner (callable).
 - Ordre: plugin_order depuis config sinon alphabétique
 - UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
@@ -143,13 +143,13 @@ def _extract_meta_from_plugin(plg: Any) -> Optional[dict[str, Any]]:
         return None
 
 
-def _discover_acasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
-    """Importe chaque package API, appelle acasl_register(manager) et construit un mapping id -> meta.
+def _discover_acasl_meta(plugins_dir: Path) -> dict[str, dict[str, Any]]:
+    """Importe chaque package Plugins, appelle acasl_register(manager) et construit un mapping id -> meta.
     Ne lit plus de constantes ACASL_* ni n'exécute acasl_run directement.
     """
     meta: dict[str, dict[str, Any]] = {}
     try:
-        for pkg_dir in sorted(api_dir.iterdir(), key=lambda p: p.name):
+        for pkg_dir in sorted(plugins_dir.iterdir(), key=lambda p: p.name):
             try:
                 if not pkg_dir.is_dir():
                     continue
@@ -216,8 +216,8 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     default_cfg: dict[str, Any] = {}
     try:
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
-        meta_map = _discover_acasl_meta(api_dir) if api_dir.exists() else {}
+        plugins_dir = repo_root / "Plugins"
+        meta_map = _discover_acasl_meta(plugins_dir) if plugins_dir.exists() else {}
         order = sorted(meta_map.keys())
         plugins = {pid: {"enabled": True, "priority": i} for i, pid in enumerate(order)}
         default_cfg = {
@@ -247,11 +247,11 @@ if QObject is not None and Signal is not None:  # pragma: no cover
         finished = Signal(object)  # report dict or None
         log = Signal(str)
 
-        def __init__(self, gui, workspace_root: Path, api_dir: Path, cfg: dict[str, Any], plugin_timeout: float, artifacts: list[str]) -> None:
+        def __init__(self, gui, workspace_root: Path, plugins_dir: Path, cfg: dict[str, Any], plugin_timeout: float, artifacts: list[str]) -> None:
             super().__init__()
             self.gui = gui
             self.workspace_root = workspace_root
-            self.api_dir = api_dir
+            self.plugins_dir = plugins_dir
             self.cfg = cfg
             self.plugin_timeout = plugin_timeout
             self.artifacts = list(artifacts or [])
@@ -259,9 +259,9 @@ if QObject is not None and Signal is not None:  # pragma: no cover
         @Slot()
         def run(self) -> None:
             try:
-                meta_map = _discover_acasl_meta(self.api_dir)
+                meta_map = _discover_acasl_meta(self.plugins_dir)
                 try:
-                    self.log.emit(f"🧩 ACASL: {len(meta_map)} plugin(s) détecté(s) dans API/\n")
+                    self.log.emit(f"🧩 ACASL: {len(meta_map)} plugin(s) détecté(s) dans Plugins/\n")
                 except Exception:
                     pass
                 # Déterminer liste activée et ordre
@@ -420,11 +420,11 @@ def open_acasl_loader_dialog(self) -> None:
             return
         workspace_root = Path(self.workspace_dir).resolve()
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
-        if not api_dir.exists():
-            QMessageBox.information(self, "ACASL", "Aucun répertoire API trouvé / No API directory found.")
+        plugins_dir = repo_root / "Plugins"
+        if not plugins_dir.exists():
+            QMessageBox.information(self, "ACASL", "Aucun répertoire Plugins trouvé / No Plugins directory found.")
             return
-        meta_map = _discover_acasl_meta(api_dir)
+        meta_map = _discover_acasl_meta(plugins_dir)
         plugin_ids = list(sorted(meta_map.keys()))
         if not plugin_ids:
             QMessageBox.information(self, "ACASL", "Aucun plugin ACASL détecté / No ACASL plugin detected.")
@@ -539,7 +539,7 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
         except Exception:
             workspace_root = Path(os.getcwd()).resolve()
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
+        plugins_dir = repo_root / "Plugins"
         cfg = _load_workspace_config(workspace_root)
         # Timeout (<=0 illimité)
         try:
@@ -574,7 +574,7 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
         # Qt worker
         if QThread is not None and "_ACASLWorker" in globals():
             thread = QThread()
-            worker = _ACASLWorker(gui, workspace_root, api_dir, cfg, plugin_timeout, list(artifacts or []))  # type: ignore[name-defined]
+            worker = _ACASLWorker(gui, workspace_root, plugins_dir, cfg, plugin_timeout, list(artifacts or []))  # type: ignore[name-defined]
             try:
                 gui._acasl_thread = thread
                 gui._acasl_worker = worker
@@ -603,7 +603,7 @@ def run_post_compile_async(gui, artifacts: list[str], finished_cb: Optional[Call
             thread.start()
             return
         # Repli synchrone
-        meta_map = _discover_acasl_meta(api_dir)
+        meta_map = _discover_acasl_meta(plugins_dir)
         available = list(meta_map.keys())
         pmap = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
         order = []

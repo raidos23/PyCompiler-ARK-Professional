@@ -122,6 +122,12 @@ except Exception:
         pass
 
 
+# ACASL PluginBase (post-compile plugins)
+class Ac_PluginBase:  # type: ignore
+    """Base class for ACASL (post-compile) plugins."""
+    pass
+
+
 Pathish = Union[str, Path]
 
 
@@ -555,6 +561,8 @@ __all__ = [
     "BCASL",
     "register_plugin",
     "BCASL_PLUGIN_REGISTER_FUNC",
+    # ACASL facade
+    "Ac_PluginBase",
     # Decorator & wrapping
     "plugin",
     "wrap_context",

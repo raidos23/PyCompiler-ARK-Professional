@@ -14,10 +14,17 @@ Preferred loader in-package: 'acasl/acasl_loader.py'; fallback to 'utils/acasl_l
 """
 
 __all__ = (
+    # Loader API
     "run_post_compile_async",
     "ensure_acasl_thread_stopped",
     "ACASLContext",
     "open_acasl_loader_dialog",
+    # Plugin system
+    "Ac_PluginBase",
+    "PluginMeta",
+    "PostCompileContext",
+    "ExecutionReport",
+    "ACASL",
 )
 
 __version__ = "1.1.0"
@@ -29,6 +36,14 @@ try:  # pragma: no cover
         ensure_acasl_thread_stopped,
         open_acasl_loader_dialog,
         run_post_compile_async,
+    )
+    # Also import plugin system
+    from .acasl import (  # type: ignore
+        ACASL,
+        Ac_PluginBase,
+        ExecutionReport,
+        PluginMeta,
+        PostCompileContext,
     )
 except Exception:  # pragma: no cover
     # Fallback to legacy location
