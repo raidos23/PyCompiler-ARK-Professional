@@ -395,7 +395,7 @@ try:  # noqa: E402
     import tomllib as _toml  # Python 3.11+
 except Exception:  # pragma: no cover
     try:
-        import tomli as _toml  # backport
+        import tomli as _toml  # type: ignore # backport
     except Exception:  # pragma: no cover
         _toml = None
 

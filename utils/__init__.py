@@ -37,7 +37,7 @@ from threading import RLock
 from types import ModuleType
 from typing import Any
 
-__version__ = "3.2.3"
+__version__ = "1.0.0"
 
 # Cache of resolved attributes to avoid repeated imports
 _RESOLVED: dict[str, Any] = {}

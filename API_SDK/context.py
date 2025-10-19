@@ -13,7 +13,7 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Union
-
+import os
 # Reuse i18n facade from host
 # Local utility imports (UI helpers and message boxes)
 from .progress import show_msgbox
