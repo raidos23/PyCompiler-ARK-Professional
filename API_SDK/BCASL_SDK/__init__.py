@@ -40,7 +40,7 @@ from API_SDK import (
     ConfigView,
     ExecutionReport,
     # BCASL types
-    PluginBase,
+    Bc_PluginBase,
     PluginMeta,
     PreCompileContext,
     # Progress
@@ -336,7 +336,7 @@ __all__ = [
     "PreCompileContext",
     "wrap_context",
     # BCASL types
-    "PluginBase",
+    "Bc_PluginBase",
     "PluginMeta",
     "ExecutionReport",
     "BCASL",

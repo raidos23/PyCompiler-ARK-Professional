@@ -30,7 +30,7 @@ import platform
 import shutil
 from collections.abc import Sequence
 from typing import Any, Optional
-
+from acasl import PluginMeta
 # Re-export from the main API_SDK to keep a single source of truth
 from API_SDK import (
     # Config
@@ -337,6 +337,7 @@ class Ac_PluginBase:
 __all__ = [
     # Plugin base
     "Ac_PluginBase",
+    "PluginMeta",
     # Version & caps
     "__version__",
     "ensure_min_sdk",
