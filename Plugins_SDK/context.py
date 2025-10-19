@@ -132,7 +132,7 @@ class SDKContext:
     ) -> tuple[int, str, str]:
         """Proxy to API_SDK.run_command to avoid direct imports here and keep modularity."""
         try:
-            from API_SDK import run_command as _run
+            from Plugins_SDK import run_command as _run
         except Exception:
             # Minimal fallback if API_SDK.run_command is not accessible
             import os as _os

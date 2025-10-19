@@ -6,8 +6,8 @@ import fnmatch
 import os
 import shutil
 
-import API_SDK
-from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, load_plugin_translations, wrap_context
+import Plugins_SDK
+from Plugins_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, load_plugin_translations, wrap_context
 
 # BCASL package signature (required)
 
@@ -66,7 +66,7 @@ class Cleaner(Bc_PluginBase):
             return
 
         # 1) Analyse (comptage des éléments à supprimer) avec progression indéterminée
-        ph = API_SDK.progress(
+        ph = Plugins_SDK.progress(
             tr.get("progress_title", "Nettoyage du workspace"),
             tr.get("analysis_text", "Analyse des éléments à supprimer..."),
             maximum=0,

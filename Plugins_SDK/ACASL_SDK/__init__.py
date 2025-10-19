@@ -32,7 +32,7 @@ from collections.abc import Sequence
 from typing import Any, Optional
 from acasl import PluginMeta
 # Re-export from the main API_SDK to keep a single source of truth
-from API_SDK import (
+from Plugins_SDK import (
     # Config
     ConfigView,
     PostCompileContext,

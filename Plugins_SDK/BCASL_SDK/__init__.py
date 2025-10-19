@@ -33,7 +33,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 # Re-export from the main API_SDK
-from API_SDK import (
+from Plugins_SDK import (
     BCASL,
     BCASL_PLUGIN_REGISTER_FUNC,
     # Config

@@ -339,7 +339,7 @@ def sys_msgbox_for_installing(
     if _QtW is not None and _QtW.QApplication.instance() is not None:
         try:
             parent = _qt_active_parent()
-            from API_SDK.progress import show_msgbox as _show
+            from Plugins_SDK.progress import show_msgbox as _show
 
             proceed = _show("question", title, msg, default="Yes")
             if not proceed:

@@ -9,7 +9,7 @@ This plugin demonstrates the ACASL plugin architecture with:
 """
 from __future__ import annotations
 
-from API_SDK.ACASL_SDK import Ac_PluginBase, PluginMeta, PostCompileContext, wrap_post_context
+from Plugins_SDK.ACASL_SDK import Ac_PluginBase, PluginMeta, PostCompileContext, wrap_post_context
 
 
 # Plugin metadata with tags for classification
