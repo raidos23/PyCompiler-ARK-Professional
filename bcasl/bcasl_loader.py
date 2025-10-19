@@ -4,7 +4,7 @@ BCASL loader (simplifié)
 
 Objectifs de simplification:
 - Config JSON uniquement (bcasl.json ou .bcasl.json)
-- Détection de plugins minimale: packages dans API/ ayant __init__.py
+- Détection de plugins minimale: packages dans Plugins/ ayant __init__.py
 - Ordre: plugin_order depuis config sinon basé sur tags simples, sinon alphabétique
 - UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
 - Async via QThread si QtCore dispo, sinon repli synchrone
@@ -160,7 +160,7 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     default_cfg: dict[str, Any] = {}
     try:
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
+        api_dir = repo_root / "Plugins"
         detected_plugins: dict[str, Any] = {}
         meta_map = _discover_bcasl_meta(api_dir) if api_dir.exists() else {}
         if meta_map:
@@ -237,7 +237,7 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                 manager = BCASL(self.workspace_root, config=self.cfg, plugin_timeout_s=self.plugin_timeout)
                 loaded, errors = manager.load_plugins_from_directory(self.api_dir)
                 try:
-                    self.log.emit(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis API/\n")
+                    self.log.emit(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n")
                     for mod, msg in errors or []:
                         self.log.emit(f"⚠️ Plugin '{mod}': {msg}\n")
                 except Exception:
@@ -392,7 +392,7 @@ def resolve_bcasl_timeout(self) -> float:
 
 
 def open_api_loader_dialog(self) -> None:  # UI minimale
-    """Fenêtre simple pour activer/désactiver et réordonner les plugins API (BCASL).
+    """Fenêtre simple pour activer/désactiver et réordonner les plugins(BCASL).
     Persiste dans <workspace>/bcasl.json uniquement (JSON).
     """
     try:  # Importer QtWidgets à la demande pour compatibilité headless
@@ -420,12 +420,12 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             return
         workspace_root = Path(self.workspace_dir).resolve()
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
+        api_dir = repo_root / "Plugins"
         if not api_dir.exists():
             QMessageBox.information(
                 self,
                 self.tr("Information", "Information"),
-                self.tr("Aucun répertoire API/ trouvé dans le projet.", "No API/ directory found in the project."),
+                self.tr("Aucun répertoire Plugins/ trouvé dans le projet.", "No Plugins/ directory found in the project."),
             )
             return
         meta_map = _discover_bcasl_meta(api_dir)
@@ -434,19 +434,19 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             QMessageBox.information(
                 self,
                 self.tr("Information", "Information"),
-                self.tr("Aucun plugin détecté dans API/.", "No plugins detected in API."),
+                self.tr("Aucun plugin détecté dans Plugins/.", "No plugins detected in Plugins."),
             )
             return
         cfg = _load_workspace_config(workspace_root)
         plugins_cfg = cfg.get("plugins", {}) if isinstance(cfg, dict) else {}
 
         dlg = QDialog(self)
-        dlg.setWindowTitle(self.tr("Chargeur API", "API Loader"))
+        dlg.setWindowTitle(self.tr("BCASL LOADER", "BCASL LOADER"))
         layout = QVBoxLayout(dlg)
         info = QLabel(
             self.tr(
-                "Activez/désactivez les plugins API et définissez leur ordre d'exécution (haut = d'abord).",
-                "Enable/disable API plugins and set their execution order (top = first).",
+                "Activez/désactivez les plugins et définissez leur ordre d'exécution (haut = d'abord).",
+                "Enable/disable plugins and set their execution order (top = first).",
             )
         )
         layout.addWidget(info)
@@ -549,7 +549,7 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             try:
                 target.write_text(json.dumps(cfg_out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
                 if hasattr(self, "log") and self.log is not None:
-                    self.log.append(self.tr("✅ Plugins/API enregistrés dans bcasl.json", "✅ API plugins saved to bcasl.json"))
+                    self.log.append(self.tr("✅ Plugins enregistrés dans bcasl.json", "✅ Plugins plugins saved to bcasl.json"))
                 dlg.accept()
             except Exception as e:
                 QMessageBox.critical(
@@ -577,10 +577,11 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
     except Exception as e:
         try:
             if hasattr(self, "log") and self.log is not None:
-                self.log.append(f"⚠️ API Loader UI error: {e}")
+                self.log.append(f"⚠️ Plugins Loader UI error: {e}")
         except Exception:
             pass
 
+#API
 
 def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
     """Lance BCASL en arrière-plan si QtCore est dispo; sinon, exécution bloquante rapide.
@@ -596,7 +597,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             return
         workspace_root = Path(self.workspace_dir).resolve()
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
+        api_dir = repo_root / "Plugins"
 
         cfg = _load_workspace_config(workspace_root)
         # Timeout: <= 0 => illimité
@@ -657,7 +658,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
             loaded, errors = manager.load_plugins_from_directory(api_dir)
             if hasattr(self, "log") and self.log is not None:
-                self.log.append(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis API/\n")
+                self.log.append(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n")
                 for mod, msg in errors or []:
                     self.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
             # Appliquer config
@@ -723,7 +724,7 @@ def run_pre_compile(self) -> Optional[object]:
             return None
         workspace_root = Path(self.workspace_dir).resolve()
         repo_root = Path(__file__).resolve().parents[1]
-        api_dir = repo_root / "API"
+        api_dir = repo_root / "Plugins"
 
         cfg = _load_workspace_config(workspace_root)
         try:
@@ -753,7 +754,7 @@ def run_pre_compile(self) -> Optional[object]:
         manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
         loaded, errors = manager.load_plugins_from_directory(api_dir)
         if hasattr(self, "log") and self.log is not None:
-            self.log.append(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis API/\n")
+            self.log.append(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n")
             for mod, msg in errors or []:
                 self.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
 
