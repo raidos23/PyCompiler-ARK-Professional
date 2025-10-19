@@ -7,23 +7,21 @@ import os
 import shutil
 
 import API_SDK
-from API_SDK import PluginBase, PluginMeta, PreCompileContext, load_plugin_translations, plugin, wrap_context
+from API_SDK import Bc_PluginBase, PluginMeta, PreCompileContext, load_plugin_translations, wrap_context
 
 # BCASL package signature (required)
-BCASL_PLUGIN = True
-BCASL_ID = "cleaner"
-BCASL_DESCRIPTION = "Nettoie le workspace (.pyc et __pycache__)"
-BCASL_NAME = "Cleaner"
-BCASL_VERSION = "1.0.0"
-BCASL_AUTHOR = "Samuel Amen Ague"
-BCASL_CREATED = "2025-09-06"
-BCASL_COMPATIBILITY = ["PyCompiler ARK++ v3.2+", "Python 3.10+"]
-BCASL_LICENSE = "GPL-3.0-only"
-BCASL_TAGS = ["pre-compilation", "clean", "cache", "pyc"]
 
 
-@plugin(id="cleaner", version="1.0.0", description="Nettoie le workspace (.pyc et __pycache__)")
-class Cleaner(PluginBase):
+
+# Métadonnées et instance du plugin pour BCASL
+META = PluginMeta(
+    id="cleaner",
+    name="Nettoyeur",
+    version="1.0.0",
+    description="clean the workspace (.pyc and __pycache__)",
+)
+
+class Cleaner(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
             sctx = wrap_context(ctx)
@@ -144,13 +142,7 @@ class Cleaner(PluginBase):
             ph.close()
 
 
-# Métadonnées et instance du plugin pour BCASL
-META = PluginMeta(
-    id=BCASL_ID,
-    name="Nettoyeur",
-    version="1.0.0",
-    description="Nettoie le workspace (.pyc et __pycache__)",
-)
+
 PLUGIN = Cleaner(META)
 
 # Fonction requise par le chargeur BCASL

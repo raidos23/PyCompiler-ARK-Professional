@@ -72,7 +72,7 @@ try:  # noqa: E402
     from bcasl import (
         BCASL as BCASL,
         ExecutionReport as ExecutionReport,
-        PluginBase as PluginBase,
+        Bc_PluginBase as Bc_PluginBase,
         PluginMeta as PluginMeta,
         PreCompileContext as PreCompileContext,
     )
@@ -91,7 +91,7 @@ try:  # noqa: E402
         BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
 except Exception:  # pragma: no cover — dev fallback when BCASL is not importable
 
-    class PluginBase:  # type: ignore
+    class Bc_PluginBase:  # type: ignore
         pass
 
     class PluginMeta:  # type: ignore
@@ -140,7 +140,7 @@ def plugin(id: Optional[str] = None, version: str = "", description: str = ""):
     """
 
     def _wrap(cls):
-        if not issubclass(cls, PluginBase):
+        if not issubclass(cls, Bc_PluginBase):
             raise TypeError("@plugin must decorate a subclass of PluginBase")
         cls.id = id or _sdk_snake_case(cls.__name__)
         cls.version = version

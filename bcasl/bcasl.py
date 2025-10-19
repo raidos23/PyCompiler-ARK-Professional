@@ -90,7 +90,7 @@ class PluginMeta:
         object.__setattr__(self, "id", nid)
 
 
-class PluginBase:
+class Bc_PluginBase:
     """Classe de base minimale que doivent étendre les plugins BCASL.
 
     Un plugin doit fournir:
@@ -404,7 +404,7 @@ def _plugin_worker(module_path: str, plugin_id: str, project_root: str, config: 
 class _PluginRecord:
     __slots__ = ("plugin", "active", "requires", "priority", "order", "insert_idx", "module_path", "module_name")
 
-    def __init__(self, plugin: PluginBase, insert_idx: int) -> None:
+    def __init__(self, plugin: Bc_PluginBase, insert_idx: int) -> None:
         self.plugin = plugin
         self.active = True
         self.requires = tuple(plugin.requires)
@@ -435,8 +435,8 @@ class BCASL:
         self.plugin_timeout_s = float(plugin_timeout_s)
 
     # API publique
-    def add_plugin(self, plugin: PluginBase) -> None:
-        if not isinstance(plugin, PluginBase):
+    def add_plugin(self, plugin: Bc_PluginBase) -> None:
+        if not isinstance(plugin, Bc_PluginBase):
             raise TypeError("Le plugin doit être une instance de PluginBase")
         pid = plugin.meta.id
         if pid in self._registry:

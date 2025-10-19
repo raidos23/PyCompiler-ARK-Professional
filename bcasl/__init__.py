@@ -20,7 +20,7 @@ from __future__ import annotations
 from .bcasl import (
     BCASL,
     ExecutionReport,
-    PluginBase,
+    Bc_PluginBase,
     PluginMeta,
     PreCompileContext,
     register_plugin,
@@ -46,7 +46,7 @@ from .dialog_creator import (
 __all__ = [
     # Coeur
     "BCASL",
-    "PluginBase",
+    "Bc_PluginBase",
     "PluginMeta",
     "PreCompileContext",
     "ExecutionReport",
