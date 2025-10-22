@@ -1,6 +1,0 @@
-# CODEOWNERS - PyCompiler ARK++
-# Single-owner repository. All files are owned and maintained by the author.
-# Owner: Samuel Amen Ague (@raidos23)
-
-# Global ownership: every file in the repository
-* @raidos23
