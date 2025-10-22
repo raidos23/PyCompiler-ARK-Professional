@@ -1,0 +1,82 @@
+
+QWidget {
+    background-color: #121214;
+    color: #d6d6d6;
+    font-family: "Segoe UI", Roboto, Arial;
+    font-size: 12px;
+}
+#topbar {
+    background-color: #16161a;
+    border-bottom: 1px solid #222;
+}
+QLineEdit {
+    background-color: #1e1e24;
+    border: 1px solid #2a2a2f;
+    padding: 8px;
+    border-radius: 8px;
+    color: #eaeaea;
+}
+QTabWidget::pane { border: none; }
+QTabBar::tab {
+    background: transparent;
+    color: #9aa0a6;
+    padding: 8px 14px;
+    margin: 4px;
+    border-radius: 8px;
+    min-width: 100px;
+}
+QTabBar::tab:selected {
+    color: #fff;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2f8a00, stop:1 #4e9a06);
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(78,154,6,0.15);
+}
+QListWidget {
+    background-color: #0f0f11;
+    border: 1px solid #202024;
+    padding: 6px;
+    border-radius: 8px;
+}
+QListWidget::item {
+    padding: 10px;
+    margin: 2px;
+    border-radius: 6px;
+}
+QListWidget::item:selected {
+    background-color: rgba(78,154,6,0.18);
+    color: white;
+}
+QPushButton {
+    background-color: #1f1f23;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #2b2b2f;
+}
+QPushButton:hover {
+    background-color: #2b2b2f;
+}
+QPushButton#primary {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2f8a00, stop:1 #4e9a06);
+    color: white;
+    border: none;
+    font-weight: 600;
+}
+QFrame#right_panel {
+    background-color: #0e0e10;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 12px;
+}
+QLabel.title {
+    color: #e8f5d7;
+    font-weight: 700;
+    font-size: 14px;
+}
+.small {
+    color: #9aa0a6;
+    font-size: 11px;
+}
+.meta {
+    color: #bfc6b6;
+    font-size: 12px;
+}
