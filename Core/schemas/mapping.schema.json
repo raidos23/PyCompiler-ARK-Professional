@@ -1,6 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/pycompiler/mapping.schema.json",
   "title": "PyCompiler engine auto-plugins mapping",
   "type": "object",
   "description": "Top-level keys are package names; values are per-engine configurations. Special top-level key '__aliases__' can provide alias tables.",
