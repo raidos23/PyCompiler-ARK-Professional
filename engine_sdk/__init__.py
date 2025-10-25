@@ -51,7 +51,7 @@ from .sysdep import SysDependencyManager  # type: ignore
 
 # Re-export engines registry for self-registration from engine packages
 try:
-    from utils.engines_loader import registry as registry  # type: ignore
+    from Core.engines_loader import registry as registry  # type: ignore
 except Exception:  # pragma: no cover
     registry = None  # type: ignore
 

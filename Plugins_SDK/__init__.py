@@ -41,7 +41,7 @@ def ensure_min_sdk(required: str) -> bool:
 # -----------------------------
 # i18n facade (host-level)
 # -----------------------------
-from utils.i18n import (  # type: ignore  # noqa: E402
+from Core.i18n import (  # type: ignore  # noqa: E402
     available_languages,
     get_translations,
     normalize_lang_pref,
@@ -160,7 +160,7 @@ def plugin(id: Optional[str] = None, version: str = "", description: str = ""):
 def _detect_workspace_root(pre_ctx: Any) -> Path:
     # 1) Use the workspace selected by the application (UI)
     try:
-        from utils.worker import get_selected_workspace  # type: ignore
+        from Core.worker import get_selected_workspace  # type: ignore
 
         sel = get_selected_workspace()
         if sel:
@@ -488,7 +488,7 @@ def set_selected_workspace(path: Pathish) -> bool:
         pass
     # Try to inform the GUI when running with UI; ignore result and accept by contract
     try:
-        from utils.worker import request_workspace_change_from_api  # type: ignore
+        from Core.worker import request_workspace_change_from_api  # type: ignore
 
         try:
             request_workspace_change_from_api(str(path))

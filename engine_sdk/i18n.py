@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 # Stable i18n facade for engines
-from utils.i18n import (
+from Core.i18n import (
     available_languages,
     get_translations,
     normalize_lang_pref,

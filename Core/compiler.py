@@ -14,7 +14,7 @@ import subprocess
 from PySide6.QtCore import QProcess, QTimer
 from PySide6.QtWidgets import QCheckBox, QLabel, QMessageBox, QPlainTextEdit, QPushButton, QWidget
 
-import utils.engines_loader as engines_loader
+import Core.engines_loader as engines_loader
 from engine_sdk.utils import clamp_text, redact_secrets
 
 from .auto_plugins import compute_for_all

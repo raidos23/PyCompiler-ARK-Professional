@@ -24,7 +24,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 if ROOT_DIR not in sys.path[:1]:
     sys.path.insert(0, ROOT_DIR)
 
-from utils import __version__ as APP_VERSION
+from Core import __version__ as APP_VERSION
 
 IS_WINDOWS = os.name == "nt" or platform.system().lower().startswith("win")
 IS_DARWIN = platform.system().lower().startswith("darwin")
@@ -196,7 +196,7 @@ if IS_WINDOWS and hasattr(signal, "SIGBREAK"):
     except Exception:
         pass
 
-from utils import PyInstallerWorkspaceGUI
+from Core.worker import PyInstallerWorkspaceGUI
 
 
 def main(argv: list[str]) -> int:

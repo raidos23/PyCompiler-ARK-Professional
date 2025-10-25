@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from utils import i18n as _i18n
+from Core import i18n as _i18n
 
 
 def _detect_system_color_scheme() -> str:
@@ -307,7 +307,7 @@ def init_ui(self):
     self.tab_nuitka = self.ui.findChild(QWidget, "tab_nuitka")
     # Lier dynamiquement les onglets des moteurs plug-and-play
     try:
-        import utils.engines_loader as engines_loader
+        import Core.engines_loader as engines_loader
 
         engines_loader.registry.bind_tabs(self)
     except Exception:
@@ -488,7 +488,7 @@ def init_ui(self):
 
     def update_compiler_options_enabled():
         try:
-            import utils.engines_loader as engines_loader
+            import Core.engines_loader as engines_loader
 
             idx = self.compiler_tabs.currentIndex()
             engine_id = engines_loader.registry.get_engine_for_tab(idx) or ("pyinstaller" if idx == 0 else "nuitka")
@@ -769,7 +769,7 @@ def show_language_dialog(self):
                 pass
             # Propagate translations to all engines so their UI matches the app language immediately
             try:
-                import utils.engines_loader as engines_loader
+                import Core.engines_loader as engines_loader
 
                 engines_loader.registry.apply_translations(self, tr)
             except Exception:

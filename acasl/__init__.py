@@ -48,7 +48,7 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
     # Fallback to legacy location
     try:
-        from utils.acasl_loader import (  # type: ignore
+        from Core.acasl_loader import (  # type: ignore
             ACASLContext,
             ensure_acasl_thread_stopped,
             open_acasl_loader_dialog,

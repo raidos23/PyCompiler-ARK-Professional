@@ -23,7 +23,7 @@ except Exception:  # pragma: no cover
 
 # Try to import app-level ProgressDialog for consistency
 try:
-    from utils.dialogs import ProgressDialog as _AppProgressDialog  # type: ignore
+    from Core.dialogs import ProgressDialog as _AppProgressDialog  # type: ignore
 except Exception:
     _AppProgressDialog = None
 

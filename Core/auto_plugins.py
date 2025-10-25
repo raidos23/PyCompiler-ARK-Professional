@@ -23,7 +23,7 @@ from typing import Optional
 
 # Optional access to registered engines for discovery
 try:
-    from utils.engines_loader import registry as engines_registry  # type: ignore
+    from Core.engines_loader import registry as engines_registry  # type: ignore
 except Exception:  # pragma: no cover
     engines_registry = None  # type: ignore
 
@@ -465,7 +465,7 @@ def _detect_modules_preferring_requirements(self) -> tuple[set[str], str]:
         import tomllib as _tomllib  # Python 3.11+
     except Exception:
         try:
-            import tomli as _tomllib  # backport
+            import tomli as _tomllib  # pyright: ignore[reportMissingImports] # backport
         except Exception:
             _tomllib = None
     try:
