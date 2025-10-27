@@ -92,7 +92,9 @@ class PluginMeta:
         object.__setattr__(self, "id", nid)
         # Normaliser les tags
         try:
-            normalized_tags = tuple(str(t).strip().lower() for t in (self.tags or []) if str(t).strip())
+            normalized_tags = tuple(
+                str(t).strip().lower() for t in (self.tags or []) if str(t).strip()
+            )
             object.__setattr__(self, "tags", normalized_tags)
         except Exception:
             object.__setattr__(self, "tags", tuple())
@@ -117,7 +119,9 @@ class Ac_PluginBase:
     requires: tuple[str, ...]
     priority: int
 
-    def __init__(self, meta: PluginMeta, requires: Iterable[str] = (), priority: int = 100) -> None:
+    def __init__(
+        self, meta: PluginMeta, requires: Iterable[str] = (), priority: int = 100
+    ) -> None:
         if not meta or not meta.id:
             raise ValueError("PluginMeta invalide: 'id' requis")
         # Normaliser l'id pour éviter erreurs de casse/espaces accidentelles
@@ -129,7 +133,9 @@ class Ac_PluginBase:
         self.priority = int(priority)
 
     # Hook principal
-    def on_post_compile(self, ctx: PostCompileContext) -> None:  # pragma: no cover - à surcharger
+    def on_post_compile(
+        self, ctx: PostCompileContext
+    ) -> None:  # pragma: no cover - à surcharger
         raise NotImplementedError
 
     def __repr__(self) -> str:
@@ -151,7 +157,9 @@ class PostCompileContext:
         default_factory=dict, repr=False, compare=False
     )
 
-    def iter_artifacts(self, include: Iterable[str] = (), exclude: Iterable[str] = ()) -> Iterable[Path]:
+    def iter_artifacts(
+        self, include: Iterable[str] = (), exclude: Iterable[str] = ()
+    ) -> Iterable[Path]:
         """Itère sur les artefacts compilés en appliquant des motifs glob d'inclusion/exclusion.
 
         - include: motifs type glob (ex: "*.exe", "*.so"); si vide, retourne tous les artefacts
@@ -168,7 +176,7 @@ class PostCompileContext:
                     return True
             return False
 
-        for art_str in (self.artifacts or []):
+        for art_str in self.artifacts or []:
             try:
                 art_path = Path(art_str)
                 if not art_path.is_file():
@@ -184,7 +192,9 @@ class PostCompileContext:
             except Exception:
                 continue
 
-    def iter_files(self, include: Iterable[str], exclude: Iterable[str] = ()) -> Iterable[Path]:
+    def iter_files(
+        self, include: Iterable[str], exclude: Iterable[str] = ()
+    ) -> Iterable[Path]:
         """Itère sur les fichiers du projet en appliquant des motifs glob d'inclusion/exclusion.
 
         - include: motifs type glob (ex: "**/*.py", "src/**/*.c")
@@ -236,7 +246,9 @@ class ExecutionReport:
         ok = sum(1 for i in self.items if i.success)
         ko = total - ok
         dur = sum(i.duration_ms for i in self.items)
-        return f"Plugins ACASL: {ok}/{total} ok, {ko} échec(s), temps total {dur:.1f} ms"
+        return (
+            f"Plugins ACASL: {ok}/{total} ok, {ko} échec(s), temps total {dur:.1f} ms"
+        )
 
     def by_tag(self, tag: str) -> list[ExecutionItem]:
         """Retourne les items ayant le tag spécifié."""
@@ -248,7 +260,16 @@ class ExecutionReport:
 
 
 class _PluginRecord:
-    __slots__ = ("plugin", "active", "requires", "priority", "order", "insert_idx", "module_path", "module_name")
+    __slots__ = (
+        "plugin",
+        "active",
+        "requires",
+        "priority",
+        "order",
+        "insert_idx",
+        "module_path",
+        "module_name",
+    )
 
     def __init__(self, plugin: Ac_PluginBase, insert_idx: int) -> None:
         self.plugin = plugin
@@ -293,7 +314,9 @@ class ACASL:
     def remove_plugin(self, plugin_id: str) -> bool:
         return self._registry.pop(plugin_id, None) is not None
 
-    def list_plugins(self, include_inactive: bool = True, tag_filter: Optional[str] = None) -> list[tuple[str, PluginMeta, bool, int]]:
+    def list_plugins(
+        self, include_inactive: bool = True, tag_filter: Optional[str] = None
+    ) -> list[tuple[str, PluginMeta, bool, int]]:
         """Liste les plugins, optionnellement filtrés par tag."""
         out = []
         tag_lower = str(tag_filter).strip().lower() if tag_filter else None
@@ -329,7 +352,9 @@ class ACASL:
         return True
 
     # Chargement automatique
-    def load_plugins_from_directory(self, directory: Path) -> tuple[int, list[tuple[str, str]]]:
+    def load_plugins_from_directory(
+        self, directory: Path
+    ) -> tuple[int, list[tuple[str, str]]]:
         """Charge automatiquement tous les plugins depuis un dossier.
 
         Retourne (nombre_plugins_enregistrés, liste_erreurs[(module, message)]).
@@ -343,7 +368,9 @@ class ACASL:
         errors: list[tuple[str, str]] = []
         # Parcourt uniquement les packages Python (dossiers contenant __init__.py)
         try:
-            pkg_dirs = sorted([p for p in directory.iterdir() if p.is_dir()], key=lambda p: p.name)
+            pkg_dirs = sorted(
+                [p for p in directory.iterdir() if p.is_dir()], key=lambda p: p.name
+            )
         except Exception:
             pkg_dirs = []
         for pkg_dir in pkg_dirs:
@@ -366,7 +393,11 @@ class ACASL:
                 # Recherche et appel de la fonction d'enregistrement si présente
                 reg = getattr(module, ACASL_PLUGIN_REGISTER_FUNC, None)
                 if not callable(reg):
-                    _logger.debug("Package %s: aucune fonction %s, ignoré", pkg_dir.name, ACASL_PLUGIN_REGISTER_FUNC)
+                    _logger.debug(
+                        "Package %s: aucune fonction %s, ignoré",
+                        pkg_dir.name,
+                        ACASL_PLUGIN_REGISTER_FUNC,
+                    )
                     continue
                 # Appeler l'enregistrement
                 before_ids = set(self._registry.keys())
@@ -380,7 +411,9 @@ class ACASL:
                 # Validation de signature supprimée (simplification)
                 added = len(new_ids)
                 if added <= 0:
-                    _logger.warning("Aucun plugin enregistré par package %s", pkg_dir.name)
+                    _logger.warning(
+                        "Aucun plugin enregistré par package %s", pkg_dir.name
+                    )
                 else:
                     count += added
                     _logger.info("Plugin ACASL chargé depuis package %s", pkg_dir.name)
@@ -410,7 +443,9 @@ class ACASL:
         for pid, rec in active_items.items():
             for dep in rec.requires:
                 if dep not in active_items:
-                    _logger.warning("Dépendance manquante pour %s: '%s' (ignorée)", pid, dep)
+                    _logger.warning(
+                        "Dépendance manquante pour %s: '%s' (ignorée)", pid, dep
+                    )
                     continue
                 indeg[pid] += 1
                 children[dep].append(pid)
@@ -441,11 +476,15 @@ class ACASL:
             # Cycle détecté; insérer les restants par priorité pour ne pas bloquer
             remaining = [pid for pid in active_items if pid not in order]
             _logger.error("Cycle de dépendances détecté: %s", ", ".join(remaining))
-            remaining.sort(key=lambda x: (active_items[x].priority, active_items[x].insert_idx, x))
+            remaining.sort(
+                key=lambda x: (active_items[x].priority, active_items[x].insert_idx, x)
+            )
             order.extend(remaining)
         return order
 
-    def run_post_compile(self, ctx: Optional[PostCompileContext] = None) -> ExecutionReport:
+    def run_post_compile(
+        self, ctx: Optional[PostCompileContext] = None
+    ) -> ExecutionReport:
         """Exécute le hook 'on_post_compile' de tous les plugins actifs.
 
         Exécution séquentielle en respectant dépendances et priorités.
@@ -483,7 +522,9 @@ class ACASL:
                         tags=plg.meta.tags,
                     )
                 )
-                _logger.info("Plugin ACASL %s exécuté avec succès (%.1f ms)", pid, duration_ms)
+                _logger.info(
+                    "Plugin ACASL %s exécuté avec succès (%.1f ms)", pid, duration_ms
+                )
             except Exception as exc:
                 duration_ms = (time.perf_counter() - start) * 1000.0
                 report.add(

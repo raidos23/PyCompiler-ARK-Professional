@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Union
 import os
+
 # Reuse i18n facade from host
 # Local utility imports (UI helpers and message boxes)
 from .progress import show_msgbox
@@ -74,7 +75,9 @@ class SDKContext:
         self.log(f"[ERROR] {message}")
 
     # ---------- Message boxes ----------
-    def show_msgbox(self, kind: str, title: str, text: str, *, default: Optional[str] = None) -> Optional[bool]:
+    def show_msgbox(
+        self, kind: str, title: str, text: str, *, default: Optional[str] = None
+    ) -> Optional[bool]:
         return show_msgbox(kind, title, text, default=default)
 
     def msg_info(self, title: str, text: str) -> None:
@@ -87,7 +90,9 @@ class SDKContext:
         show_msgbox("error", title, text)
 
     def msg_question(self, title: str, text: str, default_yes: bool = True) -> bool:
-        return bool(show_msgbox("question", title, text, default="Yes" if default_yes else "No"))
+        return bool(
+            show_msgbox("question", title, text, default="Yes" if default_yes else "No")
+        )
 
     # ---------- Environment/policy ----------
     @property
@@ -138,7 +143,11 @@ class SDKContext:
             import os as _os
             import subprocess
 
-            base_env = {k: v for k, v in _os.environ.items() if k in ("PATH", "LANG", "HOME", "LC_ALL", "LC_CTYPE")}
+            base_env = {
+                k: v
+                for k, v in _os.environ.items()
+                if k in ("PATH", "LANG", "HOME", "LC_ALL", "LC_CTYPE")
+            }
             if isinstance(env, dict):
                 base_env.update({str(k): str(v) for k, v in env.items()})
             try:
@@ -153,8 +162,16 @@ class SDKContext:
                 )
                 return int(cp.returncode), cp.stdout or "", cp.stderr or ""
             except subprocess.TimeoutExpired as te:
-                out = te.stdout.decode() if isinstance(te.stdout, (bytes, bytearray)) else (te.stdout or "")
-                err = te.stderr.decode() if isinstance(te.stderr, (bytes, bytearray)) else (te.stderr or "")
+                out = (
+                    te.stdout.decode()
+                    if isinstance(te.stdout, (bytes, bytearray))
+                    else (te.stdout or "")
+                )
+                err = (
+                    te.stderr.decode()
+                    if isinstance(te.stderr, (bytes, bytearray))
+                    else (te.stderr or "")
+                )
                 return -999, out, err
         rc, out, err = _run(cmd, timeout_s=timeout_s, cwd=cwd, env=env, shell=shell)
         try:
@@ -254,7 +271,11 @@ class SDKContext:
                 if not patterns or any(fnmatch.fnmatch(rel, pat) for pat in patterns):
                     yield p
                     count += 1
-                    if isinstance(max_files, int) and max_files > 0 and count >= max_files:
+                    if (
+                        isinstance(max_files, int)
+                        and max_files > 0
+                        and count >= max_files
+                    ):
                         return
             except Exception:
                 continue
@@ -268,7 +289,9 @@ class SDKContext:
         max_files: Optional[int] = None,
     ) -> Iterable[Path]:
         pats = (
-            list(patterns) if patterns else (self.config_view.file_patterns or ["**/*.py"])
+            list(patterns)
+            if patterns
+            else (self.config_view.file_patterns or ["**/*.py"])
         )  # default to python files
         exc = list(exclude) if exclude else (self.config_view.exclude_patterns or [])
         key = None
@@ -277,7 +300,11 @@ class SDKContext:
                 key = (tuple(sorted(pats)), tuple(sorted(exc)))
                 cached = self._iter_cache.get(key)
                 if cached is not None:
-                    for cp in cached[:max_files] if isinstance(max_files, int) and max_files > 0 else cached:
+                    for cp in (
+                        cached[:max_files]
+                        if isinstance(max_files, int) and max_files > 0
+                        else cached
+                    ):
                         yield cp
                     return
             except Exception:
@@ -311,7 +338,12 @@ class SDKContext:
 
     # ---------- Replace helpers ----------
     def write_text_atomic(
-        self, *parts: Pathish, text: str, create_dirs: bool = True, backup: bool = True, encoding: str = "utf-8"
+        self,
+        *parts: Pathish,
+        text: str,
+        create_dirs: bool = True,
+        backup: bool = True,
+        encoding: str = "utf-8",
     ) -> Path:
         import os as _os
         import tempfile
@@ -366,14 +398,26 @@ class SDKContext:
         if regex:
             import re as _re
 
-            new, n = _re.subn(pattern, repl, data, count=0 if count is None or count <= 0 else count, flags=flags)
+            new, n = _re.subn(
+                pattern,
+                repl,
+                data,
+                count=0 if count is None or count <= 0 else count,
+                flags=flags,
+            )
         else:
             if pattern in data:
-                n = data.count(pattern) if (count is None or count <= 0) else min(count, data.count(pattern))
+                n = (
+                    data.count(pattern)
+                    if (count is None or count <= 0)
+                    else min(count, data.count(pattern))
+                )
                 if n > 0:
                     new = data.replace(pattern, repl, n)
         if n > 0 and new != data:
-            self.write_text_atomic(p, text=new, create_dirs=False, backup=True, encoding=encoding)
+            self.write_text_atomic(
+                p, text=new, create_dirs=False, backup=True, encoding=encoding
+            )
         return n
 
     def batch_replace(
@@ -387,7 +431,9 @@ class SDKContext:
         max_files: Optional[int] = None,
     ) -> dict[str, int]:
         stats: dict[str, int] = {}
-        for fp in self.iter_project_files(patterns=patterns, exclude=exclude, use_cache=True, max_files=max_files):
+        for fp in self.iter_project_files(
+            patterns=patterns, exclude=exclude, use_cache=True, max_files=max_files
+        ):
             total = 0
             try:
                 content = fp.read_text(encoding="utf-8", errors="ignore")
@@ -408,7 +454,9 @@ class SDKContext:
                         total += c
             if total > 0 and new != content:
                 try:
-                    self.write_text_atomic(fp, text=new, create_dirs=False, backup=True, encoding="utf-8")
+                    self.write_text_atomic(
+                        fp, text=new, create_dirs=False, backup=True, encoding="utf-8"
+                    )
                     stats[str(fp)] = total
                 except Exception:
                     pass
@@ -433,7 +481,10 @@ class SDKContext:
 
     # ---------- Parallel map ----------
     def parallel_map(
-        self, func: Callable[[Any], Any], items: Sequence[Any], max_workers: Optional[int] = None
+        self,
+        func: Callable[[Any], Any],
+        items: Sequence[Any],
+        max_workers: Optional[int] = None,
     ) -> list[Any]:
         try:
             from concurrent.futures import ThreadPoolExecutor, as_completed

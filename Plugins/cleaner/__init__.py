@@ -17,6 +17,7 @@ META = PluginMeta(
     description="clean the workspace (.pyc and __pycache__)",
 )
 
+
 class Cleaner(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -27,7 +28,7 @@ class Cleaner(Bc_PluginBase):
         root = sctx.workspace_root
 
         # Charger les traductions locales du plugin
-        tr = apply_plugin_i18n(self, __file__, getattr(sctx, '_tr', {}))
+        tr = apply_plugin_i18n(self, __file__, getattr(sctx, "_tr", {}))
 
         # Préparer exclusions (globales + spécifiques au plugin)
         cfg = sctx.config_view
@@ -56,7 +57,10 @@ class Cleaner(Bc_PluginBase):
         # Demande de confirmation avant une opération potentiellement destructive
         if not sctx.msg_question(
             tr.get("title", "Nettoyeur"),
-            tr.get("confirm_delete", "Supprimer tous les fichiers .pyc et les dossiers __pycache__ du workspace ?"),
+            tr.get(
+                "confirm_delete",
+                "Supprimer tous les fichiers .pyc et les dossiers __pycache__ du workspace ?",
+            ),
             default_yes=False,
         ):
             sctx.log_warn("Nettoyage annulé par l'utilisateur")
@@ -129,7 +133,9 @@ class Cleaner(Bc_PluginBase):
                             sctx.log_warn(f"Erreur suppression {d}: {e}")
                         finally:
                             current += 1
-                            ph.update(current, f"Suppression __pycache__ ({current}/{total})")
+                            ph.update(
+                                current, f"Suppression __pycache__ ({current}/{total})"
+                            )
 
             # 3) Logs UI
             sctx.log_info(
@@ -137,7 +143,6 @@ class Cleaner(Bc_PluginBase):
             )
         finally:
             ph.close()
-
 
 
 PLUGIN = Cleaner(META)

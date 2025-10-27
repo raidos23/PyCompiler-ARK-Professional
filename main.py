@@ -65,7 +65,9 @@ if IS_DARWIN:
             if p not in path:
                 add.append(p)
         if add:
-            os.environ["PATH"] = os.pathsep.join(add + [path]) if path else os.pathsep.join(add)
+            os.environ["PATH"] = (
+                os.pathsep.join(add + [path]) if path else os.pathsep.join(add)
+            )
     except Exception:
         pass
 # Linux: ensure a UTF-8 locale if not set
@@ -78,7 +80,11 @@ if IS_LINUX:
 def _platform_log_dir() -> Path:
     try:
         if IS_WINDOWS:
-            base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Local")
+            base = (
+                os.environ.get("LOCALAPPDATA")
+                or os.environ.get("APPDATA")
+                or str(Path.home() / "AppData" / "Local")
+            )
             return Path(base) / "PyCompiler_ProPP" / "logs"
         if IS_DARWIN:
             return Path.home() / "Library" / "Logs" / "PyCompiler_ProPP"
@@ -105,7 +111,13 @@ except Exception:
         pass
 
 # Import Qt after environment tuning
-from PySide6.QtCore import QCoreApplication, Qt, QTimer, QtMsgType, qInstallMessageHandler
+from PySide6.QtCore import (
+    QCoreApplication,
+    Qt,
+    QTimer,
+    QtMsgType,
+    qInstallMessageHandler,
+)
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import QApplication, QSplashScreen
 
@@ -206,8 +218,16 @@ def main(argv: list[str]) -> int:
         splash = None
         try:
             logo_dir = os.path.join(ROOT_DIR, "logo")
-            safe_ver = "".join(c for c in APP_VERSION if c.isalnum() or c in (".", "-", "_"))
-            names = [f"splash_v{safe_ver}.png", "splash.png", "splash.jpg", "splash.jpeg", "splash.bmp"]
+            safe_ver = "".join(
+                c for c in APP_VERSION if c.isalnum() or c in (".", "-", "_")
+            )
+            names = [
+                f"splash_v{safe_ver}.png",
+                "splash.png",
+                "splash.jpg",
+                "splash.jpeg",
+                "splash.bmp",
+            ]
             for _name in names:
                 _path = os.path.join(logo_dir, _name)
                 if os.path.isfile(_path):
@@ -216,7 +236,11 @@ def main(argv: list[str]) -> int:
                         # Limiter la taille pour éviter tout affichage plein écran
                         try:
                             screen = app.primaryScreen()
-                            geo = screen.availableGeometry() if screen is not None else None
+                            geo = (
+                                screen.availableGeometry()
+                                if screen is not None
+                                else None
+                            )
                             max_side = 720
                             if geo is not None:
                                 max_side = int(min(geo.width(), geo.height()) * 0.5)
@@ -236,8 +260,15 @@ def main(argv: list[str]) -> int:
                             # Centrer le splash sur l'écran actif
                             if screen is not None:
                                 sg = splash.frameGeometry()
-                                center = geo.center() if geo is not None else screen.geometry().center()
-                                splash.move(center.x() - sg.width() // 2, center.y() - sg.height() // 2)
+                                center = (
+                                    geo.center()
+                                    if geo is not None
+                                    else screen.geometry().center()
+                                )
+                                splash.move(
+                                    center.x() - sg.width() // 2,
+                                    center.y() - sg.height() // 2,
+                                )
                         except Exception:
                             pass
                         app.processEvents()
@@ -245,20 +276,31 @@ def main(argv: list[str]) -> int:
                         try:
                             align = Qt.AlignHCenter | Qt.AlignBottom
                             col = QColor(255, 255, 255)
-                            splash.showMessage("Initialisation… / Initializing…", align, col)
+                            splash.showMessage(
+                                "Initialisation… / Initializing…", align, col
+                            )
                             app.processEvents()
                             QTimer.singleShot(
-                                700, lambda: splash.showMessage("Chargement du thème… / Loading theme…", align, col)
+                                700,
+                                lambda: splash.showMessage(
+                                    "Chargement du thème… / Loading theme…", align, col
+                                ),
                             )
                             QTimer.singleShot(
                                 1400,
                                 lambda: splash.showMessage(
-                                    "Découverte des moteurs… / Discovering engines…", align, col
+                                    "Découverte des moteurs… / Discovering engines…",
+                                    align,
+                                    col,
                                 ),
                             )
                             QTimer.singleShot(
                                 2300,
-                                lambda: splash.showMessage("Préparation de l’interface… / Preparing UI…", align, col),
+                                lambda: splash.showMessage(
+                                    "Préparation de l’interface… / Preparing UI…",
+                                    align,
+                                    col,
+                                ),
                             )
                         except Exception:
                             pass
@@ -281,10 +323,16 @@ def main(argv: list[str]) -> int:
                         from PySide6.QtWidgets import QLabel, QLayout
 
                         screen2 = app.primaryScreen()
-                        geo2 = screen2.availableGeometry() if screen2 is not None else None
+                        geo2 = (
+                            screen2.availableGeometry() if screen2 is not None else None
+                        )
                         if geo2 and (geo2.width() < 1000 or geo2.height() < 650):
                             try:
-                                lays = w.ui.findChildren(QLayout) if hasattr(w, "ui") else []
+                                lays = (
+                                    w.ui.findChildren(QLayout)
+                                    if hasattr(w, "ui")
+                                    else []
+                                )
                                 for _l in lays:
                                     try:
                                         _l.setContentsMargins(6, 6, 6, 6)

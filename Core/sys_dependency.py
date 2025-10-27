@@ -35,12 +35,18 @@ class SysDependencyManager:
         self.parent_widget = parent_widget
         # Register list of system dependency tasks on the parent widget for global coordination
         try:
-            if parent_widget is not None and not hasattr(parent_widget, "_sysdep_tasks"):
-                parent_widget._sysdep_tasks = []  # list of dicts: {process, dialog, label_fr, label_en}
+            if parent_widget is not None and not hasattr(
+                parent_widget, "_sysdep_tasks"
+            ):
+                parent_widget._sysdep_tasks = (
+                    []
+                )  # list of dicts: {process, dialog, label_fr, label_en}
         except Exception:
             pass
 
-    def _register_task(self, proc: QProcess, dlg: ProgressDialog, label_fr: str, label_en: str) -> None:
+    def _register_task(
+        self, proc: QProcess, dlg: ProgressDialog, label_fr: str, label_en: str
+    ) -> None:
         try:
             if self.parent_widget is None:
                 return
@@ -61,7 +67,9 @@ class SysDependencyManager:
 
     def _unregister_task(self, proc: QProcess) -> None:
         try:
-            if self.parent_widget is None or not hasattr(self.parent_widget, "_sysdep_tasks"):
+            if self.parent_widget is None or not hasattr(
+                self.parent_widget, "_sysdep_tasks"
+            ):
                 return
             tasks = getattr(self.parent_widget, "_sysdep_tasks")
             for t in list(tasks):
@@ -129,7 +137,9 @@ class SysDependencyManager:
         """Ask for sudo password using a masked input dialog."""
         pwd, ok = QInputDialog.getText(
             self.parent_widget,
-            self.tr("Mot de passe administrateur requis", "Administrator password required"),
+            self.tr(
+                "Mot de passe administrateur requis", "Administrator password required"
+            ),
             self.tr(
                 "Pour installer les dépendances, entrez votre mot de passe administrateur :",
                 "To install dependencies, enter your administrator password:",
@@ -141,7 +151,9 @@ class SysDependencyManager:
         return None
 
     # ------------- MessageBox helpers -------------
-    def msg_info(self, title_fr: str, title_en: str, body_fr: str, body_en: str) -> None:
+    def msg_info(
+        self, title_fr: str, title_en: str, body_fr: str, body_en: str
+    ) -> None:
         """Show an information message box (no return)."""
         try:
             QMessageBox.information(
@@ -152,7 +164,9 @@ class SysDependencyManager:
         except Exception:
             pass
 
-    def msg_warning(self, title_fr: str, title_en: str, body_fr: str, body_en: str) -> None:
+    def msg_warning(
+        self, title_fr: str, title_en: str, body_fr: str, body_en: str
+    ) -> None:
         """Show a warning message box (no return)."""
         try:
             QMessageBox.warning(
@@ -163,7 +177,9 @@ class SysDependencyManager:
         except Exception:
             pass
 
-    def msg_error(self, title_fr: str, title_en: str, body_fr: str, body_en: str) -> None:
+    def msg_error(
+        self, title_fr: str, title_en: str, body_fr: str, body_en: str
+    ) -> None:
         """Show an error (critical) message box (no return)."""
         try:
             QMessageBox.critical(
@@ -174,7 +190,14 @@ class SysDependencyManager:
         except Exception:
             pass
 
-    def ask_yes_no(self, title_fr: str, title_en: str, text_fr: str, text_en: str, default_yes: bool = True) -> bool:
+    def ask_yes_no(
+        self,
+        title_fr: str,
+        title_en: str,
+        text_fr: str,
+        text_en: str,
+        default_yes: bool = True,
+    ) -> bool:
         """Ask a Yes/No question. Return True if Yes selected, else False."""
         try:
             msg = QMessageBox(self.parent_widget)
@@ -188,7 +211,13 @@ class SysDependencyManager:
             return False
 
     def prompt_text(
-        self, title_fr: str, title_en: str, label_fr: str, label_en: str, default: str = "", password: bool = False
+        self,
+        title_fr: str,
+        title_en: str,
+        label_fr: str,
+        label_en: str,
+        default: str = "",
+        password: bool = False,
     ) -> tuple[Optional[str], bool]:
         """Prompt a text input. If password=True, mask input. Return (value|None, ok)."""
         try:
@@ -244,7 +273,9 @@ class SysDependencyManager:
                     )
                     if data:
                         try:
-                            self._dbg(("STDERR: " if is_error else "STDOUT: ") + data.strip())
+                            self._dbg(
+                                ("STDERR: " if is_error else "STDOUT: ") + data.strip()
+                            )
                         except Exception:
                             pass
                         if is_error and callable(on_error):
@@ -272,7 +303,9 @@ class SysDependencyManager:
                 pass
 
             try:
-                self._dbg(f"shell_run start: program={proc.program()} args={' '.join(proc.arguments())} cwd={cwd or ''}")
+                self._dbg(
+                    f"shell_run start: program={proc.program()} args={' '.join(proc.arguments())} cwd={cwd or ''}"
+                )
             except Exception:
                 pass
             proc.start()
@@ -323,16 +356,28 @@ class SysDependencyManager:
                         # Auto-respond to sudo password prompts if they reappear
                         try:
                             low = data.lower()
-                            if password and ("password" in low) and ("sudo" in low or "[sudo]" in low or "password for" in low):
+                            if (
+                                password
+                                and ("password" in low)
+                                and (
+                                    "sudo" in low
+                                    or "[sudo]" in low
+                                    or "password for" in low
+                                )
+                            ):
                                 p.write((password + "\n").encode("utf-8"))
                                 try:
-                                    self._dbg("sudo: password prompt detected, password re-sent")
+                                    self._dbg(
+                                        "sudo: password prompt detected, password re-sent"
+                                    )
                                 except Exception:
                                     pass
                         except Exception:
                             pass
                         try:
-                            self._dbg(("STDERR: " if is_error else "STDOUT: ") + data.strip())
+                            self._dbg(
+                                ("STDERR: " if is_error else "STDOUT: ") + data.strip()
+                            )
                         except Exception:
                             pass
                         if is_error and callable(on_error):
@@ -371,7 +416,14 @@ class SysDependencyManager:
                 try:
                     timer = QTimer(self.parent_widget)
                     timer.setSingleShot(True)
-                    timer.timeout.connect(lambda: (self._dbg(f"sudo shell timeout after {timeout_s}s; killing"), proc.kill()))
+                    timer.timeout.connect(
+                        lambda: (
+                            self._dbg(
+                                f"sudo shell timeout after {timeout_s}s; killing"
+                            ),
+                            proc.kill(),
+                        )
+                    )
                     timer.start(int(timeout_s) * 1000)
                     proc.finished.connect(lambda *_: timer.stop())
                     self._last_timer = timer
@@ -379,7 +431,9 @@ class SysDependencyManager:
                     pass
 
             try:
-                self._dbg(f"sudo shell start: program={proc.program()} args={' '.join(proc.arguments())} cwd={cwd or ''}")
+                self._dbg(
+                    f"sudo shell start: program={proc.program()} args={' '.join(proc.arguments())} cwd={cwd or ''}"
+                )
             except Exception:
                 pass
             proc.start()
@@ -445,7 +499,11 @@ class SysDependencyManager:
                 pass
             # Progress dialog
             dlg = ProgressDialog(
-                self.tr("Installation des dépendances Windows", "Installing Windows dependencies"), self.parent_widget
+                self.tr(
+                    "Installation des dépendances Windows",
+                    "Installing Windows dependencies",
+                ),
+                self.parent_widget,
             )
             dlg.set_message(self.tr("Préparation…", "Preparing…"))
             dlg.progress.setRange(0, 0)
@@ -469,9 +527,11 @@ class SysDependencyManager:
                     return
                 args = [
                     "install",
-                    "--id", pkg_id,
+                    "--id",
+                    pkg_id,
                     "-e",
-                    "--source", "winget",
+                    "--source",
+                    "winget",
                     "--silent",
                     "--accept-source-agreements",
                     "--accept-package-agreements",
@@ -479,7 +539,9 @@ class SysDependencyManager:
                 if override:
                     args += ["--override", override]
                 try:
-                    dlg.set_message(self.tr(f"Installation: {pkg_id}", f"Installing: {pkg_id}"))
+                    dlg.set_message(
+                        self.tr(f"Installation: {pkg_id}", f"Installing: {pkg_id}")
+                    )
                 except Exception:
                     pass
                 proc.setProgram("winget")
@@ -493,10 +555,15 @@ class SysDependencyManager:
             def _on_output(p: QProcess, error: bool = False):
                 try:
                     data = (
-                        p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                        p.readAllStandardError().data().decode()
+                        if error
+                        else p.readAllStandardOutput().data().decode()
                     )
                     try:
-                        self._dbg(("winget STDERR: " if error else "winget STDOUT: ") + data.strip())
+                        self._dbg(
+                            ("winget STDERR: " if error else "winget STDOUT: ")
+                            + data.strip()
+                        )
                     except Exception:
                         pass
                     lines = [ln for ln in data.strip().splitlines() if ln.strip()]
@@ -551,7 +618,9 @@ class SysDependencyManager:
             def _on_output(p: QProcess, error: bool = False):
                 try:
                     data = (
-                        p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                        p.readAllStandardError().data().decode()
+                        if error
+                        else p.readAllStandardOutput().data().decode()
                     )
                     lines = [ln for ln in data.strip().splitlines() if ln.strip()]
                     if lines:
@@ -572,7 +641,9 @@ class SysDependencyManager:
 
             proc.finished.connect(_on_finished_wrapper)
             # Register task for global coordination (quit handling)
-            self._register_task(proc, dlg, "installation des dépendances", "dependencies installation")
+            self._register_task(
+                proc, dlg, "installation des dépendances", "dependencies installation"
+            )
             proc.start()
             # Conserver des refs sur l'instance pour éviter la GC
             self._last_progress_dialog = dlg
@@ -626,15 +697,27 @@ class SysDependencyManager:
             def _on_output(p: QProcess, error: bool = False):
                 try:
                     data = (
-                        p.readAllStandardError().data().decode() if error else p.readAllStandardOutput().data().decode()
+                        p.readAllStandardError().data().decode()
+                        if error
+                        else p.readAllStandardOutput().data().decode()
                     )
                     # Auto-respond to sudo password prompts if they reappear
                     try:
                         low = data.lower()
-                        if password and ("password" in low) and ("sudo" in low or "[sudo]" in low or "password for" in low):
+                        if (
+                            password
+                            and ("password" in low)
+                            and (
+                                "sudo" in low
+                                or "[sudo]" in low
+                                or "password for" in low
+                            )
+                        ):
                             proc.write((password + "\n").encode("utf-8"))
                             try:
-                                self._dbg("sudo: password prompt detected (progress), password re-sent")
+                                self._dbg(
+                                    "sudo: password prompt detected (progress), password re-sent"
+                                )
                             except Exception:
                                 pass
                     except Exception:
@@ -670,14 +753,24 @@ class SysDependencyManager:
 
             proc.finished.connect(_on_finished_wrapper)
             # Register task for global coordination (quit handling)
-            self._register_task(proc, dlg, "installation des dépendances", "dependencies installation")
+            self._register_task(
+                proc, dlg, "installation des dépendances", "dependencies installation"
+            )
 
             # Optional timeout to enforce robustness
             if timeout_s and int(timeout_s) > 0:
                 try:
                     timer = QTimer(self.parent_widget)
                     timer.setSingleShot(True)
-                    timer.timeout.connect(lambda: (self._dbg(f"sudo shell (progress) timeout after {timeout_s}s; killing"), proc.kill(), dlg.set_message(self.tr("Délai dépassé", "Timed out"))))
+                    timer.timeout.connect(
+                        lambda: (
+                            self._dbg(
+                                f"sudo shell (progress) timeout after {timeout_s}s; killing"
+                            ),
+                            proc.kill(),
+                            dlg.set_message(self.tr("Délai dépassé", "Timed out")),
+                        )
+                    )
                     timer.start(int(timeout_s) * 1000)
                     proc.finished.connect(lambda *_: timer.stop())
                     self._last_timer = timer
@@ -685,7 +778,9 @@ class SysDependencyManager:
                     pass
 
             try:
-                self._dbg(f"sudo shell (progress) start: program={proc.program()} args={' '.join(proc.arguments())} cwd={cwd or ''}")
+                self._dbg(
+                    f"sudo shell (progress) start: program={proc.program()} args={' '.join(proc.arguments())} cwd={cwd or ''}"
+                )
             except Exception:
                 pass
             proc.start()
@@ -701,7 +796,10 @@ class SysDependencyManager:
             return None
 
     def install_packages_linux(
-        self, packages: list[str], pm: Optional[str] = None, password: Optional[str] = None
+        self,
+        packages: list[str],
+        pm: Optional[str] = None,
+        password: Optional[str] = None,
     ) -> Optional[QProcess]:
         """
         Helper haut-niveau: demande consentement + mot de passe (si absent),
@@ -747,34 +845,42 @@ class SysDependencyManager:
             pkgs = " ".join(packages)
             if pm == "apt":
                 cmd = (
-                    'set -euo pipefail; for i in 1 2 3; do '
-                    'sudo -S env DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 update -yq && '
+                    "set -euo pipefail; for i in 1 2 3; do "
+                    "sudo -S env DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 update -yq && "
                     'sudo -S env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" '
-                    '-o Dpkg::Options::="--force-confnew" -o Acquire::Retries=3 install -yq --no-install-recommends ' + pkgs + ' '
+                    '-o Dpkg::Options::="--force-confnew" -o Acquire::Retries=3 install -yq --no-install-recommends '
+                    + pkgs
+                    + " "
                     '&& break || { ec=$?; echo "SYSDEP: apt attempt $i failed (exit=$ec), retrying..."; sleep 5; }; done'
                 )
             elif pm == "dnf":
                 cmd = (
-                    'set -euo pipefail; for i in 1 2 3; do '
-                    'sudo -S dnf -y install --setopt=install_weak_deps=False --best --allowerasing ' + pkgs + ' '
+                    "set -euo pipefail; for i in 1 2 3; do "
+                    "sudo -S dnf -y install --setopt=install_weak_deps=False --best --allowerasing "
+                    + pkgs
+                    + " "
                     '&& break || { ec=$?; echo "SYSDEP: dnf attempt $i failed (exit=$ec), retrying..."; sleep 5; }; done'
                 )
             elif pm == "yum":
                 cmd = (
-                    'set -euo pipefail; for i in 1 2 3; do '
-                    'sudo -S yum -y install ' + pkgs + ' '
+                    "set -euo pipefail; for i in 1 2 3; do "
+                    "sudo -S yum -y install " + pkgs + " "
                     '&& break || { ec=$?; echo "SYSDEP: yum attempt $i failed (exit=$ec), retrying..."; sleep 5; }; done'
                 )
             elif pm == "pacman":
                 cmd = (
-                    'set -euo pipefail; for i in 1 2 3; do '
-                    'sudo -S pacman -Sy --noconfirm && sudo -S pacman -S --noconfirm --needed ' + pkgs + ' '
+                    "set -euo pipefail; for i in 1 2 3; do "
+                    "sudo -S pacman -Sy --noconfirm && sudo -S pacman -S --noconfirm --needed "
+                    + pkgs
+                    + " "
                     '&& break || { ec=$?; echo "SYSDEP: pacman attempt $i failed (exit=$ec), retrying..."; sleep 5; }; done'
                 )
             else:  # zypper
                 cmd = (
-                    'set -euo pipefail; for i in 1 2 3; do '
-                    'sudo -S zypper --non-interactive --gpg-auto-import-keys --no-gpg-checks install -y ' + pkgs + ' '
+                    "set -euo pipefail; for i in 1 2 3; do "
+                    "sudo -S zypper --non-interactive --gpg-auto-import-keys --no-gpg-checks install -y "
+                    + pkgs
+                    + " "
                     '&& break || { ec=$?; echo "SYSDEP: zypper attempt $i failed (exit=$ec), retrying..."; sleep 5; }; done'
                 )
             try:

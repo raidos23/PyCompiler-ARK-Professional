@@ -173,7 +173,9 @@ def clamp_text(text: str, *, max_len: int = 10000) -> str:
 # -------------------------------
 
 
-def normalized_program_and_args(program: Pathish, args: Sequence[Any]) -> tuple[str, list[str]]:
+def normalized_program_and_args(
+    program: Pathish, args: Sequence[Any]
+) -> tuple[str, list[str]]:
     """Return (program, args) as (str, list[str]) with basic validation.
     - Ensure program is a string path
     - Validate args with validate_args
@@ -235,7 +237,9 @@ def safe_log(gui: Any, text: str, *, redact: bool = True, clamp: bool = True) ->
 # -------------------------------
 
 
-def resolve_executable(program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True) -> str:
+def resolve_executable(
+    program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True
+) -> str:
     """Resolve an executable path according to a clear, cross-platform policy.
 
     - Absolute program path: returned as-is.
@@ -272,7 +276,10 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
 
     def resolve_executable_path(
-        program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True
+        program: Pathish,
+        base_dir: Optional[Pathish] = None,
+        *,
+        prefer_path: bool = True,
     ) -> str:  # type: ignore
         return resolve_executable(program, base_dir, prefer_path=prefer_path)
 
@@ -388,7 +395,9 @@ def discover_output_candidates(
             except Exception:
                 pass
             lab = " ".join([str(x) for x in label_parts if x]).lower()
-            if any(tok in lab for tok in ("output", "dist")) and any(tok in lab for tok in ("dir", "path")):
+            if any(tok in lab for tok in ("output", "dist")) and any(
+                tok in lab for tok in ("dir", "path")
+            ):
                 try:
                     _add(w.text())
                 except Exception:
@@ -444,7 +453,9 @@ def open_output_directory(
     Returns the opened directory path or None if none found.
     """
     try:
-        cands = discover_output_candidates(gui, engine_id=engine_id, source_file=source_file, artifacts=artifacts)
+        cands = discover_output_candidates(
+            gui, engine_id=engine_id, source_file=source_file, artifacts=artifacts
+        )
         return open_dir_candidates(cands) if cands else None
     except Exception:
         return None
@@ -538,7 +549,11 @@ def run_process(
             try:
                 if env:
                     proc.setEnvironment(
-                        [f"{k}={v}" for k, v in env.items() if isinstance(k, str) and isinstance(v, str)]
+                        [
+                            f"{k}={v}"
+                            for k, v in env.items()
+                            if isinstance(k, str) and isinstance(v, str)
+                        ]
                     )
             except Exception:
                 pass
@@ -558,8 +573,16 @@ def run_process(
             try:
                 out_bytes = proc.readAllStandardOutput().data()
                 err_bytes = proc.readAllStandardError().data()
-                out = out_bytes.decode(errors="ignore") if isinstance(out_bytes, (bytes, bytearray)) else str(out_bytes)
-                err = err_bytes.decode(errors="ignore") if isinstance(err_bytes, (bytes, bytearray)) else str(err_bytes)
+                out = (
+                    out_bytes.decode(errors="ignore")
+                    if isinstance(out_bytes, (bytes, bytearray))
+                    else str(out_bytes)
+                )
+                err = (
+                    err_bytes.decode(errors="ignore")
+                    if isinstance(err_bytes, (bytes, bytearray))
+                    else str(err_bytes)
+                )
             except Exception:
                 out, err = "", ""
             code = int(proc.exitCode())
@@ -627,7 +650,9 @@ def resolve_project_venv(gui: Any) -> Optional[str]:
 def pip_executable(vroot: str) -> str:
     """Return pip executable path under a venv root (cross-platform)."""
     name = "pip.exe" if platform.system() == "Windows" else "pip"
-    return os.path.join(vroot, "Scripts" if platform.system() == "Windows" else "bin", name)
+    return os.path.join(
+        vroot, "Scripts" if platform.system() == "Windows" else "bin", name
+    )
 
 
 def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) -> int:
@@ -655,7 +680,9 @@ def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) 
     return int(code)
 
 
-def pip_install(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 600000) -> int:
+def pip_install(
+    gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 600000
+) -> int:
     """Run 'pip install <package>' and return exit code (0 if success).
     - Uses the venv pip when available, else falls back to 'python -m pip'
     - Retries once on failure after a short delay to improve robustness.

@@ -34,7 +34,9 @@ def _discover_external_plugins(base_path: str) -> None:
                 importlib.import_module(name)
                 # Import submodules to trigger additional registrations if needed
                 pkg_path = os.path.join(base_path, name)
-                for __f, subname, __ispkg in pkgutil.walk_packages([pkg_path], prefix=f"{name}."):
+                for __f, subname, __ispkg in pkgutil.walk_packages(
+                    [pkg_path], prefix=f"{name}."
+                ):
                     try:
                         importlib.import_module(subname)
                     except Exception:
@@ -61,7 +63,11 @@ def _auto_discover() -> None:
 
 # Perform discovery at import-time so engines are ready for UI/compile usage (packages under ENGINES/ only)
 try:
-    if str(os.environ.get("ARK_ENGINES_AUTO_DISCOVER", "1")).lower() not in ("0", "false", "no"):
+    if str(os.environ.get("ARK_ENGINES_AUTO_DISCOVER", "1")).lower() not in (
+        "0",
+        "false",
+        "no",
+    ):
         _auto_discover()
 except Exception:
     pass

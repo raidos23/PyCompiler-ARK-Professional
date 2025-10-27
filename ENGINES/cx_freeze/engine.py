@@ -6,7 +6,14 @@ import platform
 import sys
 from typing import Optional
 
-from engine_sdk import CompilerEngine, SysDependencyManager, pip_executable, pip_install, pip_show, resolve_project_venv
+from engine_sdk import (
+    CompilerEngine,
+    SysDependencyManager,
+    pip_executable,
+    pip_install,
+    pip_show,
+    resolve_project_venv,
+)
 
 
 class CxFreezeEngine(CompilerEngine):
@@ -112,21 +119,35 @@ class CxFreezeEngine(CompilerEngine):
         try:
             if pip_show(gui, pip, package) == 0:
                 try:
-                    gui.log.append(gui.tr(f"✅ {package} déjà installé", f"✅ {package} already installed"))
+                    gui.log.append(
+                        gui.tr(
+                            f"✅ {package} déjà installé",
+                            f"✅ {package} already installed",
+                        )
+                    )
                 except Exception:
                     pass
                 return True
             try:
-                gui.log.append(gui.tr(f"📦 Installation de {package}…", f"📦 Installing {package}…"))
+                gui.log.append(
+                    gui.tr(
+                        f"📦 Installation de {package}…", f"📦 Installing {package}…"
+                    )
+                )
             except Exception:
                 pass
             ok = pip_install(gui, pip, package) == 0
             try:
                 if ok:
-                    gui.log.append(gui.tr("✅ Installation réussie", "✅ Installation successful"))
+                    gui.log.append(
+                        gui.tr("✅ Installation réussie", "✅ Installation successful")
+                    )
                 else:
                     gui.log.append(
-                        gui.tr(f"❌ Installation échouée ({package})", f"❌ Installation failed ({package})")
+                        gui.tr(
+                            f"❌ Installation échouée ({package})",
+                            f"❌ Installation failed ({package})",
+                        )
                     )
             except Exception:
                 pass
@@ -161,7 +182,9 @@ class CxFreezeEngine(CompilerEngine):
                 for label, cmd in required_cmds.items():
                     c = _shutil.which(cmd)
                     if not c:
-                        if cmd == "pkg-config" and not (_shutil.which("pkg-config") or _shutil.which("pkgconf")):
+                        if cmd == "pkg-config" and not (
+                            _shutil.which("pkg-config") or _shutil.which("pkgconf")
+                        ):
                             missing.append("pkg-config/pkgconf")
                         elif cmd != "pkg-config":
                             missing.append(label)
@@ -192,13 +215,17 @@ class CxFreezeEngine(CompilerEngine):
                         if "python3-dev/python3-devel (headers)" not in missing:
                             missing.append("python3-dev")
                 # Libs via pkg-config
-                has_pkgconf = (_shutil.which("pkg-config") or _shutil.which("pkgconf")) is not None
+                has_pkgconf = (
+                    _shutil.which("pkg-config") or _shutil.which("pkgconf")
+                ) is not None
                 missing_libs = []
                 if has_pkgconf:
                     for pc in ("openssl", "zlib"):
                         try:
                             rc = _subprocess.run(
-                                ["pkg-config", "--exists", pc], stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL
+                                ["pkg-config", "--exists", pc],
+                                stdout=_subprocess.DEVNULL,
+                                stderr=_subprocess.DEVNULL,
                             )
                             if rc.returncode != 0:
                                 missing_libs.append(pc)
@@ -231,7 +258,10 @@ class CxFreezeEngine(CompilerEngine):
 
                             QMessageBox.critical(
                                 gui,
-                                _tr("Gestionnaire de paquets non détecté", "Package manager not detected"),
+                                _tr(
+                                    "Gestionnaire de paquets non détecté",
+                                    "Package manager not detected",
+                                ),
                                 _tr(
                                     "Impossible d'installer automatiquement les dépendances système (build tools, python3-dev, pkg-config, openssl, zlib, etc.).",
                                     "Unable to auto-install system dependencies (build tools, python3-dev, pkg-config, openssl, zlib, etc.).",
@@ -307,13 +337,19 @@ class CxFreezeEngine(CompilerEngine):
                         if needs_libxcrypt:
                             details.append("libxcrypt-compat")
                         if details:
-                            gui.log.append("🔧 Dépendances système manquantes détectées (" + "; ".join(details) + ").")
+                            gui.log.append(
+                                "🔧 Dépendances système manquantes détectées ("
+                                + "; ".join(details)
+                                + ")."
+                            )
                     except Exception:
                         pass
                     proc = sdm.install_packages_linux(packages, pm=pm)
                     if not proc:
                         try:
-                            gui.log.append("⛔ Compilation cx_Freeze annulée ou installation non démarrée.\n")
+                            gui.log.append(
+                                "⛔ Compilation cx_Freeze annulée ou installation non démarrée.\n"
+                            )
                         except Exception:
                             pass
                         return False
@@ -353,7 +389,9 @@ class CxFreezeEngine(CompilerEngine):
 
                     msg = QMessageBox(gui)
                     msg.setIcon(QMessageBox.Question)
-                    msg.setWindowTitle(_tr("Installer MinGW-w64 (mhw)", "Install MinGW-w64 (mhw)"))
+                    msg.setWindowTitle(
+                        _tr("Installer MinGW-w64 (mhw)", "Install MinGW-w64 (mhw)")
+                    )
                     msg.setText(
                         _tr(
                             "Pour compiler avec cx_Freeze sous Windows, il faut un compilateur C/C++.\n\nWinget indisponible. Voulez-vous ouvrir la page MinGW-w64 (winlibs.com) ?\n\nAprès installation, relancez la compilation.",
@@ -395,7 +433,9 @@ class CxFreezeEngine(CompilerEngine):
             # With VenvManager
             vm = getattr(gui, "venv_manager", None)
             if vm:
-                if vm.is_tool_installed(vroot, "cx_Freeze") or vm.is_tool_installed(vroot, "cxfreeze"):
+                if vm.is_tool_installed(vroot, "cx_Freeze") or vm.is_tool_installed(
+                    vroot, "cxfreeze"
+                ):
                     return True
                 try:
                     gui.log.append(
@@ -410,7 +450,12 @@ class CxFreezeEngine(CompilerEngine):
                 def _on_check(ok: bool):
                     try:
                         if ok:
-                            gui.log.append(gui.tr("✅ cx_Freeze déjà installé", "✅ cx_Freeze already installed"))
+                            gui.log.append(
+                                gui.tr(
+                                    "✅ cx_Freeze déjà installé",
+                                    "✅ cx_Freeze already installed",
+                                )
+                            )
                         else:
                             gui.log.append(
                                 gui.tr(
@@ -455,7 +500,11 @@ class CxFreezeEngine(CompilerEngine):
             pass
         if not out_dir:
             try:
-                out_dir = gui.output_dir_input.text().strip() if getattr(gui, "output_dir_input", None) else None
+                out_dir = (
+                    gui.output_dir_input.text().strip()
+                    if getattr(gui, "output_dir_input", None)
+                    else None
+                )
                 if not out_dir:
                     base = getattr(gui, "workspace_dir", None) or os.getcwd()
                     out_dir = os.path.join(base, "dist")
@@ -466,7 +515,9 @@ class CxFreezeEngine(CompilerEngine):
         try:
             if getattr(self, "_output_dir_input", None) is not None:
                 self._output_dir_input.setText(out_dir)
-            if hasattr(gui, "output_dir_input") and getattr(gui, "output_dir_input", None):
+            if hasattr(gui, "output_dir_input") and getattr(
+                gui, "output_dir_input", None
+            ):
                 gui.output_dir_input.setText(out_dir)
         except Exception:
             pass
@@ -476,7 +527,11 @@ class CxFreezeEngine(CompilerEngine):
         try:
             if hasattr(self, "_base_combo") and self._base_combo:
                 base_val = self._base_combo.currentText().strip()
-                if platform.system() == "Windows" and base_val and base_val != "Console":
+                if (
+                    platform.system() == "Windows"
+                    and base_val
+                    and base_val != "Console"
+                ):
                     extra += ["--base-name", base_val]
         except Exception:
             pass
@@ -509,7 +564,11 @@ class CxFreezeEngine(CompilerEngine):
             pass
         # Icon
         try:
-            p = self._icon_edit.text().strip() if hasattr(self, "_icon_edit") and self._icon_edit else ""
+            p = (
+                self._icon_edit.text().strip()
+                if hasattr(self, "_icon_edit") and self._icon_edit
+                else ""
+            )
             if p:
                 try:
                     p_norm = self._norm_path(gui, p)
@@ -518,7 +577,11 @@ class CxFreezeEngine(CompilerEngine):
                 if os.path.isfile(p_norm):
                     extra += ["--icon", p_norm]
                 else:
-                    self._log(gui, f"⚠️ Icône introuvable: {p_norm}", f"⚠️ Icon not found: {p_norm}")
+                    self._log(
+                        gui,
+                        f"⚠️ Icône introuvable: {p_norm}",
+                        f"⚠️ Icon not found: {p_norm}",
+                    )
         except Exception:
             pass
         # Target name
@@ -630,7 +693,10 @@ class CxFreezeEngine(CompilerEngine):
             try:
                 if not os.path.isfile(file):
                     try:
-                        gui.log.append(gui.tr("❌ Script introuvable: ", "❌ Script not found: ") + str(file))
+                        gui.log.append(
+                            gui.tr("❌ Script introuvable: ", "❌ Script not found: ")
+                            + str(file)
+                        )
                         gui.show_error_dialog(os.path.basename(file))
                     except Exception:
                         pass
@@ -641,15 +707,26 @@ class CxFreezeEngine(CompilerEngine):
             vroot = vm.resolve_project_venv() if vm else None
             if not vroot:
                 gui.log.append(
-                    gui.tr("❌ Venv introuvable pour résoudre cx_Freeze.", "❌ Venv not found to resolve cx_Freeze.")
+                    gui.tr(
+                        "❌ Venv introuvable pour résoudre cx_Freeze.",
+                        "❌ Venv not found to resolve cx_Freeze.",
+                    )
                 )
                 gui.show_error_dialog(os.path.basename(file))
                 return None
-            vbin = os.path.join(vroot, "Scripts" if platform.system() == "Windows" else "bin")
-            python_exe = os.path.join(vbin, "python.exe" if platform.system() == "Windows" else "python")
+            vbin = os.path.join(
+                vroot, "Scripts" if platform.system() == "Windows" else "bin"
+            )
+            python_exe = os.path.join(
+                vbin, "python.exe" if platform.system() == "Windows" else "python"
+            )
             if not os.path.isfile(python_exe):
                 gui.log.append(
-                    gui.tr("❌ python non trouvé dans le venv : ", "❌ python not found in venv: ") + str(python_exe)
+                    gui.tr(
+                        "❌ python non trouvé dans le venv : ",
+                        "❌ python not found in venv: ",
+                    )
+                    + str(python_exe)
                 )
                 gui.show_error_dialog(os.path.basename(file))
                 return None
@@ -752,7 +829,12 @@ class CxFreezeEngine(CompilerEngine):
         out_edit = QLineEdit()
         out_edit.setObjectName("cx_output_dir")
         try:
-            out_edit.setPlaceholderText(gui.tr("Dossier de sortie (--target-dir)", "Output directory (--target-dir)"))
+            out_edit.setPlaceholderText(
+                gui.tr(
+                    "Dossier de sortie (--target-dir)",
+                    "Output directory (--target-dir)",
+                )
+            )
         except Exception:
             pass
         browse_btn = QPushButton(gui.tr("Parcourir…", "Browse…"))
@@ -773,10 +855,16 @@ class CxFreezeEngine(CompilerEngine):
                 except Exception:
                     start_dir = ""
                 d = QFileDialog.getExistingDirectory(
-                    tab, gui.tr("Choisir le dossier de sortie", "Choose output directory"), start_dir
+                    tab,
+                    gui.tr("Choisir le dossier de sortie", "Choose output directory"),
+                    start_dir,
                 )
             except Exception:
-                d = QFileDialog.getExistingDirectory(tab, "Choose output directory", start_dir if 'start_dir' in locals() else "")
+                d = QFileDialog.getExistingDirectory(
+                    tab,
+                    "Choose output directory",
+                    start_dir if "start_dir" in locals() else "",
+                )
             if d:
                 out_edit.setText(d)
                 try:
@@ -803,7 +891,12 @@ class CxFreezeEngine(CompilerEngine):
         tn_edit = QLineEdit()
         tn_edit.setObjectName("cx_target_name")
         try:
-            tn_edit.setPlaceholderText(gui.tr("Nom de l'exécutable (--target-name)", "Executable name (--target-name)"))
+            tn_edit.setPlaceholderText(
+                gui.tr(
+                    "Nom de l'exécutable (--target-name)",
+                    "Executable name (--target-name)",
+                )
+            )
         except Exception:
             pass
         row_tn.addWidget(tn_edit)
@@ -857,9 +950,13 @@ class CxFreezeEngine(CompilerEngine):
                     filt = "Icon (*.icns);;All files (*)"
                 else:
                     filt = "Icon (*.ico *.icns);;All files (*)"
-                p, _ = QFileDialog.getOpenFileName(tab, gui.tr("Choisir une icône", "Choose an icon"), "", filt)
+                p, _ = QFileDialog.getOpenFileName(
+                    tab, gui.tr("Choisir une icône", "Choose an icon"), "", filt
+                )
             except Exception:
-                p, _ = QFileDialog.getOpenFileName(tab, "Choose an icon", "", "*.ico *.icns *.*")
+                p, _ = QFileDialog.getOpenFileName(
+                    tab, "Choose an icon", "", "*.ico *.icns *.*"
+                )
             if p:
                 icon_edit.setText(p)
 
@@ -911,7 +1008,9 @@ class CxFreezeEngine(CompilerEngine):
             if not code:
                 try:
                     # Try GUI preferences
-                    pref = getattr(gui, "language_pref", getattr(gui, "language", "System"))
+                    pref = getattr(
+                        gui, "language_pref", getattr(gui, "language", "System")
+                    )
                     if isinstance(pref, str) and pref != "System":
                         code = pref
                 except Exception:
@@ -966,7 +1065,9 @@ class CxFreezeEngine(CompilerEngine):
             def _load_lang(c: str) -> bool:
                 nonlocal lang_data
                 try:
-                    with ilr.as_file(ilr.files(pkg).joinpath("languages", f"{c}.json")) as p:
+                    with ilr.as_file(
+                        ilr.files(pkg).joinpath("languages", f"{c}.json")
+                    ) as p:
                         if os.path.isfile(str(p)):
                             with open(str(p), encoding="utf-8") as f:
                                 lang_data = _json.load(f) or {}
@@ -990,14 +1091,18 @@ class CxFreezeEngine(CompilerEngine):
             # Apply title text
             try:
                 if getattr(self, "_cx_title", None):
-                    self._cx_title.setText(g("cx_freeze_title") or gui.tr("Options cx_Freeze", "cx_Freeze Options"))
+                    self._cx_title.setText(
+                        g("cx_freeze_title")
+                        or gui.tr("Options cx_Freeze", "cx_Freeze Options")
+                    )
             except Exception:
                 pass
             # Output dir
             try:
                 if getattr(self, "_output_dir_input", None):
                     ph = g("cx_output_dir_ph") or gui.tr(
-                        "Dossier de sortie (--target-dir)", "Output directory (--target-dir)"
+                        "Dossier de sortie (--target-dir)",
+                        "Output directory (--target-dir)",
                     )
                     try:
                         self._output_dir_input.setPlaceholderText(ph)
@@ -1007,16 +1112,22 @@ class CxFreezeEngine(CompilerEngine):
                     if tt:
                         self._output_dir_input.setToolTip(tt)
                 if getattr(self, "_cx_out_browse_btn", None):
-                    self._cx_out_browse_btn.setText(g("browse") or gui.tr("Parcourir…", "Browse…"))
+                    self._cx_out_browse_btn.setText(
+                        g("browse") or gui.tr("Parcourir…", "Browse…")
+                    )
             except Exception:
                 pass
             # Target name i18n
             try:
                 if getattr(self, "_cx_tn_label", None):
-                    self._cx_tn_label.setText(g("target_name_title") or gui.tr("Nom de la cible", "Target name"))
+                    self._cx_tn_label.setText(
+                        g("target_name_title")
+                        or gui.tr("Nom de la cible", "Target name")
+                    )
                 if getattr(self, "_target_name_input", None):
                     ph = g("cx_target_name_ph") or gui.tr(
-                        "Nom de l'exécutable (--target-name)", "Executable name (--target-name)"
+                        "Nom de l'exécutable (--target-name)",
+                        "Executable name (--target-name)",
                     )
                     try:
                         self._target_name_input.setPlaceholderText(ph)
@@ -1036,13 +1147,17 @@ class CxFreezeEngine(CompilerEngine):
                     if tt:
                         self._base_combo.setToolTip(tt)
                 if getattr(self, "_cb_include_deps", None):
-                    txt = g("include_deps") or gui.tr("Inclure dépendances", "Include dependencies")
+                    txt = g("include_deps") or gui.tr(
+                        "Inclure dépendances", "Include dependencies"
+                    )
                     self._cb_include_deps.setText(txt)
                     tt = g("tt_cx_include_deps")
                     if tt:
                         self._cb_include_deps.setToolTip(tt)
                 if getattr(self, "_cb_enc", None):
-                    txt = g("include_encodings") or gui.tr("Inclure encodings", "Include encodings")
+                    txt = g("include_encodings") or gui.tr(
+                        "Inclure encodings", "Include encodings"
+                    )
                     self._cb_enc.setText(txt)
                     tt = g("tt_cx_include_encodings")
                     if tt:
@@ -1058,14 +1173,17 @@ class CxFreezeEngine(CompilerEngine):
                     if tt:
                         self._icon_edit.setToolTip(tt)
                 if getattr(self, "_cx_icon_browse_btn", None):
-                    self._cx_icon_browse_btn.setText(g("browse") or gui.tr("Parcourir…", "Browse…"))
+                    self._cx_icon_browse_btn.setText(
+                        g("browse") or gui.tr("Parcourir…", "Browse…")
+                    )
             except Exception:
                 pass
             # Lists
             try:
                 if getattr(self, "_cx_packages_title", None):
                     self._cx_packages_title.setText(
-                        g("packages_title") or gui.tr("Paquets à inclure", "Packages to include")
+                        g("packages_title")
+                        or gui.tr("Paquets à inclure", "Packages to include")
                     )
                 if getattr(self, "_pkg_list", None):
                     tt = g("tt_cx_packages")
@@ -1074,13 +1192,16 @@ class CxFreezeEngine(CompilerEngine):
                 if getattr(self, "_cx_pkg_add_btn", None):
                     self._cx_pkg_add_btn.setText(g("add") or gui.tr("Ajouter", "Add"))
                 if getattr(self, "_cx_pkg_rm_btn", None):
-                    self._cx_pkg_rm_btn.setText(g("remove") or gui.tr("Supprimer", "Remove"))
+                    self._cx_pkg_rm_btn.setText(
+                        g("remove") or gui.tr("Supprimer", "Remove")
+                    )
             except Exception:
                 pass
             try:
                 if getattr(self, "_cx_modules_title", None):
                     self._cx_modules_title.setText(
-                        g("modules_title") or gui.tr("Modules à inclure", "Modules to include")
+                        g("modules_title")
+                        or gui.tr("Modules à inclure", "Modules to include")
                     )
                 if getattr(self, "_mod_list", None):
                     tt = g("tt_cx_modules")
@@ -1089,14 +1210,20 @@ class CxFreezeEngine(CompilerEngine):
                 if getattr(self, "_cx_mod_add_btn", None):
                     self._cx_mod_add_btn.setText(g("add") or gui.tr("Ajouter", "Add"))
                 if getattr(self, "_cx_mod_rm_btn", None):
-                    self._cx_mod_rm_btn.setText(g("remove") or gui.tr("Supprimer", "Remove"))
+                    self._cx_mod_rm_btn.setText(
+                        g("remove") or gui.tr("Supprimer", "Remove")
+                    )
             except Exception:
                 pass
             # Excludes i18n
             try:
                 if getattr(self, "_cx_excludes_title", None):
                     self._cx_excludes_title.setText(
-                        g("excludes_title") or gui.tr("Exclusions (modules/paquets)", "Modules/packages to exclude")
+                        g("excludes_title")
+                        or gui.tr(
+                            "Exclusions (modules/paquets)",
+                            "Modules/packages to exclude",
+                        )
                     )
                 if getattr(self, "_ex_list", None):
                     tt = g("tt_cx_excludes")
@@ -1105,32 +1232,44 @@ class CxFreezeEngine(CompilerEngine):
                 if getattr(self, "_cx_ex_add_btn", None):
                     self._cx_ex_add_btn.setText(g("add") or gui.tr("Ajouter", "Add"))
                 if getattr(self, "_cx_ex_rm_btn", None):
-                    self._cx_ex_rm_btn.setText(g("remove") or gui.tr("Supprimer", "Remove"))
+                    self._cx_ex_rm_btn.setText(
+                        g("remove") or gui.tr("Supprimer", "Remove")
+                    )
             except Exception:
                 pass
             try:
                 if getattr(self, "_cx_data_title", None):
                     self._cx_data_title.setText(
                         g("data_title")
-                        or gui.tr("Fichiers/Dossiers à inclure (données)", "Data files/directories to include")
+                        or gui.tr(
+                            "Fichiers/Dossiers à inclure (données)",
+                            "Data files/directories to include",
+                        )
                     )
                 if getattr(self, "_data_list", None):
                     tt = g("tt_cx_data")
                     if tt:
                         self._data_list.setToolTip(tt)
                 if getattr(self, "_cx_data_add_file_btn", None):
-                    self._cx_data_add_file_btn.setText(g("add_file") or gui.tr("Ajouter fichier", "Add file"))
+                    self._cx_data_add_file_btn.setText(
+                        g("add_file") or gui.tr("Ajouter fichier", "Add file")
+                    )
                 if getattr(self, "_cx_data_add_dir_btn", None):
-                    self._cx_data_add_dir_btn.setText(g("add_directory") or gui.tr("Ajouter dossier", "Add directory"))
+                    self._cx_data_add_dir_btn.setText(
+                        g("add_directory") or gui.tr("Ajouter dossier", "Add directory")
+                    )
                 if getattr(self, "_cx_data_rm_btn", None):
-                    self._cx_data_rm_btn.setText(g("remove") or gui.tr("Supprimer", "Remove"))
+                    self._cx_data_rm_btn.setText(
+                        g("remove") or gui.tr("Supprimer", "Remove")
+                    )
             except Exception:
                 pass
             # Zip include/exclude i18n
             try:
                 if getattr(self, "_cx_zip_include_title", None):
                     self._cx_zip_include_title.setText(
-                        g("zip_include_title") or gui.tr("Patterns d'inclusion ZIP", "Zip include patterns")
+                        g("zip_include_title")
+                        or gui.tr("Patterns d'inclusion ZIP", "Zip include patterns")
                     )
                 if getattr(self, "_zip_include_list", None):
                     tt = g("tt_cx_zip_include")
@@ -1139,13 +1278,16 @@ class CxFreezeEngine(CompilerEngine):
                 if getattr(self, "_cx_zi_add_btn", None):
                     self._cx_zi_add_btn.setText(g("add") or gui.tr("Ajouter", "Add"))
                 if getattr(self, "_cx_zi_rm_btn", None):
-                    self._cx_zi_rm_btn.setText(g("remove") or gui.tr("Supprimer", "Remove"))
+                    self._cx_zi_rm_btn.setText(
+                        g("remove") or gui.tr("Supprimer", "Remove")
+                    )
             except Exception:
                 pass
             try:
                 if getattr(self, "_cx_zip_exclude_title", None):
                     self._cx_zip_exclude_title.setText(
-                        g("zip_exclude_title") or gui.tr("Patterns d'exclusion ZIP", "Zip exclude patterns")
+                        g("zip_exclude_title")
+                        or gui.tr("Patterns d'exclusion ZIP", "Zip exclude patterns")
                     )
                 if getattr(self, "_zip_exclude_list", None):
                     tt = g("tt_cx_zip_exclude")
@@ -1154,18 +1296,22 @@ class CxFreezeEngine(CompilerEngine):
                 if getattr(self, "_cx_ze_add_btn", None):
                     self._cx_ze_add_btn.setText(g("add") or gui.tr("Ajouter", "Add"))
                 if getattr(self, "_cx_ze_rm_btn", None):
-                    self._cx_ze_rm_btn.setText(g("remove") or gui.tr("Supprimer", "Remove"))
+                    self._cx_ze_rm_btn.setText(
+                        g("remove") or gui.tr("Supprimer", "Remove")
+                    )
             except Exception:
                 pass
             # Replace paths / Constants i18n
             try:
                 if getattr(self, "_cx_replace_title", None):
                     self._cx_replace_title.setText(
-                        g("replace_paths_title") or gui.tr("Remplacer chemins", "Replace paths")
+                        g("replace_paths_title")
+                        or gui.tr("Remplacer chemins", "Replace paths")
                     )
                 if getattr(self, "_replace_paths_edit", None):
                     ph = g("cx_replace_paths_ph") or gui.tr(
-                        "pattern=>replacement, séparés par des virgules", "pattern=>replacement, comma-separated"
+                        "pattern=>replacement, séparés par des virgules",
+                        "pattern=>replacement, comma-separated",
                     )
                     try:
                         self._replace_paths_edit.setPlaceholderText(ph)
@@ -1178,10 +1324,13 @@ class CxFreezeEngine(CompilerEngine):
                 pass
             try:
                 if getattr(self, "_cx_constants_title", None):
-                    self._cx_constants_title.setText(g("constants_title") or gui.tr("Constantes", "Constants"))
+                    self._cx_constants_title.setText(
+                        g("constants_title") or gui.tr("Constantes", "Constants")
+                    )
                 if getattr(self, "_constants_edit", None):
                     ph = g("cx_constants_ph") or gui.tr(
-                        "NAME=VALUE, séparés par des virgules", "NAME=VALUE, comma-separated"
+                        "NAME=VALUE, séparés par des virgules",
+                        "NAME=VALUE, comma-separated",
                     )
                     try:
                         self._constants_edit.setPlaceholderText(ph)
@@ -1194,7 +1343,9 @@ class CxFreezeEngine(CompilerEngine):
                 pass
             try:
                 if getattr(self, "_cx_optimize_title", None):
-                    self._cx_optimize_title.setText(g("optimize") or gui.tr("Optimisation", "Optimize"))
+                    self._cx_optimize_title.setText(
+                        g("optimize") or gui.tr("Optimisation", "Optimize")
+                    )
                 if getattr(self, "_opt_combo", None):
                     tt = g("tt_cx_optimize")
                     if tt:

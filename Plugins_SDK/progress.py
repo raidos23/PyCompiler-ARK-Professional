@@ -61,7 +61,9 @@ def _qt_active_parent():
         return None
 
 
-def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, default=None):
+def show_msgbox(
+    kind: str, title: str, text: str, *, parent=None, buttons=None, default=None
+):
     """
     Show a message box if a Qt toolkit is available; fallback to console output otherwise.
 
@@ -74,7 +76,11 @@ def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, 
         # Console fallback
         print(f"[MSGBOX:{kind}] {title}: {text}")
         if kind == "question":
-            return True if (default and str(default).lower() in ("yes", "ok", "true", "1")) else False
+            return (
+                True
+                if (default and str(default).lower() in ("yes", "ok", "true", "1"))
+                else False
+            )
         return None
     try:
         parent = parent or _qt_active_parent()
@@ -109,7 +115,11 @@ def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, 
     except Exception:
         print(f"[MSGBOX:{kind}] {title}: {text}")
         if kind == "question":
-            return True if (default and str(default).lower() in ("yes", "ok", "true", "1")) else False
+            return (
+                True
+                if (default and str(default).lower() in ("yes", "ok", "true", "1"))
+                else False
+            )
         return None
 
 
@@ -121,7 +131,13 @@ class ProgressHandle:
     - Not thread-safe by itself; intended for use from the GUI thread.
     """
 
-    def __init__(self, title: str = "", text: str = "", maximum: int = 0, cancelable: bool = False) -> None:
+    def __init__(
+        self,
+        title: str = "",
+        text: str = "",
+        maximum: int = 0,
+        cancelable: bool = False,
+    ) -> None:
         self._title = str(title)
         self._text = str(text)
         self.maximum = int(maximum) if maximum else 0
@@ -138,7 +154,9 @@ class ProgressHandle:
         if _AppProgressDialog is not None and _QtW is not None:
             try:
                 parent = _qt_active_parent()
-                dlg = _AppProgressDialog(self._title or "Progress", parent, cancelable=self._cancelable)
+                dlg = _AppProgressDialog(
+                    self._title or "Progress", parent, cancelable=self._cancelable
+                )
                 dlg.set_message(self._text or self._title)
                 if self.maximum > 0:
                     dlg.set_progress(0, self.maximum)
@@ -205,7 +223,11 @@ class ProgressHandle:
     @property
     def canceled(self) -> bool:
         try:
-            if self._app_dlg is not None and hasattr(self._app_dlg, "is_canceled") and self._app_dlg.is_canceled():
+            if (
+                self._app_dlg is not None
+                and hasattr(self._app_dlg, "is_canceled")
+                and self._app_dlg.is_canceled()
+            ):
                 self._canceled = True
         except Exception:
             pass
@@ -303,16 +325,26 @@ class ProgressHandle:
         return False
 
 
-def create_progress(title: str, text: str = "", maximum: int = 0, cancelable: bool = False) -> ProgressHandle:
-    return ProgressHandle(title=title, text=text, maximum=maximum, cancelable=cancelable)
+def create_progress(
+    title: str, text: str = "", maximum: int = 0, cancelable: bool = False
+) -> ProgressHandle:
+    return ProgressHandle(
+        title=title, text=text, maximum=maximum, cancelable=cancelable
+    )
 
 
-def progress(title: str, text: str = "", maximum: int = 0, cancelable: bool = False) -> ProgressHandle:
-    return create_progress(title=title, text=text, maximum=maximum, cancelable=cancelable)
+def progress(
+    title: str, text: str = "", maximum: int = 0, cancelable: bool = False
+) -> ProgressHandle:
+    return create_progress(
+        title=title, text=text, maximum=maximum, cancelable=cancelable
+    )
 
 
 def sys_msgbox_for_installing(
-    subject: str, explanation: Optional[str] = None, title: str = "Installation required"
+    subject: str,
+    explanation: Optional[str] = None,
+    title: str = "Installation required",
 ) -> Optional[tuple]:
     """Ask for install authorization (multi-OS).
 

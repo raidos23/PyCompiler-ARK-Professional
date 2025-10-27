@@ -78,7 +78,11 @@ PACKAGE_TO_IMPORT_NAME: dict[str, str] = {}
 # Fonctions d'extension d'alias (plug-and-play)
 def register_import_alias(import_name: str, package_name: str) -> None:
     try:
-        if isinstance(import_name, str) and isinstance(package_name, str) and import_name:
+        if (
+            isinstance(import_name, str)
+            and isinstance(package_name, str)
+            and import_name
+        ):
             ALIASES_IMPORT_TO_PACKAGE[import_name.lower()] = package_name
     except Exception:
         pass
@@ -86,14 +90,20 @@ def register_import_alias(import_name: str, package_name: str) -> None:
 
 def register_package_import_name(package_name: str, import_name: str) -> None:
     try:
-        if isinstance(package_name, str) and isinstance(import_name, str) and package_name:
+        if (
+            isinstance(package_name, str)
+            and isinstance(import_name, str)
+            and package_name
+        ):
             PACKAGE_TO_IMPORT_NAME[package_name] = import_name
     except Exception:
         pass
 
 
 def register_aliases(
-    *, import_to_package: Optional[dict[str, str]] = None, package_to_import: Optional[dict[str, str]] = None
+    *,
+    import_to_package: Optional[dict[str, str]] = None,
+    package_to_import: Optional[dict[str, str]] = None,
 ) -> None:
     try:
         if import_to_package:
@@ -128,8 +138,12 @@ def _read_json_file(path: str) -> dict[str, dict[str, Optional[str]]]:
     # Validation JSON Schema optionnelle (si schéma disponible)
     if jsonschema is not None:
         try:
-            repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
-            schema_path = os.path.join(repo_root, "utils", "schemas", "mapping.schema.json")
+            repo_root = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+            )
+            schema_path = os.path.join(
+                repo_root, "utils", "schemas", "mapping.schema.json"
+            )
             if os.path.isfile(schema_path):
                 with open(schema_path, encoding="utf-8") as sf:
                     schema = json.load(sf)
@@ -142,7 +156,9 @@ def _read_json_file(path: str) -> dict[str, dict[str, Optional[str]]]:
     if isinstance(data, dict):
         for k, v in data.items():
             if not isinstance(k, str):
-                _VALIDATION_WARNINGS.append(f"Mapping key is not a string in '{path}': {k!r}")
+                _VALIDATION_WARNINGS.append(
+                    f"Mapping key is not a string in '{path}': {k!r}"
+                )
                 continue
             if isinstance(v, dict):
                 normed[k] = v
@@ -278,7 +294,9 @@ def _scan_imports(py_files: list[str], workspace_dir: str) -> set[str]:
             # Imports dynamiques
             for m in re.findall(r"__import__\(['\"]([\w\.]+)['\"]\)", src):
                 found.add(m.split(".")[0])
-            for m in re.findall(r"importlib\.import_module\(['\"]([\w\.]+)['\"]\)", src):
+            for m in re.findall(
+                r"importlib\.import_module\(['\"]([\w\.]+)['\"]\)", src
+            ):
                 found.add(m.split(".")[0])
         except Exception:
             continue
@@ -333,7 +351,9 @@ from typing import Optional as _Optional  # local alias to avoid confusion
 
 
 def _default_builder_for_engine(engine_id: str):
-    def _builder(matched: dict[str, dict[str, _Optional[str]]], pkg_to_import: dict[str, str]) -> list[str]:
+    def _builder(
+        matched: dict[str, dict[str, _Optional[str]]], pkg_to_import: dict[str, str]
+    ) -> list[str]:
         out: list[str] = []
         for pkg, entry in matched.items():
             val = entry.get(engine_id)
@@ -347,7 +367,9 @@ def _default_builder_for_engine(engine_id: str):
             elif isinstance(val, dict):
                 a = val.get("args") or val.get("flags")
                 if isinstance(a, list):
-                    out.extend([str(x).replace("{import_name}", tmpl_import) for x in a])
+                    out.extend(
+                        [str(x).replace("{import_name}", tmpl_import) for x in a]
+                    )
                 elif isinstance(a, str):
                     out.append(str(a).replace("{import_name}", tmpl_import))
             elif val is True:
@@ -411,7 +433,9 @@ def _write_report_if_enabled(self, report: dict):
         )
         if not should:
             return
-        out_path = os.path.join(self.workspace_dir, ".pycompiler_auto_modules_report.json")
+        out_path = os.path.join(
+            self.workspace_dir, ".pycompiler_auto_modules_report.json"
+        )
         # Atomic write
         import tempfile
 
@@ -437,14 +461,22 @@ def _write_report_if_enabled(self, report: dict):
                 pass
         try:
             self.log.append(
-                _tr(self, f"🧾 Rapport auto-modules écrit: {out_path}", f"🧾 Auto-modules report written: {out_path}")
+                _tr(
+                    self,
+                    f"🧾 Rapport auto-modules écrit: {out_path}",
+                    f"🧾 Auto-modules report written: {out_path}",
+                )
             )
         except Exception:
             pass
     except Exception as e:
         try:
             self.log.append(
-                _tr(self, f"⚠️ Échec écriture rapport auto-modules: {e}", f"⚠️ Failed to write auto-modules report: {e}")
+                _tr(
+                    self,
+                    f"⚠️ Échec écriture rapport auto-modules: {e}",
+                    f"⚠️ Failed to write auto-modules report: {e}",
+                )
             )
         except Exception:
             pass
@@ -453,7 +485,9 @@ def _write_report_if_enabled(self, report: dict):
 def _detect_modules_preferring_requirements(self) -> tuple[set[str], str]:
     """Retourne (modules_detectés, source: 'requirements'|'pyproject'|'imports')."""
     # 1) requirements.{txt|in} dans le workspace (configurable via env PYCOMPILER_REQ_FILES)
-    req_names = os.environ.get("PYCOMPILER_REQ_FILES", "requirements.txt,requirements.in").split(",")
+    req_names = os.environ.get(
+        "PYCOMPILER_REQ_FILES", "requirements.txt,requirements.in"
+    ).split(",")
     for name in [n.strip() for n in req_names if n.strip()]:
         req_path = os.path.join(self.workspace_dir, name)
         if os.path.isfile(req_path):
@@ -504,7 +538,11 @@ def _detect_modules_preferring_requirements(self) -> tuple[set[str], str]:
     except Exception:
         pass
     # 3) fallback: scan imports
-    py_files = self.selected_files if getattr(self, "selected_files", None) else getattr(self, "python_files", [])
+    py_files = (
+        self.selected_files
+        if getattr(self, "selected_files", None)
+        else getattr(self, "python_files", [])
+    )
     mods = _scan_imports(py_files, self.workspace_dir)
     return mods, "imports"
 
@@ -538,7 +576,9 @@ def _match_with_requirements_aware(
     return matched, pkg_to_import
 
 
-def compute_for_all(self, engine_ids: Optional[list[str]] = None) -> dict[str, list[str]]:
+def compute_for_all(
+    self, engine_ids: Optional[list[str]] = None
+) -> dict[str, list[str]]:
     """
     Calcule les arguments auto pour tous les moteurs (plug-and-play).
     - engine_ids: liste optionnelle d'identifiants de moteurs à traiter. Si None,
@@ -576,12 +616,16 @@ def compute_for_all(self, engine_ids: Optional[list[str]] = None) -> dict[str, l
             pass
         # 2) moteurs sous ENGINES/<engine_id>/mapping.json (plug-and-play)
         try:
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+            project_root = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+            )
             engines_root = os.path.join(project_root, "ENGINES")
             if os.path.isdir(engines_root):
                 for name in sorted(os.listdir(engines_root)):
                     d = os.path.join(engines_root, name)
-                    if os.path.isdir(d) and os.path.isfile(os.path.join(d, "mapping.json")):
+                    if os.path.isdir(d) and os.path.isfile(
+                        os.path.join(d, "mapping.json")
+                    ):
                         if name not in ordered:
                             ordered.append(name)
                             _maybe_load_plugin_auto_builder(name)
@@ -598,7 +642,9 @@ def compute_for_all(self, engine_ids: Optional[list[str]] = None) -> dict[str, l
     return results
 
 
-def _load_engine_package_mapping(engine_id: str) -> tuple[dict[str, dict[str, Optional[str]]], Optional[str]]:
+def _load_engine_package_mapping(
+    engine_id: str,
+) -> tuple[dict[str, dict[str, Optional[str]]], Optional[str]]:
     """Charge le mapping spécifique au moteur depuis plusieurs emplacements, avec priorités:
     1) mapping.json embarqué dans le package du moteur importé (engine_id)
     2) ENGINES/<engine_id>/mapping.json (fichiers du projet)
@@ -619,13 +665,17 @@ def _load_engine_package_mapping(engine_id: str) -> tuple[dict[str, dict[str, Op
                     combined.update(data_pkg)
                     used = used or p2
                 except Exception as e:
-                    _VALIDATION_WARNINGS.append(f"Invalid embedded mapping for engine '{engine_id}' at {p2}: {e}")
+                    _VALIDATION_WARNINGS.append(
+                        f"Invalid embedded mapping for engine '{engine_id}' at {p2}: {e}"
+                    )
     except Exception:
         pass
 
     # 2) mapping dans ENGINES/<engine_id>/mapping.json (filesystem projet)
     try:
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+        )
         engines_dir = os.path.join(project_root, "ENGINES", engine_id, "mapping.json")
         if os.path.isfile(engines_dir):
             try:
@@ -635,7 +685,9 @@ def _load_engine_package_mapping(engine_id: str) -> tuple[dict[str, dict[str, Op
                         combined[k] = v
                 used = used or engines_dir
             except Exception as e:
-                _VALIDATION_WARNINGS.append(f"Invalid mapping for engine '{engine_id}' at {engines_dir}: {e}")
+                _VALIDATION_WARNINGS.append(
+                    f"Invalid mapping for engine '{engine_id}' at {engines_dir}: {e}"
+                )
     except Exception:
         pass
 
@@ -709,7 +761,11 @@ def compute_auto_for_engine(self, engine_id: str) -> list[str]:
     except Exception as e:
         try:
             self.log.append(
-                _tr(self, f"⚠️ Mapping hooks/plugins introuvable: {e}", f"⚠️ Mapping hooks/plugins not found: {e}")
+                _tr(
+                    self,
+                    f"⚠️ Mapping hooks/plugins introuvable: {e}",
+                    f"⚠️ Mapping hooks/plugins not found: {e}",
+                )
             )
         except Exception:
             pass
@@ -754,7 +810,11 @@ def compute_auto_for_engine(self, engine_id: str) -> list[str]:
                 f"🔎 Auto-detection of sensitive modules ({engine_id}) enabled.",
             )
         )
-        self.log.append(_tr(self, f"   Source détection: {source}", f"   Detection source: {source}"))
+        self.log.append(
+            _tr(
+                self, f"   Source détection: {source}", f"   Detection source: {source}"
+            )
+        )
         if detected:
             self.log.append(
                 _tr(
@@ -764,7 +824,13 @@ def compute_auto_for_engine(self, engine_id: str) -> list[str]:
                 )
             )
         else:
-            self.log.append(_tr(self, "   Aucun module externe détecté.", "   No external modules detected."))
+            self.log.append(
+                _tr(
+                    self,
+                    "   Aucun module externe détecté.",
+                    "   No external modules detected.",
+                )
+            )
         if args:
             self.log.append(
                 _tr(

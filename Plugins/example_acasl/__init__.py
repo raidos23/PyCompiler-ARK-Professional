@@ -10,7 +10,13 @@ This plugin demonstrates the ACASL plugin architecture with:
 """
 from __future__ import annotations
 
-from Plugins_SDK.ACASL_SDK import Ac_PluginBase, PluginMeta, PostCompileContext, apply_plugin_i18n, wrap_post_context
+from Plugins_SDK.ACASL_SDK import (
+    Ac_PluginBase,
+    PluginMeta,
+    PostCompileContext,
+    apply_plugin_i18n,
+    wrap_post_context,
+)
 
 
 # Plugin metadata with tags for classification
@@ -29,7 +35,7 @@ class ExampleAcaslPlugin(Ac_PluginBase):
 
     def on_post_compile(self, ctx: PostCompileContext) -> None:
         """Execute post-compilation actions.
-        
+
         This hook is called after compilation completes.
         """
         try:
@@ -47,7 +53,9 @@ class ExampleAcaslPlugin(Ac_PluginBase):
             sctx.log_info(f"  - {art.name} ({art.stat().st_size} bytes)")
 
         # Access project files
-        py_files = list(ctx.iter_files(["**/*.py"], exclude=["venv/**", "**/__pycache__/**"]))
+        py_files = list(
+            ctx.iter_files(["**/*.py"], exclude=["venv/**", "**/__pycache__/**"])
+        )
         sctx.log_info(f"📄 Found {len(py_files)} Python file(s)")
 
         sctx.log_info("✅ Example ACASL Plugin: Post-compilation analysis complete")
@@ -64,7 +72,7 @@ PLUGIN = ExampleAcaslPlugin(
 # ACASL registration function (required)
 def acasl_register(manager):
     """Register this plugin with the ACASL manager.
-    
+
     This function is called by the ACASL loader to register the plugin.
     """
     manager.add_plugin(PLUGIN)

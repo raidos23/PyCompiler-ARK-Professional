@@ -19,11 +19,15 @@ def _user_config_dir() -> str:
     Retourne le dossier de préférences au sein du projet source: <project_root>/.pref
     """
     try:
-        project_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
+        )
         return os.path.join(project_root, ".pref")
     except Exception:
         # Repli: toujours utiliser un dossier '.pref' à la racine du module utils
-        return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".pref"))
+        return os.path.abspath(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".pref")
+        )
 
 
 def _prefs_path() -> str:
@@ -56,7 +60,11 @@ def load_preferences(self):
         except Exception:
             # Migration douce: tenter l'ancien chemin <project_root>/pref/<basename>
             try:
-                old_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "pref"))
+                old_dir = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)), os.pardir, "pref"
+                    )
+                )
                 old_path = os.path.join(old_dir, PREFS_BASENAME)
                 with open(old_path, encoding="utf-8") as f:
                     prefs = json.load(f)
@@ -104,10 +112,14 @@ def save_preferences(self):
     # Minimal persisted preferences: only language/theme; other UI states omitted by design.
     prefs = {
         "language_pref": getattr(
-            self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))
+            self,
+            "language_pref",
+            getattr(self, "language", getattr(self, "current_language", "System")),
         ),
         "language": getattr(
-            self, "language_pref", getattr(self, "language", getattr(self, "current_language", "System"))
+            self,
+            "language_pref",
+            getattr(self, "language", getattr(self, "current_language", "System")),
         ),
         "theme": getattr(self, "theme", "System"),
     }
@@ -186,7 +198,11 @@ def detect_system_color_scheme() -> str:
         # macOS
         if sysname == "Darwin":
             try:
-                out = subprocess.run(["defaults", "read", "-g", "AppleInterfaceStyle"], capture_output=True, text=True)
+                out = subprocess.run(
+                    ["defaults", "read", "-g", "AppleInterfaceStyle"],
+                    capture_output=True,
+                    text=True,
+                )
                 if out.returncode == 0 and "dark" in out.stdout.strip().lower():
                     return "dark"
             except Exception:
@@ -197,7 +213,9 @@ def detect_system_color_scheme() -> str:
             # GNOME 42+: color-scheme
             try:
                 out = subprocess.run(
-                    ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], capture_output=True, text=True
+                    ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
+                    capture_output=True,
+                    text=True,
                 )
                 if out.returncode == 0 and "prefer-dark" in out.stdout:
                     return "dark"
@@ -206,7 +224,9 @@ def detect_system_color_scheme() -> str:
             # GNOME: gtk-theme contains "dark"
             try:
                 out = subprocess.run(
-                    ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"], capture_output=True, text=True
+                    ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"],
+                    capture_output=True,
+                    text=True,
                 )
                 if out.returncode == 0 and "dark" in out.stdout.lower():
                     return "dark"

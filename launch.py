@@ -14,7 +14,9 @@ from pathlib import Path
 def check_python_version():
     """Check if Python version meets requirements."""
     if sys.version_info < (3, 10):
-        print("❌ Error: Python 3.10+ is required for PyCompiler ARK++ Professional Edition")
+        print(
+            "❌ Error: Python 3.10+ is required for PyCompiler ARK++ Professional Edition"
+        )
         print(f"   Current version: {sys.version}")
         print("   Please upgrade Python and try again.")
         return False
@@ -76,7 +78,9 @@ def check_development_tools():
     print("\n🛠️  Development Tools Status:")
     for tool, description in dev_tools.items():
         try:
-            result = subprocess.run([tool, "--version"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                [tool, "--version"], capture_output=True, text=True, timeout=5
+            )
             if result.returncode == 0:
                 version = result.stdout.strip().split("\n")[0]
                 print(f"✅ {tool} - {description} ({version})")
@@ -166,8 +170,12 @@ def main():
     if not check_dependencies():
         print("\n💡 Quick setup:")
         print("   1. Create virtual environment: python -m venv .venv")
-        print("   2. Activate it: source .venv/bin/activate (Linux/macOS) or .venv\\Scripts\\activate (Windows)")
-        print("   3. Install dependencies: pip install -r requirements.txt -c constraints.txt")
+        print(
+            "   2. Activate it: source .venv/bin/activate (Linux/macOS) or .venv\\Scripts\\activate (Windows)"
+        )
+        print(
+            "   3. Install dependencies: pip install -r requirements.txt -c constraints.txt"
+        )
         sys.exit(1)
 
     check_development_tools()

@@ -124,7 +124,12 @@ def _available_languages_sync() -> list[dict[str, str]]:
     try:
         path = _languages_dir()
         if not os.path.isdir(path):
-            return [{"code": FALLBACK_EN["_meta"]["code"], "name": FALLBACK_EN["_meta"]["name"]}]
+            return [
+                {
+                    "code": FALLBACK_EN["_meta"]["code"],
+                    "name": FALLBACK_EN["_meta"]["name"],
+                }
+            ]
         for fname in sorted(os.listdir(path)):
             if not fname.endswith(".json"):
                 continue
@@ -137,8 +142,12 @@ def _available_languages_sync() -> list[dict[str, str]]:
                 name = None
                 code = None
                 if isinstance(data, dict):
-                    name = data.get("name") or (meta.get("name") if isinstance(meta, dict) else None)
-                    code = data.get("code") or (meta.get("code") if isinstance(meta, dict) else None)
+                    name = data.get("name") or (
+                        meta.get("name") if isinstance(meta, dict) else None
+                    )
+                    code = data.get("code") or (
+                        meta.get("code") if isinstance(meta, dict) else None
+                    )
                 langs.append(
                     {
                         "code": code or default_code,
@@ -150,11 +159,14 @@ def _available_languages_sync() -> list[dict[str, str]]:
     except Exception:
         pass
     if not langs:
-        langs = [{"code": FALLBACK_EN["_meta"]["code"], "name": FALLBACK_EN["_meta"]["name"]}]
+        langs = [
+            {"code": FALLBACK_EN["_meta"]["code"], "name": FALLBACK_EN["_meta"]["name"]}
+        ]
     return langs
 
 
 # Public async API with real-time caching and error handling
+
 
 async def resolve_system_language() -> str:
     """Résout la langue système en temps réel avec gestion d'erreurs."""
@@ -167,19 +179,19 @@ async def resolve_system_language() -> str:
 async def available_languages() -> list[dict[str, str]]:
     """Retourne les langues disponibles avec caching thread-safe."""
     global _LANGUAGES_CACHE
-    
+
     try:
         # Vérifier le cache d'abord (rapide)
         if _LANGUAGES_CACHE is not None:
             return _LANGUAGES_CACHE
-        
+
         # Charger depuis le disque en thread pool
         langs = await asyncio.to_thread(_available_languages_sync)
-        
+
         # Mettre en cache de manière thread-safe
         async with _CACHE_LOCK:
             _LANGUAGES_CACHE = langs
-        
+
         return langs
     except Exception:
         # Fallback: retourner au moins l'anglais
@@ -191,31 +203,31 @@ async def get_translations(lang_pref: str | None) -> dict[str, Any]:
     try:
         # Normaliser la préférence de langue
         code = await normalize_lang_pref(lang_pref)
-        
+
         # Résoudre "System" vers la langue réelle
         if code == "System":
             code = await resolve_system_language()
-        
+
         # Vérifier le cache d'abord (très rapide)
         if code in _TRANSLATION_CACHE:
             return _TRANSLATION_CACHE[code]
-        
+
         # Charger depuis le disque en thread pool
         data = await asyncio.to_thread(_load_language_file_sync, code)
-        
+
         # Valider les données
         if not isinstance(data, dict) or not data:
             data = FALLBACK_EN.copy()
-        
+
         # Normaliser les métadonnées
         data = _normalize_translation_meta(data, code)
-        
+
         # Mettre en cache de manière thread-safe
         async with _CACHE_LOCK:
             _TRANSLATION_CACHE[code] = data
-        
+
         return data
-    
+
     except Exception:
         # Fallback ultime: retourner l'anglais avec métadonnées normalisées
         return _normalize_translation_meta(FALLBACK_EN.copy(), "en")
@@ -226,37 +238,28 @@ def _normalize_translation_meta(data: dict[str, Any], code: str) -> dict[str, An
     try:
         if not isinstance(data, dict):
             data = {}
-        
+
         # Extraire les métadonnées existantes
         top_name = data.get("name") if isinstance(data, dict) else None
         top_code = data.get("code") if isinstance(data, dict) else None
         meta_in = data.get("_meta", {}) if isinstance(data, dict) else {}
-        
+
         if not isinstance(meta_in, dict):
             meta_in = {}
-        
+
         # Construire les métadonnées finales avec fallbacks
-        final_code = (
-            top_code 
-            or meta_in.get("code") 
-            or code 
-            or "en"
-        )
-        
-        final_name = (
-            top_name
-            or meta_in.get("name")
-            or _get_language_name(final_code)
-        )
-        
+        final_code = top_code or meta_in.get("code") or code or "en"
+
+        final_name = top_name or meta_in.get("name") or _get_language_name(final_code)
+
         # Mettre à jour les métadonnées
         data["_meta"] = {
             "code": final_code,
             "name": final_name,
         }
-        
+
         return data
-    
+
     except Exception:
         # En cas d'erreur, retourner une structure minimale valide
         return {
@@ -267,7 +270,7 @@ def _normalize_translation_meta(data: dict[str, Any], code: str) -> dict[str, An
 def _get_language_name(code: str) -> str:
     """Retourne le nom de la langue pour un code donné (synchrone, pas d'I/O)."""
     code_lower = (code or "").lower()
-    
+
     if code_lower in ("en", "english"):
         return "English"
     elif code_lower in ("fr", "français", "francais"):
@@ -294,7 +297,7 @@ def _get_language_name(code: str) -> str:
 async def clear_translation_cache() -> None:
     """Vide le cache des traductions (utile pour les tests ou rechargements)."""
     global _TRANSLATION_CACHE, _LANGUAGES_CACHE
-    
+
     try:
         async with _CACHE_LOCK:
             _TRANSLATION_CACHE.clear()

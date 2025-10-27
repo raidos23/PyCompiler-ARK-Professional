@@ -31,6 +31,7 @@ import shutil
 from collections.abc import Sequence
 from typing import Any, Optional
 from acasl import Ac_PluginBase, PluginMeta
+
 # Re-export from the main Plugins_SDK to keep a single source of truth
 from Plugins_SDK import (
     # Config
@@ -60,13 +61,14 @@ from Plugins_SDK import (
     sys_msgbox_for_installing,
     wrap_post_context,
     # Dialog creator
-
 )
 
 # --- Unified i18n helper for BCASL/ACASL plugins ---
 
 
-def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fallback_to_core: bool = True) -> dict:
+def apply_plugin_i18n(
+    plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fallback_to_core: bool = True
+) -> dict:
     """Load and apply plugin-local i18n translations (async internally, sync interface).
 
     This helper provides a unified i18n system for BCASL/ACASL plugins, matching the engine pattern.
@@ -91,7 +93,7 @@ def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fal
                 msg = tr.get('my_key', 'fallback text')
     """
     import asyncio
-    
+
     async def _load_async() -> dict:
         """Asynchronous i18n loading implementation."""
         import json
@@ -140,12 +142,14 @@ def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fal
             try:
                 # Run file I/O in thread pool to avoid blocking
                 loop = asyncio.get_event_loop()
+
                 def _read():
                     try:
                         with open(path, "r", encoding="utf-8") as f:
                             return json.load(f) or {}
                     except Exception:
                         return {}
+
                 return await loop.run_in_executor(None, _read)
             except Exception:
                 return {}
@@ -166,7 +170,9 @@ def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fal
             if ilr and hasattr(plugin_instance, "__module__"):
                 try:
                     pkg = plugin_instance.__module__.rsplit(".", 1)[0]
-                    with ilr.as_file(ilr.files(pkg).joinpath("languages", f"{cand}.json")) as p:
+                    with ilr.as_file(
+                        ilr.files(pkg).joinpath("languages", f"{cand}.json")
+                    ) as p:
                         if os.path.isfile(str(p)):
                             data = await _load_json_async(Path(str(p)))
                             if data:
@@ -190,6 +196,7 @@ def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fal
         if loop.is_running():
             # If already in async context, create task
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(asyncio.run, _load_async())
                 return future.result()
@@ -205,7 +212,10 @@ def apply_plugin_i18n(plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fal
 
 def _is_noninteractive(sctx) -> bool:
     try:
-        return bool(getattr(sctx, "noninteractive", False) or getattr(sctx, "is_noninteractive", False))
+        return bool(
+            getattr(sctx, "noninteractive", False)
+            or getattr(sctx, "is_noninteractive", False)
+        )
     except Exception:
         return False
 
@@ -244,7 +254,11 @@ def ensure_system_pip_install(
         if callable(fn):
             consent = bool(fn(", ".join(pkgs), msg))
         else:
-            consent = bool(getattr(sctx, "msg_question", lambda *_args, **_kw: False)(title, msg, default_yes=False))
+            consent = bool(
+                getattr(sctx, "msg_question", lambda *_args, **_kw: False)(
+                    title, msg, default_yes=False
+                )
+            )
     except Exception:
         consent = False
     if not consent:
@@ -266,7 +280,8 @@ def ensure_system_pip_install(
             last_err = err or last_err
             # Debian/Ubuntu fallback when system pip refuses to write
             rc2, _out2, err2 = getattr(sctx, "run_command", run_command)(
-                [py, "-m", "pip", "install", "--break-system-packages", *pkgs], timeout_s=timeout_s
+                [py, "-m", "pip", "install", "--break-system-packages", *pkgs],
+                timeout_s=timeout_s,
             )
             if rc2 == 0:
                 return True
@@ -324,7 +339,11 @@ def ensure_system_packages(
         if callable(fn):
             consent = bool(fn(", ".join(pkgs), msg))
         else:
-            consent = bool(getattr(sctx, "msg_question", lambda *_args, **_kw: False)(title, msg, default_yes=False))
+            consent = bool(
+                getattr(sctx, "msg_question", lambda *_args, **_kw: False)(
+                    title, msg, default_yes=False
+                )
+            )
     except Exception:
         consent = False
     if not consent:
@@ -345,7 +364,9 @@ def ensure_system_packages(
         if not pm:
             try:
                 if hasattr(sctx, "log_error"):
-                    sctx.log_error("No supported package manager detected (apt/dnf/pacman/zypper)")
+                    sctx.log_error(
+                        "No supported package manager detected (apt/dnf/pacman/zypper)"
+                    )
             except Exception:
                 pass
             return False
@@ -359,11 +380,15 @@ def ensure_system_packages(
             cmd_core = "zypper install -y " + " ".join(pkgs)
         if _has_cmd("pkexec"):
             full = ["pkexec", "bash", "-lc", cmd_core]
-            rc, _out, err = getattr(sctx, "run_command", run_command)(full, timeout_s=timeout_s)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(
+                full, timeout_s=timeout_s
+            )
             ok_all = rc == 0
         else:
             full = ["bash", "-lc", f"sudo -S {cmd_core}"]
-            rc, _out, err = getattr(sctx, "run_command", run_command)(full, timeout_s=timeout_s)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(
+                full, timeout_s=timeout_s
+            )
             ok_all = rc == 0
         if not ok_all:
             try:
@@ -382,7 +407,9 @@ def ensure_system_packages(
                     "--accept-source-agreements",
                     pkg,
                 ]
-                rc, _out, err = getattr(sctx, "run_command", run_command)(args, timeout_s=timeout_s)
+                rc, _out, err = getattr(sctx, "run_command", run_command)(
+                    args, timeout_s=timeout_s
+                )
                 if rc != 0:
                     ok_all = False
                     try:
@@ -393,7 +420,9 @@ def ensure_system_packages(
         elif _has_cmd("choco"):
             for pkg in pkgs:
                 args = ["choco", "install", "-y", pkg]
-                rc, _out, err = getattr(sctx, "run_command", run_command)(args, timeout_s=timeout_s)
+                rc, _out, err = getattr(sctx, "run_command", run_command)(
+                    args, timeout_s=timeout_s
+                )
                 if rc != 0:
                     ok_all = False
                     try:
@@ -405,20 +434,26 @@ def ensure_system_packages(
             ok_all = False
             try:
                 if hasattr(sctx, "log_error"):
-                    sctx.log_error("No supported Windows package manager detected (winget/choco)")
+                    sctx.log_error(
+                        "No supported Windows package manager detected (winget/choco)"
+                    )
             except Exception:
                 pass
     elif sysname == "Darwin":
         if not _has_cmd("brew"):
             try:
                 if hasattr(sctx, "log_error"):
-                    sctx.log_error("Homebrew not detected; install from https://brew.sh/")
+                    sctx.log_error(
+                        "Homebrew not detected; install from https://brew.sh/"
+                    )
             except Exception:
                 pass
             return False
         for pkg in pkgs:
             args = ["brew", "install", pkg]
-            rc, _out, err = getattr(sctx, "run_command", run_command)(args, timeout_s=timeout_s)
+            rc, _out, err = getattr(sctx, "run_command", run_command)(
+                args, timeout_s=timeout_s
+            )
             if rc != 0:
                 ok_all = False
                 try:

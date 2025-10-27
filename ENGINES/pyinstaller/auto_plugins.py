@@ -6,7 +6,9 @@ from __future__ import annotations
 from engine_sdk import register_auto_builder  # type: ignore
 
 
-def AUTO_BUILDER(matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]) -> list[str]:
+def AUTO_BUILDER(
+    matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]
+) -> list[str]:
     """
     Build PyInstaller arguments from the engine-owned mapping.
 

@@ -6,7 +6,11 @@
 from __future__ import annotations
 
 # Re-export auto_plugins helpers for convenience
-from .auto_plugins import compute_auto_for_engine, compute_for_all, register_auto_builder
+from .auto_plugins import (
+    compute_auto_for_engine,
+    compute_for_all,
+    register_auto_builder,
+)
 
 # Re-export the base interface used by the host
 from .base import CompilerEngine

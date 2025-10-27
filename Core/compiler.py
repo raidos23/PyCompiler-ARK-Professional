@@ -12,7 +12,14 @@ import re
 import subprocess
 
 from PySide6.QtCore import QProcess, QTimer
-from PySide6.QtWidgets import QCheckBox, QLabel, QMessageBox, QPlainTextEdit, QPushButton, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QLabel,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QWidget,
+)
 
 import Core.engines_loader as engines_loader
 from engine_sdk.utils import clamp_text, redact_secrets
@@ -89,7 +96,10 @@ def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
             if system == "Windows":
                 try:
                     _sp.run(
-                        ["taskkill", "/PID", str(pid), "/T", "/F"], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=10
+                        ["taskkill", "/PID", str(pid), "/T", "/F"],
+                        stdout=_sp.DEVNULL,
+                        stderr=_sp.DEVNULL,
+                        timeout=10,
                     )
                 except Exception:
                     pass
@@ -112,23 +122,43 @@ def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
                     pass
                 # pkill children by parent
                 try:
-                    _sp.run(["pkill", "-TERM", "-P", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=5)
+                    _sp.run(
+                        ["pkill", "-TERM", "-P", str(pid)],
+                        stdout=_sp.DEVNULL,
+                        stderr=_sp.DEVNULL,
+                        timeout=5,
+                    )
                 except Exception:
                     pass
                 time.sleep(0.2)
                 try:
-                    _sp.run(["pkill", "-KILL", "-P", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=5)
+                    _sp.run(
+                        ["pkill", "-KILL", "-P", str(pid)],
+                        stdout=_sp.DEVNULL,
+                        stderr=_sp.DEVNULL,
+                        timeout=5,
+                    )
                 except Exception:
                     pass
                 # Hard kill parent last
                 if _sig is not None:
                     try:
-                        _sp.run(["kill", "-TERM", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=3)
+                        _sp.run(
+                            ["kill", "-TERM", str(pid)],
+                            stdout=_sp.DEVNULL,
+                            stderr=_sp.DEVNULL,
+                            timeout=3,
+                        )
                     except Exception:
                         pass
                     time.sleep(0.2)
                     try:
-                        _sp.run(["kill", "-KILL", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=3)
+                        _sp.run(
+                            ["kill", "-KILL", str(pid)],
+                            stdout=_sp.DEVNULL,
+                            stderr=_sp.DEVNULL,
+                            timeout=3,
+                        )
                     except Exception:
                         pass
         # Final check
@@ -147,7 +177,12 @@ def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
         system = _plat.system()
         try:
             if system == "Windows":
-                _sp.run(["taskkill", "/PID", str(pid), "/T", "/F"], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=10)
+                _sp.run(
+                    ["taskkill", "/PID", str(pid), "/T", "/F"],
+                    stdout=_sp.DEVNULL,
+                    stderr=_sp.DEVNULL,
+                    timeout=10,
+                )
                 _log(f"🪓 taskkill issued for pid={pid}")
             else:
                 try:
@@ -159,13 +194,33 @@ def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
                             _os.killpg(pgrp, _sig.SIGTERM)
                         except Exception:
                             pass
-                    _sp.run(["pkill", "-TERM", "-P", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=5)
+                    _sp.run(
+                        ["pkill", "-TERM", "-P", str(pid)],
+                        stdout=_sp.DEVNULL,
+                        stderr=_sp.DEVNULL,
+                        timeout=5,
+                    )
                     time.sleep(0.2)
-                    _sp.run(["pkill", "-KILL", "-P", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=5)
+                    _sp.run(
+                        ["pkill", "-KILL", "-P", str(pid)],
+                        stdout=_sp.DEVNULL,
+                        stderr=_sp.DEVNULL,
+                        timeout=5,
+                    )
                     if _sig is not None:
-                        _sp.run(["kill", "-TERM", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=3)
+                        _sp.run(
+                            ["kill", "-TERM", str(pid)],
+                            stdout=_sp.DEVNULL,
+                            stderr=_sp.DEVNULL,
+                            timeout=3,
+                        )
                         time.sleep(0.2)
-                        _sp.run(["kill", "-KILL", str(pid)], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=3)
+                        _sp.run(
+                            ["kill", "-KILL", str(pid)],
+                            stdout=_sp.DEVNULL,
+                            stderr=_sp.DEVNULL,
+                            timeout=3,
+                        )
                     _log(f"🪓 pkill/kill issued for pid={pid}")
                 except Exception:
                     pass
@@ -200,7 +255,12 @@ def _kill_all_descendants(timeout: float = 2.0, log=None) -> None:
             import os as _os
             import subprocess as _sp
 
-            _sp.run(["pkill", "-KILL", "-P", str(_os.getpid())], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=2)
+            _sp.run(
+                ["pkill", "-KILL", "-P", str(_os.getpid())],
+                stdout=_sp.DEVNULL,
+                stderr=_sp.DEVNULL,
+                timeout=2,
+            )
         except Exception:
             pass
 
@@ -213,7 +273,9 @@ def compile_all(self):
         QMessageBox.warning(
             self,
             self.tr("Attention", "Warning"),
-            self.tr("Des compilations sont déjà en cours.", "Builds are already running."),
+            self.tr(
+                "Des compilations sont déjà en cours.", "Builds are already running."
+            ),
         )
         return
     if not self.workspace_dir or (not self.python_files and not self.selected_files):
@@ -269,7 +331,9 @@ def compile_all(self):
                 try:
                     import traceback as _tb
 
-                    self.log.append(f"⚠️ Exception _after_bcasl: {_e}\n{_tb.format_exc()}\n")
+                    self.log.append(
+                        f"⚠️ Exception _after_bcasl: {_e}\n{_tb.format_exc()}\n"
+                    )
                 except Exception:
                     pass
 
@@ -305,7 +369,10 @@ def compile_all(self):
         try:
             with open(path, encoding="utf-8") as f:
                 content = f.read()
-                if "if __name__ == '__main__'" in content or 'if __name__ == "__main__"' in content:
+                if (
+                    "if __name__ == '__main__'" in content
+                    or 'if __name__ == "__main__"' in content
+                ):
                     return True
                 else:
                     self.log.append(f"⏩ Ignoré (pas de point d'entrée) : {path}")
@@ -317,7 +384,9 @@ def compile_all(self):
     # Détection du compilateur actif
     use_nuitka = False
     if hasattr(self, "compiler_tabs") and self.compiler_tabs:
-        self.compiler_tabs.setEnabled(False)  # Désactive les onglets au début de la compilation
+        self.compiler_tabs.setEnabled(
+            False
+        )  # Désactive les onglets au début de la compilation
         if self.compiler_tabs.currentIndex() == 1:  # 0 = PyInstaller, 1 = Nuitka
             use_nuitka = True
 
@@ -337,12 +406,18 @@ def compile_all(self):
             self.queue = [(f, True) for f in files_ok]
             total_files = len(files_ok)
         elif self.opt_main_only.isChecked():
-            files = [f for f in self.python_files if os.path.basename(f) in ("main.py", "app.py")]
+            files = [
+                f
+                for f in self.python_files
+                if os.path.basename(f) in ("main.py", "app.py")
+            ]
             files_ok = [f for f in files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
             total_files = len(files_ok)
             if not files_ok:
-                self.log.append("⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n")
+                self.log.append(
+                    "⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n"
+                )
                 return
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
@@ -374,7 +449,10 @@ def _continue_compile_all(self):
         try:
             with open(path, encoding="utf-8") as f:
                 content = f.read()
-                if "if __name__ == '__main__'" in content or 'if __name__ == "__main__"' in content:
+                if (
+                    "if __name__ == '__main__'" in content
+                    or 'if __name__ == "__main__"' in content
+                ):
                     return True
                 else:
                     self.log.append(f"⏩ Ignoré (pas de point d'entrée) : {path}")
@@ -386,7 +464,9 @@ def _continue_compile_all(self):
     # Détection du compilateur actif
     use_nuitka = False
     if hasattr(self, "compiler_tabs") and self.compiler_tabs:
-        self.compiler_tabs.setEnabled(False)  # Désactive les onglets au début de la compilation
+        self.compiler_tabs.setEnabled(
+            False
+        )  # Désactive les onglets au début de la compilation
         if self.compiler_tabs.currentIndex() == 1:  # 0 = PyInstaller, 1 = Nuitka
             use_nuitka = True
 
@@ -406,12 +486,18 @@ def _continue_compile_all(self):
             self.queue = [(f, True) for f in files_ok]
             total_files = len(files_ok)
         elif self.opt_main_only.isChecked():
-            files = [f for f in self.python_files if os.path.basename(f) in ("main.py", "app.py")]
+            files = [
+                f
+                for f in self.python_files
+                if os.path.basename(f) in ("main.py", "app.py")
+            ]
             files_ok = [f for f in files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
             total_files = len(files_ok)
             if not files_ok:
-                self.log.append("⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n")
+                self.log.append(
+                    "⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n"
+                )
                 return
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
@@ -491,7 +577,10 @@ def try_start_processes(self):
                         pass
 
                 QTimer.singleShot(
-                    0, lambda a=list(artifacts): run_post_compile_async(self, a, finished_cb=_after_acasl)
+                    0,
+                    lambda a=list(artifacts): run_post_compile_async(
+                        self, a, finished_cb=_after_acasl
+                    ),
                 )
             except Exception:
                 # En cas d'échec de démarrage d'ACASL, restaurer l'UI immédiatement
@@ -507,8 +596,14 @@ def start_compilation_process(self, file):
     file_basename = os.path.basename(file)
     # Determine active engine from UI tab (via registry mapping)
     try:
-        idx = self.compiler_tabs.currentIndex() if hasattr(self, "compiler_tabs") and self.compiler_tabs else 0
-        engine_id = engines_loader.registry.get_engine_for_tab(idx) or ("pyinstaller" if idx == 0 else "nuitka")
+        idx = (
+            self.compiler_tabs.currentIndex()
+            if hasattr(self, "compiler_tabs") and self.compiler_tabs
+            else 0
+        )
+        engine_id = engines_loader.registry.get_engine_for_tab(idx) or (
+            "pyinstaller" if idx == 0 else "nuitka"
+        )
     except Exception:
         engine_id = "pyinstaller"
     # Instantiate engine
@@ -551,13 +646,19 @@ def start_compilation_process(self, file):
     except Exception:
         cmd_preview_log = cmd_preview
     if engine_id == "nuitka":
-        self.log.append(f"▶️ Lancement compilation Nuitka : {file_basename}\nCommande : {cmd_preview_log}\n")
+        self.log.append(
+            f"▶️ Lancement compilation Nuitka : {file_basename}\nCommande : {cmd_preview_log}\n"
+        )
     else:
-        self.log.append(f"▶️ Lancement compilation : {file_basename}\nCommande : {cmd_preview_log}\n")
+        self.log.append(
+            f"▶️ Lancement compilation : {file_basename}\nCommande : {cmd_preview_log}\n"
+        )
     # Start QProcess
     # Cooperative cancellation sentinel path
     try:
-        cancel_dir = os.path.join(self.workspace_dir or os.getcwd(), ".pycompiler", "cancel")
+        cancel_dir = os.path.join(
+            self.workspace_dir or os.getcwd(), ".pycompiler", "cancel"
+        )
         os.makedirs(cancel_dir, exist_ok=True)
         cancel_file = os.path.join(cancel_dir, f"{engine_id}_{file_basename}.cancel")
         if os.path.isfile(cancel_file):
@@ -597,7 +698,9 @@ def start_compilation_process(self, file):
                 getattr(
                     engine,
                     "get_timeout_seconds",
-                    lambda _gui: int(os.environ.get("PYCOMPILER_PROCESS_TIMEOUT", "1800")),
+                    lambda _gui: int(
+                        os.environ.get("PYCOMPILER_PROCESS_TIMEOUT", "1800")
+                    ),
                 )(self)
             )
         except Exception:
@@ -681,7 +784,11 @@ def handle_stdout(self, process):
                         if isinstance(prog, dict):
                             cur = prog.get("current")
                             total = prog.get("total")
-                            if isinstance(cur, int) and isinstance(total, int) and total > 0:
+                            if (
+                                isinstance(cur, int)
+                                and isinstance(total, int)
+                                and total > 0
+                            ):
                                 self.progress.setRange(0, total)
                                 self.progress.setValue(min(cur, total))
                         stage = evt.get("stage")
@@ -692,12 +799,22 @@ def handle_stdout(self, process):
                         if isinstance(ui_req, dict):
                             try:
                                 # Helper to emit UI events back to the engine
-                                def _emit_event(ev: str, wid: str, payload: dict | None = None):
+                                def _emit_event(
+                                    ev: str, wid: str, payload: dict | None = None
+                                ):
                                     try:
-                                        resp = {"ui": {"type": "event", "id": wid, "event": ev}}
+                                        resp = {
+                                            "ui": {
+                                                "type": "event",
+                                                "id": wid,
+                                                "event": ev,
+                                            }
+                                        }
                                         if payload:
                                             resp["ui"]["payload"] = payload
-                                        payload_bytes = (json.dumps(resp, ensure_ascii=False) + "\n").encode("utf-8")
+                                        payload_bytes = (
+                                            json.dumps(resp, ensure_ascii=False) + "\n"
+                                        ).encode("utf-8")
                                         process.write(payload_bytes)
                                         process.flush()
                                     except Exception:
@@ -726,19 +843,36 @@ def handle_stdout(self, process):
                                     if mtype in ("question", "ask"):
                                         btns = _QMB.Yes | _QMB.No
                                         box.setStandardButtons(btns)
-                                        box.setDefaultButton(_QMB.Yes if default_yes else _QMB.No)
+                                        box.setDefaultButton(
+                                            _QMB.Yes if default_yes else _QMB.No
+                                        )
                                     else:
                                         box.setStandardButtons(_QMB.Ok)
                                         box.setDefaultButton(_QMB.Ok)
                                     res = box.exec()
                                     result = (
                                         "yes"
-                                        if (mtype in ("question", "ask") and res == _QMB.Yes)
-                                        else ("no" if mtype in ("question", "ask") else "ok")
+                                        if (
+                                            mtype in ("question", "ask")
+                                            and res == _QMB.Yes
+                                        )
+                                        else (
+                                            "no"
+                                            if mtype in ("question", "ask")
+                                            else "ok"
+                                        )
                                     )
-                                    resp = {"ui": {"type": "msg_box", "id": msg.get("id"), "result": result}}
+                                    resp = {
+                                        "ui": {
+                                            "type": "msg_box",
+                                            "id": msg.get("id"),
+                                            "result": result,
+                                        }
+                                    }
                                     try:
-                                        payload = (json.dumps(resp, ensure_ascii=False) + "\n").encode("utf-8")
+                                        payload = (
+                                            json.dumps(resp, ensure_ascii=False) + "\n"
+                                        ).encode("utf-8")
                                         process.write(payload)
                                         process.flush()
                                     except Exception:
@@ -754,7 +888,9 @@ def handle_stdout(self, process):
                                             raise ValueError("missing widget id")
                                         engine_id = getattr(process, "_engine_id", None)
                                         if not engine_id:
-                                            raise RuntimeError("unknown engine id for process")
+                                            raise RuntimeError(
+                                                "unknown engine id for process"
+                                            )
                                         # Find dynamic area container
                                         cont = None
                                         try:
@@ -764,7 +900,10 @@ def handle_stdout(self, process):
                                                     tw = tabs.widget(i)
                                                     if not tw:
                                                         continue
-                                                    c = tw.findChild(QWidget, f"engine_dynamic_area_{engine_id}")
+                                                    c = tw.findChild(
+                                                        QWidget,
+                                                        f"engine_dynamic_area_{engine_id}",
+                                                    )
                                                     if c:
                                                         cont = c
                                                         break
@@ -774,23 +913,41 @@ def handle_stdout(self, process):
                                             raise RuntimeError("dynamic area not found")
                                         if not hasattr(self, "_external_ui_widgets"):
                                             self._external_ui_widgets = {}
-                                        widgets = self._external_ui_widgets.setdefault(engine_id, {})
+                                        widgets = self._external_ui_widgets.setdefault(
+                                            engine_id, {}
+                                        )
 
                                         def _apply_props(_w, props: dict):
                                             try:
                                                 if "text" in props:
-                                                    if isinstance(_w, (QLabel, QPushButton)):
+                                                    if isinstance(
+                                                        _w, (QLabel, QPushButton)
+                                                    ):
                                                         _w.setText(str(props["text"]))
                                                     elif isinstance(_w, QPlainTextEdit):
-                                                        _w.setPlainText(str(props["text"]))
-                                                if "placeholder" in props and hasattr(_w, "setPlaceholderText"):
-                                                    _w.setPlaceholderText(str(props["placeholder"]))
-                                                if "checked" in props and isinstance(_w, QCheckBox):
-                                                    _w.setChecked(bool(props["checked"]))
+                                                        _w.setPlainText(
+                                                            str(props["text"])
+                                                        )
+                                                if "placeholder" in props and hasattr(
+                                                    _w, "setPlaceholderText"
+                                                ):
+                                                    _w.setPlaceholderText(
+                                                        str(props["placeholder"])
+                                                    )
+                                                if "checked" in props and isinstance(
+                                                    _w, QCheckBox
+                                                ):
+                                                    _w.setChecked(
+                                                        bool(props["checked"])
+                                                    )
                                                 if "enabled" in props:
-                                                    _w.setEnabled(bool(props["enabled"]))
+                                                    _w.setEnabled(
+                                                        bool(props["enabled"])
+                                                    )
                                                 if "visible" in props:
-                                                    _w.setVisible(bool(props["visible"]))
+                                                    _w.setVisible(
+                                                        bool(props["visible"])
+                                                    )
                                                 if "tooltip" in props:
                                                     _w.setToolTip(str(props["tooltip"]))
                                             except Exception:
@@ -818,25 +975,39 @@ def handle_stdout(self, process):
                                                 try:
                                                     if isinstance(w, QPushButton):
                                                         w.clicked.connect(
-                                                            lambda checked=False, wid=wid: _emit_event("clicked", wid)
+                                                            lambda checked=False, wid=wid: _emit_event(
+                                                                "clicked", wid
+                                                            )
                                                         )
                                                     elif isinstance(w, QCheckBox):
                                                         w.stateChanged.connect(
                                                             lambda _s, wid=wid, w=w: _emit_event(
-                                                                "changed", wid, {"checked": w.isChecked()}
+                                                                "changed",
+                                                                wid,
+                                                                {
+                                                                    "checked": w.isChecked()
+                                                                },
                                                             )
                                                         )
                                                     elif isinstance(w, QPlainTextEdit):
                                                         w.textChanged.connect(
                                                             lambda wid=wid, w=w: _emit_event(
-                                                                "changed", wid, {"text": w.toPlainText()[:5000]}
+                                                                "changed",
+                                                                wid,
+                                                                {
+                                                                    "text": w.toPlainText()[
+                                                                        :5000
+                                                                    ]
+                                                                },
                                                             )
                                                         )
                                                 except Exception:
                                                     pass
                                         elif op == "set":
                                             props = widget.get("props") or {}
-                                            w = widgets.get(wid) or cont.findChild(QWidget, wid)
+                                            w = widgets.get(wid) or cont.findChild(
+                                                QWidget, wid
+                                            )
                                             if w is not None:
                                                 _apply_props(w, props)
                                         elif op == "remove":
@@ -997,7 +1168,9 @@ def handle_finished(self, process, exit_code, exit_status):
             f"<span style='color:red;'>❌ La compilation de {file_basename} ({file}) a échoué (code {exit_code}).</span>\n"
         )
         if error_details:
-            self.log.append(f"<span style='color:red;'>Détails de l'erreur :<br><pre>{error_details}</pre></span>")
+            self.log.append(
+                f"<span style='color:red;'>Détails de l'erreur :<br><pre>{error_details}</pre></span>"
+            )
         self.show_error_dialog(file_basename, file, exit_code, error_details)
 
         # Auto-install modules manquants si activé
@@ -1033,12 +1206,19 @@ def try_install_missing_modules(self, process):
         self._install_report = []
     if missing_modules:
         pip_exe = os.path.join(
-            self.workspace_dir, "venv", "Scripts" if platform.system() == "Windows" else "bin", "pip"
+            self.workspace_dir,
+            "venv",
+            "Scripts" if platform.system() == "Windows" else "bin",
+            "pip",
         )
         all_installed = True
-        new_modules = [m for m in missing_modules if m not in self._already_tried_modules]
+        new_modules = [
+            m for m in missing_modules if m not in self._already_tried_modules
+        ]
         if not new_modules:
-            self.log.append("❌ Boucle d'installation stoppée : mêmes modules manquants détectés à nouveau.")
+            self.log.append(
+                "❌ Boucle d'installation stoppée : mêmes modules manquants détectés à nouveau."
+            )
             self.log.append("Rapport final :")
             for line in self._install_report:
                 self.log.append(line)
@@ -1047,7 +1227,9 @@ def try_install_missing_modules(self, process):
             return
         for module in new_modules:
             self._already_tried_modules.add(module)
-            self.log.append(f"📦 Tentative d'installation du module manquant : {module}")
+            self.log.append(
+                f"📦 Tentative d'installation du module manquant : {module}"
+            )
             try:
                 subprocess.run([pip_exe, "install", module], check=True)
                 msg = f"✅ Module {module} installé avec succès."
@@ -1070,17 +1252,23 @@ def try_install_missing_modules(self, process):
                 QMessageBox.Yes | QMessageBox.No,
             )
             if reply == QMessageBox.Yes:
-                self.log.append("🔁 Relance de la compilation après installation des modules manquants...")
+                self.log.append(
+                    "🔁 Relance de la compilation après installation des modules manquants..."
+                )
                 self.queue.insert(0, process.file_path)
                 self.try_start_processes()
             else:
-                self.log.append("⏹️ Compilation non relancée après installation des modules. Rapport final :")
+                self.log.append(
+                    "⏹️ Compilation non relancée après installation des modules. Rapport final :"
+                )
                 for line in self._install_report:
                     self.log.append(line)
                 self._already_tried_modules.clear()
                 self._install_report.clear()
         else:
-            self.log.append("❌ Certains modules n'ont pas pu être installés. Compilation non relancée.")
+            self.log.append(
+                "❌ Certains modules n'ont pas pu être installés. Compilation non relancée."
+            )
             self.log.append("Rapport final :")
             for line in self._install_report:
                 self.log.append(line)
@@ -1096,13 +1284,17 @@ def try_install_missing_modules(self, process):
             self._install_report.clear()
 
 
-def show_error_dialog(self, filename, filepath=None, exit_code=None, error_details=None):
+def show_error_dialog(
+    self, filename, filepath=None, exit_code=None, error_details=None
+):
     # Mode silencieux : ne rien afficher si la case est cochée
     if hasattr(self, "opt_silent_errors") and self.opt_silent_errors.isChecked():
         return
     dlg = QMessageBox(self)
     dlg.setWindowTitle(self.tr("Erreur de compilation", "Build error"))
-    base = self.tr("La compilation de {filename} a échoué.", "Build of {filename} failed.")
+    base = self.tr(
+        "La compilation de {filename} a échoué.", "Build of {filename} failed."
+    )
     msg = base.format(filename=filename)
     if filepath:
         msg += f"\n{self.tr('Fichier', 'File')} : {filepath}"
@@ -1191,9 +1383,13 @@ def cancel_all_compilations(self):
         pass
     self.set_controls_enabled(True)
     if errors:
-        self.log.append("❌ Certains processus n'ont pas pu être arrêtés (voir erreurs ci-dessus).")
+        self.log.append(
+            "❌ Certains processus n'ont pas pu être arrêtés (voir erreurs ci-dessus)."
+        )
     else:
-        self.log.append("⛔ Toutes les compilations ont été annulées et tous les processus enfants tués.\n")
+        self.log.append(
+            "⛔ Toutes les compilations ont été annulées et tous les processus enfants tués.\n"
+        )
 
 
 def build_pyinstaller_command(self, file):
@@ -1231,10 +1427,14 @@ def build_pyinstaller_command(self, file):
 
     custom_name = self.output_name_input.text().strip()
     if custom_name:
-        output_name = custom_name + ".exe" if platform.system() == "Windows" else custom_name
+        output_name = (
+            custom_name + ".exe" if platform.system() == "Windows" else custom_name
+        )
     else:
         base_name = os.path.splitext(os.path.basename(file))[0]
-        output_name = base_name + ".exe" if platform.system() == "Windows" else base_name
+        output_name = (
+            base_name + ".exe" if platform.system() == "Windows" else base_name
+        )
     cmd += ["--name", output_name]
 
     # Dossier de sortie
@@ -1253,7 +1453,11 @@ def build_nuitka_command(self, file):
         cmd.append("--standalone")
     import platform
 
-    if self.nuitka_disable_console and self.nuitka_disable_console.isChecked() and platform.system() == "Windows":
+    if (
+        self.nuitka_disable_console
+        and self.nuitka_disable_console.isChecked()
+        and platform.system() == "Windows"
+    ):
         cmd.append("--windows-disable-console")
     if self.nuitka_show_progress and self.nuitka_show_progress.isChecked():
         cmd.append("--show-progress")

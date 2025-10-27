@@ -37,6 +37,7 @@ try:  # pragma: no cover
         open_acasl_loader_dialog,
         run_post_compile_async,
     )
+
     # Also import plugin system
     from .acasl import (  # type: ignore
         ACASL,

@@ -7,7 +7,14 @@ import os
 import platform
 from typing import Optional
 
-from engine_sdk import CompilerEngine, SysDependencyManager, pip_executable, pip_install, pip_show, resolve_project_venv
+from engine_sdk import (
+    CompilerEngine,
+    SysDependencyManager,
+    pip_executable,
+    pip_install,
+    pip_show,
+    resolve_project_venv,
+)
 
 
 class PyInstallerEngine(CompilerEngine):
@@ -29,21 +36,35 @@ class PyInstallerEngine(CompilerEngine):
         try:
             if pip_show(gui, pip, package) == 0:
                 try:
-                    gui.log.append(gui.tr(f"✅ {package} déjà installé", f"✅ {package} already installed"))
+                    gui.log.append(
+                        gui.tr(
+                            f"✅ {package} déjà installé",
+                            f"✅ {package} already installed",
+                        )
+                    )
                 except Exception:
                     pass
                 return True
             try:
-                gui.log.append(gui.tr(f"📦 Installation de {package}…", f"📦 Installing {package}…"))
+                gui.log.append(
+                    gui.tr(
+                        f"📦 Installation de {package}…", f"📦 Installing {package}…"
+                    )
+                )
             except Exception:
                 pass
             ok = pip_install(gui, pip, package) == 0
             try:
                 if ok:
-                    gui.log.append(gui.tr("✅ Installation réussie", "✅ Installation successful"))
+                    gui.log.append(
+                        gui.tr("✅ Installation réussie", "✅ Installation successful")
+                    )
                 else:
                     gui.log.append(
-                        gui.tr(f"❌ Installation échouée ({package})", f"❌ Installation failed ({package})")
+                        gui.tr(
+                            f"❌ Installation échouée ({package})",
+                            f"❌ Installation failed ({package})",
+                        )
                     )
             except Exception:
                 pass
@@ -124,7 +145,10 @@ class PyInstallerEngine(CompilerEngine):
 
                                 QMessageBox.critical(
                                     gui,
-                                    _tr("Gestionnaire de paquets non détecté", "Package manager not detected"),
+                                    _tr(
+                                        "Gestionnaire de paquets non détecté",
+                                        "Package manager not detected",
+                                    ),
                                     _tr(
                                         "Impossible d'installer automatiquement les dépendances système (patchelf, p7zip).",
                                         "Unable to auto-install system dependencies (patchelf, p7zip).",
@@ -175,7 +199,10 @@ class PyInstallerEngine(CompilerEngine):
                         if ok:
                             try:
                                 gui.log.append(
-                                    gui.tr("✅ PyInstaller déjà installé", "✅ PyInstaller already installed")
+                                    gui.tr(
+                                        "✅ PyInstaller déjà installé",
+                                        "✅ PyInstaller already installed",
+                                    )
                                 )
                             except Exception:
                                 pass
@@ -225,18 +252,25 @@ class PyInstallerEngine(CompilerEngine):
             if not vroot:
                 gui.log.append(
                     gui.tr(
-                        "❌ Venv introuvable pour résoudre pyinstaller.", "❌ Venv not found to resolve pyinstaller."
+                        "❌ Venv introuvable pour résoudre pyinstaller.",
+                        "❌ Venv not found to resolve pyinstaller.",
                     )
                 )
                 gui.show_error_dialog(os.path.basename(file))
                 return None
-            vbin = os.path.join(vroot, "Scripts" if platform.system() == "Windows" else "bin")
+            vbin = os.path.join(
+                vroot, "Scripts" if platform.system() == "Windows" else "bin"
+            )
             pyinstaller_path = os.path.join(
-                vbin, "pyinstaller" if platform.system() != "Windows" else "pyinstaller.exe"
+                vbin,
+                "pyinstaller" if platform.system() != "Windows" else "pyinstaller.exe",
             )
             if not os.path.isfile(pyinstaller_path):
                 gui.log.append(
-                    gui.tr("❌ pyinstaller non trouvé dans le venv : ", "❌ pyinstaller not found in venv: ")
+                    gui.tr(
+                        "❌ pyinstaller non trouvé dans le venv : ",
+                        "❌ pyinstaller not found in venv: ",
+                    )
                     + str(pyinstaller_path)
                 )
                 gui.show_error_dialog(os.path.basename(file))

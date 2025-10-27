@@ -29,7 +29,9 @@ def _auto_import_all() -> None:
     """
     try:
         pkg_name = __name__
-        for _finder, name, _ispkg in pkgutil.walk_packages(__path__, prefix=f"{pkg_name}."):
+        for _finder, name, _ispkg in pkgutil.walk_packages(
+            __path__, prefix=f"{pkg_name}."
+        ):
             try:
                 importlib.import_module(name)
                 short = name.rsplit(".", 1)[-1]

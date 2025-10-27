@@ -37,7 +37,6 @@ from .bcasl_loader import (
 )
 
 
-
 __all__ = [
     # Coeur
     "BCASL",

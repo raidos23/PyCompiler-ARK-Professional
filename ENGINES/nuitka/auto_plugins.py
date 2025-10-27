@@ -16,7 +16,9 @@ def _normalize_plugin_arg(val: str) -> str:
     return f"--enable-plugin={v}"
 
 
-def AUTO_BUILDER(matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]) -> list[str]:
+def AUTO_BUILDER(
+    matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]
+) -> list[str]:
     """
     Build Nuitka arguments from the engine-owned mapping.
 

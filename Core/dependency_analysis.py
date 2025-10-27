@@ -173,7 +173,9 @@ def suggest_missing_dependencies(self):
         f
         for f in files
         if not os.path.commonpath([os.path.abspath(f), venv_dir]) == venv_dir
-        and not any(part.startswith(".") or part == "__pycache__" for part in f.split(os.sep))
+        and not any(
+            part.startswith(".") or part == "__pycache__" for part in f.split(os.sep)
+        )
     ]
     # Analyse chaque fichier Python pour détecter les imports
     for file in filtered_files:
@@ -192,7 +194,9 @@ def suggest_missing_dependencies(self):
             # Imports dynamiques via __import__ ou importlib.import_module
             dynamic_imports = re.findall(r"__import__\(['\"]([\w\.]+)['\"]\)", source)
             modules.update([mod.split(".")[0] for mod in dynamic_imports])
-            importlib_imports = re.findall(r"importlib\.import_module\(['\"]([\w\.]+)['\"]\)", source)
+            importlib_imports = re.findall(
+                r"importlib\.import_module\(['\"]([\w\.]+)['\"]\)", source
+            )
             modules.update([mod.split(".")[0] for mod in importlib_imports])
         except Exception as e:
             self.log.append(f"⚠️ Erreur analyse dépendances dans {file} : {e}")
@@ -216,7 +220,9 @@ def suggest_missing_dependencies(self):
         base = os.path.splitext(os.path.basename(f))[0]
         internal_modules.add(base)
     # Liste des modules à vérifier (hors standard et hors modules internes)
-    suggestions = [m for m in modules if not _is_stdlib_module(m) and m not in internal_modules]
+    suggestions = [
+        m for m in modules if not _is_stdlib_module(m) and m not in internal_modules
+    ]
     # Alerte spéciale pour tkinter (std lib optionnelle non installable via pip)
     try:
         import importlib.util as _il_util
@@ -235,7 +241,9 @@ def suggest_missing_dependencies(self):
                 )
                 self.log.append(f"ℹ️ {msg}")
                 try:
-                    QMessageBox.information(self, self.tr("tkinter manquant", "Missing tkinter"), msg)
+                    QMessageBox.information(
+                        self, self.tr("tkinter manquant", "Missing tkinter"), msg
+                    )
                 except Exception:
                     pass
     except Exception:
@@ -246,10 +254,17 @@ def suggest_missing_dependencies(self):
     # Vérifie la présence des modules dans le venv (via pip show)
     pip_name = "pip.exe" if platform.system() == "Windows" else "pip"
     if self.venv_path_manuel:
-        pip_exe = os.path.join(self.venv_path_manuel, "Scripts" if platform.system() == "Windows" else "bin", pip_name)
+        pip_exe = os.path.join(
+            self.venv_path_manuel,
+            "Scripts" if platform.system() == "Windows" else "bin",
+            pip_name,
+        )
     else:
         pip_exe = os.path.join(
-            self.workspace_dir, "venv", "Scripts" if platform.system() == "Windows" else "bin", pip_name
+            self.workspace_dir,
+            "venv",
+            "Scripts" if platform.system() == "Windows" else "bin",
+            pip_name,
         )
     # Détermine la stratégie pip: binaire du venv si présent, sinon 'python -m pip'
     pip_program = pip_exe
@@ -276,10 +291,14 @@ def suggest_missing_dependencies(self):
             if result.returncode != 0:
                 not_installed.append(module)
         except Exception as e:
-            self.log.append(f"⚠️ Erreur lors de la vérification du module {module} : {e}")
+            self.log.append(
+                f"⚠️ Erreur lors de la vérification du module {module} : {e}"
+            )
     # Si des modules sont manquants, propose l'installation automatique
     if not_installed:
-        self.log.append("❗ Modules manquants dans le venv : " + ", ".join(sorted(not_installed)))
+        self.log.append(
+            "❗ Modules manquants dans le venv : " + ", ".join(sorted(not_installed))
+        )
         # Demande à l'utilisateur s'il souhaite installer automatiquement les modules manquants
         reply = QMessageBox.question(
             self,
@@ -304,28 +323,38 @@ def suggest_missing_dependencies(self):
                 self.tr("Installation des dépendances", "Installing dependencies"), self
             )
             self.dep_progress_dialog.set_message(
-                self.tr("Installation de {m}...", "Installing {m}...").format(m=not_installed[0])
+                self.tr("Installation de {m}...", "Installing {m}...").format(
+                    m=not_installed[0]
+                )
             )
             self.dep_progress_dialog.set_progress(0, len(not_installed))
             self.dep_progress_dialog.show()
             self._install_next_dependency()
     else:
-        self.log.append("✅ Tous les modules nécessaires sont déjà installés dans le venv.")
+        self.log.append(
+            "✅ Tous les modules nécessaires sont déjà installés dans le venv."
+        )
 
 
 # Installation automatique des dépendances manquantes (récursif)
 def _install_next_dependency(self):
     # Si tous les modules ont été installés, termine le processus
     if self._dep_install_index >= len(self._dep_install_list):
-        self.dep_progress_dialog.set_message(self.tr("Installation terminée.", "Installation completed."))
-        self.dep_progress_dialog.set_progress(len(self._dep_install_list), len(self._dep_install_list))
+        self.dep_progress_dialog.set_message(
+            self.tr("Installation terminée.", "Installation completed.")
+        )
+        self.dep_progress_dialog.set_progress(
+            len(self._dep_install_list), len(self._dep_install_list)
+        )
         self.dep_progress_dialog.close()
         self.log.append("✅ Tous les modules manquants ont été installés.")
         return
     module = self._dep_install_list[self._dep_install_index]
     msg = f"Installation de {module}... ({self._dep_install_index+1}/{len(self._dep_install_list)})"
     self.dep_progress_dialog.set_message(msg)
-    self.dep_progress_dialog.progress.setRange(0, 0)  # indéterminé pendant l'installation
+    self.dep_progress_dialog.progress.setRange(
+        0, 0
+    )  # indéterminé pendant l'installation
     process = QProcess(self)
     # Utilise le programme et préfixe déterminés (pip du venv ou 'python -m pip')
     try:
@@ -339,14 +368,22 @@ def _install_next_dependency(self):
     process.setProgram(program)
     process.setArguments(prefix + ["install", module])
     process.readyReadStandardOutput.connect(lambda: self._on_dep_pip_output(process))
-    process.readyReadStandardError.connect(lambda: self._on_dep_pip_output(process, error=True))
-    process.finished.connect(lambda code, status: self._on_dep_pip_finished(process, code, status))
+    process.readyReadStandardError.connect(
+        lambda: self._on_dep_pip_output(process, error=True)
+    )
+    process.finished.connect(
+        lambda code, status: self._on_dep_pip_finished(process, code, status)
+    )
     process.start()
 
 
 # Affiche la sortie de pip dans la ProgressDialog et les logs
 def _on_dep_pip_output(self, process, error=False):
-    data = process.readAllStandardError().data().decode() if error else process.readAllStandardOutput().data().decode()
+    data = (
+        process.readAllStandardError().data().decode()
+        if error
+        else process.readAllStandardOutput().data().decode()
+    )
     if hasattr(self, "dep_progress_dialog") and self.dep_progress_dialog:
         lines = data.strip().splitlines()
         if lines:
@@ -364,5 +401,7 @@ def _on_dep_pip_finished(self, process, code, status):
     # Met à jour la progression globale
     self._dep_install_index += 1
     self.dep_progress_dialog.progress.setRange(0, len(self._dep_install_list))
-    self.dep_progress_dialog.set_progress(self._dep_install_index, len(self._dep_install_list))
+    self.dep_progress_dialog.set_progress(
+        self._dep_install_index, len(self._dep_install_list)
+    )
     self._install_next_dependency()

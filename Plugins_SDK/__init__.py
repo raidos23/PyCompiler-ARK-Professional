@@ -126,6 +126,7 @@ except Exception:
 # ACASL PluginBase (post-compile plugins)
 class Ac_PluginBase:  # type: ignore
     """Base class for ACASL (post-compile) plugins."""
+
     pass
 
 
@@ -179,19 +180,31 @@ def _detect_workspace_root(pre_ctx: Any) -> Path:
                     return p.resolve()
         except Exception:
             continue
-    raise RuntimeError("Workspace not found: select a folder in the UI or provide 'workspace_root' in context.")
+    raise RuntimeError(
+        "Workspace not found: select a folder in the UI or provide 'workspace_root' in context."
+    )
 
 
 def wrap_context(
-    pre_ctx: PreCompileContext, *, log_fn: Optional[Any] = None, engine_id: Optional[str] = None
+    pre_ctx: PreCompileContext,
+    *,
+    log_fn: Optional[Any] = None,
+    engine_id: Optional[str] = None,
 ) -> SDKContext:
     root = _detect_workspace_root(pre_ctx)
     cfg = load_workspace_config(root)
     engine = engine_id or getattr(pre_ctx, "engine_id", None)
-    return SDKContext(workspace_root=root, config_view=ConfigView(cfg), log_fn=log_fn, engine_id=engine)
+    return SDKContext(
+        workspace_root=root,
+        config_view=ConfigView(cfg),
+        log_fn=log_fn,
+        engine_id=engine,
+    )
 
 
-def wrap_post_context(post_ctx: PostCompileContext, *, log_fn: Optional[Any] = None) -> SDKContext:
+def wrap_post_context(
+    post_ctx: PostCompileContext, *, log_fn: Optional[Any] = None
+) -> SDKContext:
     """Wrap an ACASL PostCompileContext into SDKContext for reuse of the same helpers.
     - Copies workspace root and artifacts
     - Loads workspace config
@@ -263,7 +276,11 @@ def run_command(
     import subprocess
 
     try:
-        base_env = {k: v for k, v in _os.environ.items() if k in ("PATH", "LANG", "HOME", "LC_ALL", "LC_CTYPE")}
+        base_env = {
+            k: v
+            for k, v in _os.environ.items()
+            if k in ("PATH", "LANG", "HOME", "LC_ALL", "LC_CTYPE")
+        }
     except Exception:
         base_env = {}
     if isinstance(env, dict):
@@ -280,8 +297,16 @@ def run_command(
         )
         return cp.returncode, cp.stdout or "", cp.stderr or ""
     except subprocess.TimeoutExpired as te:
-        out = te.stdout.decode() if isinstance(te.stdout, (bytes, bytearray)) else (te.stdout or "")
-        err = te.stderr.decode() if isinstance(te.stderr, (bytes, bytearray)) else (te.stderr or "")
+        out = (
+            te.stdout.decode()
+            if isinstance(te.stdout, (bytes, bytearray))
+            else (te.stdout or "")
+        )
+        err = (
+            te.stderr.decode()
+            if isinstance(te.stderr, (bytes, bytearray))
+            else (te.stderr or "")
+        )
         return -999, out, err
 
 
@@ -316,7 +341,10 @@ def _parse_local_lang_text(text: str, suffix: str) -> dict[str, Any]:
 
 
 async def load_plugin_translations(
-    plugin_file_or_dir: Pathish, lang_pref: Optional[str] = None, *, fallback_to_core: bool = True
+    plugin_file_or_dir: Pathish,
+    lang_pref: Optional[str] = None,
+    *,
+    fallback_to_core: bool = True,
 ) -> dict[str, Any]:
     """Load plugin-level translations asynchronously from plugin languages/ dir and merge with core i18n.
 
@@ -337,7 +365,9 @@ async def load_plugin_translations(
         lang_code = await resolve_system_language()
 
     # Load local language file in a worker thread (filesystem IO)
-    local = await asyncio.to_thread(_load_local_lang_file_any, lang_dir, lang_code) or {}
+    local = (
+        await asyncio.to_thread(_load_local_lang_file_any, lang_dir, lang_code) or {}
+    )
     if (not local) and lang_code != "en":
         local = await asyncio.to_thread(_load_local_lang_file_any, lang_dir, "en") or {}
 
@@ -357,11 +387,19 @@ async def load_plugin_translations(
         top_code = merged.get("code") if isinstance(merged, dict) else None
         meta_in = merged.get("_meta", {}) if isinstance(merged, dict) else {}
         meta = {
-            "code": (top_code or (meta_in.get("code") if isinstance(meta_in, dict) else None) or lang_code),
+            "code": (
+                top_code
+                or (meta_in.get("code") if isinstance(meta_in, dict) else None)
+                or lang_code
+            ),
             "name": (
                 top_name
                 or (meta_in.get("name") if isinstance(meta_in, dict) else None)
-                or ("English" if lang_code == "en" else ("Français" if lang_code == "fr" else lang_code))
+                or (
+                    "English"
+                    if lang_code == "en"
+                    else ("Français" if lang_code == "fr" else lang_code)
+                )
             ),
         }
         merged["_meta"] = meta
@@ -441,7 +479,10 @@ PLUGIN_TEMPLATE += "\n".join(
 
 
 def scaffold_plugin(
-    target_dir: Pathish, plugin_id: str, name: Optional[str] = None, description: str = "Generated plugin"
+    target_dir: Pathish,
+    plugin_id: str,
+    name: Optional[str] = None,
+    description: str = "Generated plugin",
 ) -> Path:
     target = Path(target_dir)
     target.mkdir(parents=True, exist_ok=True)
@@ -459,7 +500,9 @@ def scaffold_plugin(
     pkg_dir.mkdir(parents=False, exist_ok=False)
 
     file_path = pkg_dir / "__init__.py"
-    content = PLUGIN_TEMPLATE.format(plugin_id=plugin_id, class_name=class_name, description=description)
+    content = PLUGIN_TEMPLATE.format(
+        plugin_id=plugin_id, class_name=class_name, description=description
+    )
     file_path.write_text(content + "\n", encoding="utf-8")
     return file_path
 

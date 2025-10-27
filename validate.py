@@ -17,7 +17,9 @@ class ValidationResult:
         self.results = []
 
     def add_result(self, category: str, test: str, status: str, message: str = ""):
-        self.results.append({"category": category, "test": test, "status": status, "message": message})
+        self.results.append(
+            {"category": category, "test": test, "status": status, "message": message}
+        )
 
         if status == "PASS":
             self.passed += 1
@@ -37,9 +39,13 @@ class ValidationResult:
         print(f"📊 Total: {total}")
 
         if self.failed == 0:
-            print("\n🎉 ALL VALIDATIONS PASSED! PyCompiler ARK++ Professional Edition is ready.")
+            print(
+                "\n🎉 ALL VALIDATIONS PASSED! PyCompiler ARK++ Professional Edition is ready."
+            )
         else:
-            print(f"\n❌ {self.failed} validation(s) failed. Please address the issues above.")
+            print(
+                f"\n❌ {self.failed} validation(s) failed. Please address the issues above."
+            )
 
         return self.failed == 0
 
@@ -73,16 +79,32 @@ def validate_file_structure(result: ValidationResult):
         if Path(file_path).exists():
             result.add_result("Structure", f"File: {file_path}", "PASS")
         else:
-            result.add_result("Structure", f"File: {file_path}", "FAIL", "Missing required file")
+            result.add_result(
+                "Structure", f"File: {file_path}", "FAIL", "Missing required file"
+            )
 
     # Check directories
-    required_dirs = ["utils", "API_SDK", "engine_sdk", "bcasl", "acasl", "ENGINES", "docs", ".github/workflows"]
+    required_dirs = [
+        "utils",
+        "API_SDK",
+        "engine_sdk",
+        "bcasl",
+        "acasl",
+        "ENGINES",
+        "docs",
+        ".github/workflows",
+    ]
 
     for dir_path in required_dirs:
         if Path(dir_path).exists() and Path(dir_path).is_dir():
             result.add_result("Structure", f"Directory: {dir_path}", "PASS")
         else:
-            result.add_result("Structure", f"Directory: {dir_path}", "FAIL", "Missing required directory")
+            result.add_result(
+                "Structure",
+                f"Directory: {dir_path}",
+                "FAIL",
+                "Missing required directory",
+            )
 
 
 def validate_python_syntax(result: ValidationResult):
@@ -90,7 +112,9 @@ def validate_python_syntax(result: ValidationResult):
     print("🐍 Validating Python Syntax...")
 
     python_files = list(Path(".").rglob("*.py"))
-    python_files = [f for f in python_files if ".venv" not in str(f) and "__pycache__" not in str(f)]
+    python_files = [
+        f for f in python_files if ".venv" not in str(f) and "__pycache__" not in str(f)
+    ]
 
     for py_file in python_files[:10]:  # Limit to first 10 files for speed
         try:
@@ -98,9 +122,13 @@ def validate_python_syntax(result: ValidationResult):
                 compile(f.read(), str(py_file), "exec")
             result.add_result("Syntax", f"Python: {py_file}", "PASS")
         except SyntaxError as e:
-            result.add_result("Syntax", f"Python: {py_file}", "FAIL", f"Syntax error: {e}")
+            result.add_result(
+                "Syntax", f"Python: {py_file}", "FAIL", f"Syntax error: {e}"
+            )
         except Exception as e:
-            result.add_result("Syntax", f"Python: {py_file}", "WARN", f"Could not validate: {e}")
+            result.add_result(
+                "Syntax", f"Python: {py_file}", "WARN", f"Could not validate: {e}"
+            )
 
 
 def validate_configuration_files(result: ValidationResult):
@@ -126,7 +154,12 @@ def validate_configuration_files(result: ValidationResult):
                 if key in current:
                     current = current[key]
                 else:
-                    result.add_result("Config", f"pyproject.toml: {section}", "FAIL", "Missing section")
+                    result.add_result(
+                        "Config",
+                        f"pyproject.toml: {section}",
+                        "FAIL",
+                        "Missing section",
+                    )
                     break
             else:
                 result.add_result("Config", f"pyproject.toml: {section}", "PASS")
@@ -142,7 +175,9 @@ def validate_configuration_files(result: ValidationResult):
             yaml.safe_load(f)
         result.add_result("Config", ".pre-commit-config.yaml", "PASS")
     except Exception as e:
-        result.add_result("Config", ".pre-commit-config.yaml", "FAIL", f"Invalid YAML: {e}")
+        result.add_result(
+            "Config", ".pre-commit-config.yaml", "FAIL", f"Invalid YAML: {e}"
+        )
 
 
 def validate_dependencies(result: ValidationResult):
@@ -161,10 +196,17 @@ def validate_dependencies(result: ValidationResult):
                 if ">=" in req or "==" in req or "<" in req:
                     result.add_result("Dependencies", f"Requirement: {req}", "PASS")
                 else:
-                    result.add_result("Dependencies", f"Requirement: {req}", "WARN", "No version specified")
+                    result.add_result(
+                        "Dependencies",
+                        f"Requirement: {req}",
+                        "WARN",
+                        "No version specified",
+                    )
 
     except Exception as e:
-        result.add_result("Dependencies", "requirements.txt", "FAIL", f"Cannot read: {e}")
+        result.add_result(
+            "Dependencies", "requirements.txt", "FAIL", f"Cannot read: {e}"
+        )
 
     # Check constraints.txt
     try:
@@ -173,9 +215,13 @@ def validate_dependencies(result: ValidationResult):
         if constraints:
             result.add_result("Dependencies", "constraints.txt", "PASS")
         else:
-            result.add_result("Dependencies", "constraints.txt", "WARN", "Empty constraints file")
+            result.add_result(
+                "Dependencies", "constraints.txt", "WARN", "Empty constraints file"
+            )
     except Exception as e:
-        result.add_result("Dependencies", "constraints.txt", "FAIL", f"Cannot read: {e}")
+        result.add_result(
+            "Dependencies", "constraints.txt", "FAIL", f"Cannot read: {e}"
+        )
 
 
 def validate_git_setup(result: ValidationResult):
@@ -191,20 +237,29 @@ def validate_git_setup(result: ValidationResult):
 
     # Check git configuration
     try:
-        subprocess.run(["git", "config", "user.name"], capture_output=True, check=True, text=True)
+        subprocess.run(
+            ["git", "config", "user.name"], capture_output=True, check=True, text=True
+        )
         result.add_result("Git", "User name", "PASS")
     except subprocess.CalledProcessError:
         result.add_result("Git", "User name", "WARN", "Git user.name not configured")
 
     try:
-        subprocess.run(["git", "config", "user.email"], capture_output=True, check=True, text=True)
+        subprocess.run(
+            ["git", "config", "user.email"], capture_output=True, check=True, text=True
+        )
         result.add_result("Git", "User email", "PASS")
     except subprocess.CalledProcessError:
         result.add_result("Git", "User email", "WARN", "Git user.email not configured")
 
     # Check for commits
     try:
-        result_cmd = subprocess.run(["git", "log", "--oneline", "-1"], capture_output=True, check=True, text=True)
+        result_cmd = subprocess.run(
+            ["git", "log", "--oneline", "-1"],
+            capture_output=True,
+            check=True,
+            text=True,
+        )
         if result_cmd.stdout.strip():
             result.add_result("Git", "Commits", "PASS")
         else:
@@ -230,13 +285,29 @@ def validate_tools(result: ValidationResult):
 
     for tool, description in tools.items():
         try:
-            subprocess.run([tool, "--version"], capture_output=True, check=True, timeout=5)
+            subprocess.run(
+                [tool, "--version"], capture_output=True, check=True, timeout=5
+            )
             result.add_result("Tools", f"{tool} ({description})", "PASS")
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        except (
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+        ):
             if tool in ["black", "ruff", "mypy", "pytest", "pre-commit"]:
-                result.add_result("Tools", f"{tool} ({description})", "WARN", "Development tool not available")
+                result.add_result(
+                    "Tools",
+                    f"{tool} ({description})",
+                    "WARN",
+                    "Development tool not available",
+                )
             else:
-                result.add_result("Tools", f"{tool} ({description})", "FAIL", "Required tool not available")
+                result.add_result(
+                    "Tools",
+                    f"{tool} ({description})",
+                    "FAIL",
+                    "Required tool not available",
+                )
 
 
 def validate_security_setup(result: ValidationResult):
@@ -247,10 +318,18 @@ def validate_security_setup(result: ValidationResult):
     security_tools = ["bandit", "pip-audit", "safety"]
     for tool in security_tools:
         try:
-            subprocess.run([tool, "--version"], capture_output=True, check=True, timeout=5)
+            subprocess.run(
+                [tool, "--version"], capture_output=True, check=True, timeout=5
+            )
             result.add_result("Security", f"Tool: {tool}", "PASS")
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
-            result.add_result("Security", f"Tool: {tool}", "WARN", "Security tool not available")
+        except (
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+        ):
+            result.add_result(
+                "Security", f"Tool: {tool}", "WARN", "Security tool not available"
+            )
 
     # Check security configuration in pyproject.toml
     try:
@@ -265,10 +344,20 @@ def validate_security_setup(result: ValidationResult):
         if "tool" in data and "bandit" in data["tool"]:
             result.add_result("Security", "Bandit configuration", "PASS")
         else:
-            result.add_result("Security", "Bandit configuration", "WARN", "No bandit configuration found")
+            result.add_result(
+                "Security",
+                "Bandit configuration",
+                "WARN",
+                "No bandit configuration found",
+            )
 
     except Exception:
-        result.add_result("Security", "Security configuration", "WARN", "Cannot validate security config")
+        result.add_result(
+            "Security",
+            "Security configuration",
+            "WARN",
+            "Cannot validate security config",
+        )
 
 
 def main():

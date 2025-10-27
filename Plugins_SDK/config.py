@@ -155,7 +155,9 @@ def load_workspace_config(workspace_root: Path) -> dict[str, Any]:
                 return cfg
             return {}
 
-    for p in list(workspace_root.glob("bcasl.*")) + list(workspace_root.glob(".bcasl.*")):
+    for p in list(workspace_root.glob("bcasl.*")) + list(
+        workspace_root.glob(".bcasl.*")
+    ):
         if p.is_file():
             cfg = _parse_text_config(p)
             if isinstance(cfg, dict):
@@ -196,7 +198,9 @@ def ensure_settings_file(
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        raise RuntimeError(f"Unable to create settings directory: {target.parent}") from e
+        raise RuntimeError(
+            f"Unable to create settings directory: {target.parent}"
+        ) from e
 
     if target.exists() and not overwrite:
         return target

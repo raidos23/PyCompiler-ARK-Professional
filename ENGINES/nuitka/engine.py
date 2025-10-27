@@ -56,7 +56,9 @@ class NuitkaEngine(CompilerEngine):
                 for label, cmd in required_cmds.items():
                     c = _shutil.which(cmd)
                     if not c:
-                        if cmd == "pkg-config" and not (_shutil.which("pkg-config") or _shutil.which("pkgconf")):
+                        if cmd == "pkg-config" and not (
+                            _shutil.which("pkg-config") or _shutil.which("pkgconf")
+                        ):
                             missing.append("pkg-config/pkgconf")
                         elif cmd != "pkg-config":
                             missing.append(label)
@@ -88,13 +90,17 @@ class NuitkaEngine(CompilerEngine):
                             missing.append("python3-dev")
 
                 # Libs via pkg-config quand disponible
-                has_pkgconf = (_shutil.which("pkg-config") or _shutil.which("pkgconf")) is not None
+                has_pkgconf = (
+                    _shutil.which("pkg-config") or _shutil.which("pkgconf")
+                ) is not None
                 missing_libs = []
                 if has_pkgconf:
                     for pc in ("openssl", "zlib"):
                         try:
                             rc = _subprocess.run(
-                                ["pkg-config", "--exists", pc], stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL
+                                ["pkg-config", "--exists", pc],
+                                stdout=_subprocess.DEVNULL,
+                                stderr=_subprocess.DEVNULL,
                             )
                             if rc.returncode != 0:
                                 missing_libs.append(pc)
@@ -128,7 +134,10 @@ class NuitkaEngine(CompilerEngine):
 
                         QMessageBox.critical(
                             gui,
-                            _tr("Gestionnaire de paquets non détecté", "Package manager not detected"),
+                            _tr(
+                                "Gestionnaire de paquets non détecté",
+                                "Package manager not detected",
+                            ),
                             _tr(
                                 "Impossible d'installer automatiquement les dépendances système (build tools, python3-dev, pkg-config, openssl, zlib, etc.).",
                                 "Unable to auto-install system dependencies (build tools, python3-dev, pkg-config, openssl, zlib, etc.).",
@@ -204,15 +213,23 @@ class NuitkaEngine(CompilerEngine):
                         if needs_libxcrypt:
                             details.append("libxcrypt-compat")
                         if details:
-                            gui.log.append("🔧 Dépendances système manquantes détectées (" + "; ".join(details) + ").")
+                            gui.log.append(
+                                "🔧 Dépendances système manquantes détectées ("
+                                + "; ".join(details)
+                                + ")."
+                            )
                     except Exception:
                         pass
                     proc = sdm.install_packages_linux(packages, pm=pm)
                     if not proc:
-                        gui.log.append("⛔ Compilation Nuitka annulée ou installation non démarrée.\n")
+                        gui.log.append(
+                            "⛔ Compilation Nuitka annulée ou installation non démarrée.\n"
+                        )
                         return False
                     try:
-                        gui.log.append("⏳ Installation des dépendances système en arrière-plan...")
+                        gui.log.append(
+                            "⏳ Installation des dépendances système en arrière-plan..."
+                        )
                     except Exception:
                         pass
                     return False
@@ -236,7 +253,9 @@ class NuitkaEngine(CompilerEngine):
 
                 msg = QMessageBox(gui)
                 msg.setIcon(QMessageBox.Question)
-                msg.setWindowTitle(_tr("Installer MinGW-w64 (mhw)", "Install MinGW-w64 (mhw)"))
+                msg.setWindowTitle(
+                    _tr("Installer MinGW-w64 (mhw)", "Install MinGW-w64 (mhw)")
+                )
                 msg.setText(
                     _tr(
                         "Pour compiler avec Nuitka sous Windows, il faut un compilateur C/C++.\n\nWinget indisponible. Voulez-vous ouvrir la page MinGW-w64 (winlibs.com) ?\n\nAprès installation, relancez la compilation.",
@@ -284,7 +303,11 @@ class NuitkaEngine(CompilerEngine):
                         return True
                     gui.log.append(f"📦 Installation de {package}…")
                     ok = pip_install(gui, pip, package) == 0
-                    gui.log.append("✅ Installation réussie" if ok else f"❌ Installation échouée ({package})")
+                    gui.log.append(
+                        "✅ Installation réussie"
+                        if ok
+                        else f"❌ Installation échouée ({package})"
+                    )
                     return ok
                 except Exception:
                     return False
@@ -304,7 +327,12 @@ class NuitkaEngine(CompilerEngine):
                 def _on_check(ok: bool):
                     try:
                         if ok:
-                            gui.log.append(_tr("✅ Nuitka déjà installé", "✅ Nuitka already installed"))
+                            gui.log.append(
+                                _tr(
+                                    "✅ Nuitka déjà installé",
+                                    "✅ Nuitka already installed",
+                                )
+                            )
                         else:
                             gui.log.append(
                                 _tr(
@@ -344,14 +372,27 @@ class NuitkaEngine(CompilerEngine):
             vm = getattr(gui, "venv_manager", None)
             vroot = vm.resolve_project_venv() if vm else None
             if not vroot:
-                gui.log.append(_tr("❌ Venv introuvable pour exécuter Nuitka.", "❌ Venv not found to run Nuitka."))
+                gui.log.append(
+                    _tr(
+                        "❌ Venv introuvable pour exécuter Nuitka.",
+                        "❌ Venv not found to run Nuitka.",
+                    )
+                )
                 gui.show_error_dialog(os.path.basename(file))
                 return None
-            vbin = os.path.join(vroot, "Scripts" if platform.system() == "Windows" else "bin")
-            python_path = os.path.join(vbin, "python" if platform.system() != "Windows" else "python.exe")
+            vbin = os.path.join(
+                vroot, "Scripts" if platform.system() == "Windows" else "bin"
+            )
+            python_path = os.path.join(
+                vbin, "python" if platform.system() != "Windows" else "python.exe"
+            )
             if not os.path.isfile(python_path):
                 gui.log.append(
-                    _tr("❌ python non trouvé dans le venv : ", "❌ python not found in venv: ") + str(python_path)
+                    _tr(
+                        "❌ python non trouvé dans le venv : ",
+                        "❌ python not found in venv: ",
+                    )
+                    + str(python_path)
                 )
                 gui.show_error_dialog(os.path.basename(file))
                 return None

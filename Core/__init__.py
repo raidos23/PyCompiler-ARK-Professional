@@ -100,7 +100,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "save_preferences": (".preferences", "save_preferences"),
     "update_ui_state": (".preferences", "update_ui_state"),
     "preferences_system_info": (".preferences", "preferences_system_info"),
-    "export_system_preferences_json": (".preferences", "export_system_preferences_json"),
+    "export_system_preferences_json": (
+        ".preferences",
+        "export_system_preferences_json",
+    ),
     # Compiler
     "compile_all": (".compiler", "compile_all"),
     "try_start_processes": (".compiler", "try_start_processes"),
@@ -114,7 +117,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "build_pyinstaller_command": (".compiler", "build_pyinstaller_command"),
     "build_nuitka_command": (".compiler", "build_nuitka_command"),
     # Dependency analysis (some internal helpers intentionally exported)
-    "suggest_missing_dependencies": (".dependency_analysis", "suggest_missing_dependencies"),
+    "suggest_missing_dependencies": (
+        ".dependency_analysis",
+        "suggest_missing_dependencies",
+    ),
     "_install_next_dependency": (".dependency_analysis", "_install_next_dependency"),
     "_on_dep_pip_output": (".dependency_analysis", "_on_dep_pip_output"),
     "_on_dep_pip_finished": (".dependency_analysis", "_on_dep_pip_finished"),
@@ -175,7 +181,11 @@ def _load_export(name: str) -> Any:
         hinted = _MODULE_TARGET.get(mod_name)
     if hinted:
         try:
-            mod = _import_module(hinted) if not hinted.startswith(".") else _import_module(hinted, pkg)
+            mod = (
+                _import_module(hinted)
+                if not hinted.startswith(".")
+                else _import_module(hinted, pkg)
+            )
             value = getattr(mod, attr)
             with _LOCK:
                 _RESOLVED[name] = value
@@ -226,8 +236,12 @@ def _load_export(name: str) -> Any:
     if isinstance(last_err, (ModuleNotFoundError, ImportError)):
         raise last_err
     if isinstance(last_err, AttributeError):
-        raise AttributeError(f"Export '{name}' not found: module '{tail}' has no attribute '{attr}'") from last_err
-    raise RuntimeError(f"Failed to load export '{name}' ({pkg}.{tail}.{attr}): {last_err}") from last_err
+        raise AttributeError(
+            f"Export '{name}' not found: module '{tail}' has no attribute '{attr}'"
+        ) from last_err
+    raise RuntimeError(
+        f"Failed to load export '{name}' ({pkg}.{tail}.{attr}): {last_err}"
+    ) from last_err
 
 
 def __getattr__(name: str) -> Any:
@@ -250,7 +264,9 @@ def __getattr__(name: str) -> Any:
                 "save_preferences": _load_export("save_preferences"),
                 "update_ui_state": _load_export("update_ui_state"),
                 "preferences_system_info": _load_export("preferences_system_info"),
-                "export_system_preferences_json": _load_export("export_system_preferences_json"),
+                "export_system_preferences_json": _load_export(
+                    "export_system_preferences_json"
+                ),
             },
             "compiler": {
                 "compile_all": _load_export("compile_all"),
@@ -259,14 +275,18 @@ def __getattr__(name: str) -> Any:
                 "handle_stdout": _load_export("handle_stdout"),
                 "handle_stderr": _load_export("handle_stderr"),
                 "handle_finished": _load_export("handle_finished"),
-                "try_install_missing_modules": _load_export("try_install_missing_modules"),
+                "try_install_missing_modules": _load_export(
+                    "try_install_missing_modules"
+                ),
                 "show_error_dialog": _load_export("show_error_dialog"),
                 "cancel_all_compilations": _load_export("cancel_all_compilations"),
                 "build_pyinstaller_command": _load_export("build_pyinstaller_command"),
                 "build_nuitka_command": _load_export("build_nuitka_command"),
             },
             "dependency_analysis": {
-                "suggest_missing_dependencies": _load_export("suggest_missing_dependencies"),
+                "suggest_missing_dependencies": _load_export(
+                    "suggest_missing_dependencies"
+                ),
                 "_install_next_dependency": _load_export("_install_next_dependency"),
                 "_on_dep_pip_output": _load_export("_on_dep_pip_output"),
                 "_on_dep_pip_finished": _load_export("_on_dep_pip_finished"),

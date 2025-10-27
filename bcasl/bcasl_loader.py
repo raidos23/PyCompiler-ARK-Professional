@@ -32,6 +32,7 @@ except Exception:  # pragma: no cover
 
 # --- Utilitaires ---
 
+
 def _has_bcasl_marker(pkg_dir: Path) -> bool:
     try:
         return (pkg_dir / "__init__.py").exists()
@@ -47,6 +48,7 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     try:
         import importlib.util as _ilu
         import sys as _sys
+
         for pkg_dir in sorted(api_dir.iterdir(), key=lambda p: p.name):
             try:
                 if not pkg_dir.is_dir():
@@ -55,7 +57,9 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
                 if not init_py.exists():
                     continue
                 mod_name = f"bcasl_meta_{pkg_dir.name}"
-                spec = _ilu.spec_from_file_location(mod_name, str(init_py), submodule_search_locations=[str(pkg_dir)])
+                spec = _ilu.spec_from_file_location(
+                    mod_name, str(init_py), submodule_search_locations=[str(pkg_dir)]
+                )
                 if spec is None or spec.loader is None:
                     continue
                 module = _ilu.module_from_spec(spec)
@@ -104,33 +108,66 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     return meta
 
 
-
-
 def _compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
     """Trie les plugins par score de tag (plus petit d'abord), puis par id.
     Tags pris depuis meta_map[pid]["tags"]. Inconnu => 100.
     """
     tag_score = {
         # Clean early (workspace hygiene)
-        "clean": 0, "cleanup": 0, "sanitize": 0, "prune": 0, "tidy": 0,
+        "clean": 0,
+        "cleanup": 0,
+        "sanitize": 0,
+        "prune": 0,
+        "tidy": 0,
         # Validation / presence of inputs
-        "validation": 10, "presence": 10, "check": 10, "requirements": 10,
+        "validation": 10,
+        "presence": 10,
+        "check": 10,
+        "requirements": 10,
         # Prepare / generate inputs and resources
-        "prepare": 20, "codegen": 20, "generate": 20, "fetch": 20, "resources": 20,
-        "download": 20, "install": 20, "bootstrap": 20, "configure": 20,
+        "prepare": 20,
+        "codegen": 20,
+        "generate": 20,
+        "fetch": 20,
+        "resources": 20,
+        "download": 20,
+        "install": 20,
+        "bootstrap": 20,
+        "configure": 20,
         # Conformity / headers before linters
-        "license": 30, "header": 30, "normalize": 30, "inject": 30, "spdx": 30, "banner": 30, "copyright": 30,
+        "license": 30,
+        "header": 30,
+        "normalize": 30,
+        "inject": 30,
+        "spdx": 30,
+        "banner": 30,
+        "copyright": 30,
         # Lint / format / typing
-        "lint": 40, "format": 40, "typecheck": 40, "mypy": 40, "flake8": 40, "ruff": 40, "pep8": 40, "black": 40, "isort": 40, "sort-imports": 40,
+        "lint": 40,
+        "format": 40,
+        "typecheck": 40,
+        "mypy": 40,
+        "flake8": 40,
+        "ruff": 40,
+        "pep8": 40,
+        "black": 40,
+        "isort": 40,
+        "sort-imports": 40,
         # Obfuscation / protect / transpile (final pre-compile passes)
-        "obfuscation": 50, "obfuscate": 50, "transpile": 50, "protect": 50, "encrypt": 50,
+        "obfuscation": 50,
+        "obfuscate": 50,
+        "transpile": 50,
+        "protect": 50,
+        "encrypt": 50,
     }
 
     def _score(pid: str) -> int:
         try:
             tags = meta_map.get(pid, {}).get("tags") or []
             if isinstance(tags, list) and tags:
-                return int(min((tag_score.get(str(t).lower(), 100) for t in tags), default=100))
+                return int(
+                    min((tag_score.get(str(t).lower(), 100) for t in tags), default=100)
+                )
         except Exception:
             pass
         return 100
@@ -140,8 +177,10 @@ def _compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
 
 # --- Chargement config (JSON uniquement) ---
 
+
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     """Charge bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit."""
+
     def _read_json(p: Path) -> dict[str, Any]:
         try:
             return json.loads(p.read_text(encoding="utf-8"))
@@ -171,7 +210,11 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         else:
             # Fallback alphabétique par dossier
             try:
-                names = [p.name for p in sorted(api_dir.iterdir()) if (p.is_dir() and _has_bcasl_marker(p))]
+                names = [
+                    p.name
+                    for p in sorted(api_dir.iterdir())
+                    if (p.is_dir() and _has_bcasl_marker(p))
+                ]
             except Exception:
                 names = []
             for idx, pid in enumerate(sorted(names)):
@@ -209,7 +252,10 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         # Ecriture best-effort
         try:
             target = workspace_root / "bcasl.json"
-            target.write_text(json.dumps(default_cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            target.write_text(
+                json.dumps(default_cfg, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
         except Exception:
             pass
     except Exception:
@@ -224,7 +270,13 @@ if QObject is not None and Signal is not None:  # pragma: no cover
         finished = Signal(object)  # report or None
         log = Signal(str)
 
-        def __init__(self, workspace_root: Path, api_dir: Path, cfg: dict[str, Any], plugin_timeout: float) -> None:
+        def __init__(
+            self,
+            workspace_root: Path,
+            api_dir: Path,
+            cfg: dict[str, Any],
+            plugin_timeout: float,
+        ) -> None:
             super().__init__()
             self.workspace_root = workspace_root
             self.api_dir = api_dir
@@ -234,10 +286,16 @@ if QObject is not None and Signal is not None:  # pragma: no cover
         @Slot()
         def run(self) -> None:
             try:
-                manager = BCASL(self.workspace_root, config=self.cfg, plugin_timeout_s=self.plugin_timeout)
+                manager = BCASL(
+                    self.workspace_root,
+                    config=self.cfg,
+                    plugin_timeout_s=self.plugin_timeout,
+                )
                 loaded, errors = manager.load_plugins_from_directory(self.api_dir)
                 try:
-                    self.log.emit(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n")
+                    self.log.emit(
+                        f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n"
+                    )
                     for mod, msg in errors or []:
                         self.log.emit(f"⚠️ Plugin '{mod}': {msg}\n")
                 except Exception:
@@ -247,7 +305,11 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                 if isinstance(pmap, dict):
                     for pid, val in pmap.items():
                         try:
-                            enabled = (val if isinstance(val, bool) else bool((val or {}).get("enabled", True)))
+                            enabled = (
+                                val
+                                if isinstance(val, bool)
+                                else bool((val or {}).get("enabled", True))
+                            )
                             if not enabled:
                                 manager.disable_plugin(pid)
                         except Exception:
@@ -259,7 +321,11 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                             pass
                 order_list = []
                 try:
-                    order_list = list(self.cfg.get("plugin_order", [])) if isinstance(self.cfg, dict) else []
+                    order_list = (
+                        list(self.cfg.get("plugin_order", []))
+                        if isinstance(self.cfg, dict)
+                        else []
+                    )
                 except Exception:
                     order_list = []
                 if not order_list:
@@ -275,7 +341,9 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                             manager.set_priority(pid, int(idx))
                         except Exception:
                             pass
-                report = manager.run_pre_compile(PreCompileContext(self.workspace_root, config=self.cfg))
+                report = manager.run_pre_compile(
+                    PreCompileContext(self.workspace_root, config=self.cfg)
+                )
                 self.finished.emit(report)
             except Exception as e:
                 try:
@@ -309,7 +377,11 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                     self._gui.log.append("BCASL - Rapport:\n")
                     for item in rep:
                         try:
-                            state = "OK" if getattr(item, "success", False) else f"FAIL: {getattr(item, 'error', '')}"
+                            state = (
+                                "OK"
+                                if getattr(item, "success", False)
+                                else f"FAIL: {getattr(item, 'error', '')}"
+                            )
                             dur = getattr(item, "duration_ms", 0.0)
                             pid = getattr(item, "plugin_id", "?")
                             self._gui.log.append(f" - {pid}: {state} ({dur:.1f} ms)\n")
@@ -332,6 +404,7 @@ if QObject is not None and Signal is not None:  # pragma: no cover
 
 
 # --- API publique attendue par le reste de l'app ---
+
 
 def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
     """Arrête proprement un thread BCASL en cours (si présent)."""
@@ -382,11 +455,19 @@ def resolve_bcasl_timeout(self) -> float:
             env_timeout = 0.0
         try:
             opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
-            cfg_timeout = float(opt.get("plugin_timeout_s", 0.0)) if isinstance(opt, dict) else 0.0
+            cfg_timeout = (
+                float(opt.get("plugin_timeout_s", 0.0))
+                if isinstance(opt, dict)
+                else 0.0
+            )
         except Exception:
             cfg_timeout = 0.0
         plugin_timeout_raw = cfg_timeout if cfg_timeout != 0.0 else env_timeout
-        return float(plugin_timeout_raw) if plugin_timeout_raw and plugin_timeout_raw > 0 else 0.0
+        return (
+            float(plugin_timeout_raw)
+            if plugin_timeout_raw and plugin_timeout_raw > 0
+            else 0.0
+        )
     except Exception:
         return 0.0
 
@@ -415,7 +496,10 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             QMessageBox.warning(
                 self,
                 self.tr("Attention", "Warning"),
-                self.tr("Veuillez d'abord sélectionner un dossier workspace.", "Please select a workspace folder first."),
+                self.tr(
+                    "Veuillez d'abord sélectionner un dossier workspace.",
+                    "Please select a workspace folder first.",
+                ),
             )
             return
         workspace_root = Path(self.workspace_dir).resolve()
@@ -425,7 +509,10 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             QMessageBox.information(
                 self,
                 self.tr("Information", "Information"),
-                self.tr("Aucun répertoire Plugins/ trouvé dans le projet.", "No Plugins/ directory found in the project."),
+                self.tr(
+                    "Aucun répertoire Plugins/ trouvé dans le projet.",
+                    "No Plugins/ directory found in the project.",
+                ),
             )
             return
         meta_map = _discover_bcasl_meta(api_dir)
@@ -434,7 +521,10 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             QMessageBox.information(
                 self,
                 self.tr("Information", "Information"),
-                self.tr("Aucun plugin détecté dans Plugins/.", "No plugins detected in Plugins."),
+                self.tr(
+                    "Aucun plugin détecté dans Plugins/.",
+                    "No plugins detected in Plugins.",
+                ),
             )
             return
         cfg = _load_workspace_config(workspace_root)
@@ -465,7 +555,9 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             order = []
         if not order:
             try:
-                order = [pid for pid in _compute_tag_order(meta_map) if pid in plugin_ids]
+                order = [
+                    pid for pid in _compute_tag_order(meta_map) if pid in plugin_ids
+                ]
             except Exception:
                 order = sorted(plugin_ids)
 
@@ -499,8 +591,16 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             except Exception:
                 pass
             if Qt is not None:
-                item.setFlags(item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled)
-            item.setCheckState(Qt.Checked if (Qt is not None and enabled) else 2 if enabled else 0)
+                item.setFlags(
+                    item.flags()
+                    | Qt.ItemIsUserCheckable
+                    | Qt.ItemIsEnabled
+                    | Qt.ItemIsSelectable
+                    | Qt.ItemIsDragEnabled
+                )
+            item.setCheckState(
+                Qt.Checked if (Qt is not None and enabled) else 2 if enabled else 0
+            )
             lst.addItem(item)
         layout.addWidget(lst)
 
@@ -538,7 +638,7 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             for i in range(lst.count()):
                 it = lst.item(i)
                 pid = it.data(0x0100) or it.text()
-                en = (it.checkState() == (Qt.Checked if Qt is not None else 2))
+                en = it.checkState() == (Qt.Checked if Qt is not None else 2)
                 new_plugins[str(pid)] = {"enabled": bool(en), "priority": i}
                 order_ids.append(str(pid))
             cfg_out: dict[str, Any] = dict(cfg) if isinstance(cfg, dict) else {}
@@ -547,15 +647,26 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             # Ecrire JSON uniquement
             target = workspace_root / "bcasl.json"
             try:
-                target.write_text(json.dumps(cfg_out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                target.write_text(
+                    json.dumps(cfg_out, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
                 if hasattr(self, "log") and self.log is not None:
-                    self.log.append(self.tr("✅ Plugins enregistrés dans bcasl.json", "✅ Plugins plugins saved to bcasl.json"))
+                    self.log.append(
+                        self.tr(
+                            "✅ Plugins enregistrés dans bcasl.json",
+                            "✅ Plugins plugins saved to bcasl.json",
+                        )
+                    )
                 dlg.accept()
             except Exception as e:
                 QMessageBox.critical(
                     dlg,
                     self.tr("Erreur", "Error"),
-                    self.tr(f"Impossible d'écrire bcasl.json: {e}", f"Failed to write bcasl.json: {e}"),
+                    self.tr(
+                        f"Impossible d'écrire bcasl.json: {e}",
+                        f"Failed to write bcasl.json: {e}",
+                    ),
                 )
 
         btn_save.clicked.connect(do_save)
@@ -581,7 +692,9 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
         except Exception:
             pass
 
-#API
+
+# API
+
 
 def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
     """Lance BCASL en arrière-plan si QtCore est dispo; sinon, exécution bloquante rapide.
@@ -607,20 +720,33 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             env_timeout = 0.0
         opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
         try:
-            cfg_timeout = float(opt.get("plugin_timeout_s", 0.0)) if isinstance(opt, dict) else 0.0
+            cfg_timeout = (
+                float(opt.get("plugin_timeout_s", 0.0))
+                if isinstance(opt, dict)
+                else 0.0
+            )
         except Exception:
             cfg_timeout = 0.0
         plugin_timeout = cfg_timeout if cfg_timeout != 0.0 else env_timeout
-        plugin_timeout = plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
+        plugin_timeout = (
+            plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
+        )
         # Respect du flag global enabled
         try:
-            bcasl_enabled = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+            bcasl_enabled = (
+                bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+            )
         except Exception:
             bcasl_enabled = True
         if not bcasl_enabled:
             try:
                 if hasattr(self, "log") and self.log is not None:
-                    self.log.append(self.tr("⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n", "⏹️ BCASL disabled in configuration. Skipping execution\n"))
+                    self.log.append(
+                        self.tr(
+                            "⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n",
+                            "⏹️ BCASL disabled in configuration. Skipping execution\n",
+                        )
+                    )
             except Exception:
                 pass
             if callable(on_done):
@@ -658,7 +784,9 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
             loaded, errors = manager.load_plugins_from_directory(api_dir)
             if hasattr(self, "log") and self.log is not None:
-                self.log.append(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n")
+                self.log.append(
+                    f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n"
+                )
                 for mod, msg in errors or []:
                     self.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
             # Appliquer config
@@ -666,7 +794,11 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             if isinstance(pmap, dict):
                 for pid, val in pmap.items():
                     try:
-                        enabled = (val if isinstance(val, bool) else bool((val or {}).get("enabled", True)))
+                        enabled = (
+                            val
+                            if isinstance(val, bool)
+                            else bool((val or {}).get("enabled", True))
+                        )
                         if not enabled:
                             manager.disable_plugin(pid)
                     except Exception:
@@ -676,7 +808,9 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                             manager.set_priority(pid, int(val.get("priority", 0)))
                     except Exception:
                         pass
-            order_list = list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
+            order_list = (
+                list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
+            )
             if not order_list:
                 try:
                     meta_en = _discover_bcasl_meta(api_dir)
@@ -691,7 +825,9 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                         manager.set_priority(pid, int(idx))
                     except Exception:
                         pass
-            report = manager.run_pre_compile(PreCompileContext(workspace_root, config=cfg))
+            report = manager.run_pre_compile(
+                PreCompileContext(workspace_root, config=cfg)
+            )
         except Exception as _e:
             report = None
             try:
@@ -733,20 +869,30 @@ def run_pre_compile(self) -> Optional[object]:
             env_timeout = 0.0
         try:
             opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
-            cfg_timeout = float(opt.get("plugin_timeout_s", 0.0)) if isinstance(opt, dict) else 0.0
+            cfg_timeout = (
+                float(opt.get("plugin_timeout_s", 0.0))
+                if isinstance(opt, dict)
+                else 0.0
+            )
         except Exception:
             cfg_timeout = 0.0
         plugin_timeout = cfg_timeout if cfg_timeout != 0.0 else env_timeout
-        plugin_timeout = plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
+        plugin_timeout = (
+            plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
+        )
 
         try:
-            bcasl_enabled = bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+            bcasl_enabled = (
+                bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+            )
         except Exception:
             bcasl_enabled = True
         if not bcasl_enabled:
             try:
                 if hasattr(self, "log") and self.log is not None:
-                    self.log.append("⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n")
+                    self.log.append(
+                        "⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n"
+                    )
             except Exception:
                 pass
             return None
@@ -754,7 +900,9 @@ def run_pre_compile(self) -> Optional[object]:
         manager = BCASL(workspace_root, config=cfg, plugin_timeout_s=plugin_timeout)
         loaded, errors = manager.load_plugins_from_directory(api_dir)
         if hasattr(self, "log") and self.log is not None:
-            self.log.append(f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n")
+            self.log.append(
+                f"🧩 BCASL: {loaded} package(s) chargé(s) depuis Plugins/\n"
+            )
             for mod, msg in errors or []:
                 self.log.append(f"⚠️ Plugin '{mod}': {msg}\n")
 
@@ -764,7 +912,11 @@ def run_pre_compile(self) -> Optional[object]:
             if isinstance(pmap, dict):
                 for pid, val in pmap.items():
                     try:
-                        enabled = (val if isinstance(val, bool) else bool((val or {}).get("enabled", True)))
+                        enabled = (
+                            val
+                            if isinstance(val, bool)
+                            else bool((val or {}).get("enabled", True))
+                        )
                         if not enabled:
                             manager.disable_plugin(pid)
                     except Exception:
@@ -776,7 +928,9 @@ def run_pre_compile(self) -> Optional[object]:
                         pass
             order_list = []
             try:
-                order_list = list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
+                order_list = (
+                    list(cfg.get("plugin_order", [])) if isinstance(cfg, dict) else []
+                )
             except Exception:
                 order_list = []
             if not order_list:
@@ -801,7 +955,9 @@ def run_pre_compile(self) -> Optional[object]:
             self.log.append("BCASL - Rapport:\n")
             for item in report:
                 state = "OK" if item.success else f"FAIL: {item.error}"
-                self.log.append(f" - {item.plugin_id}: {state} ({item.duration_ms:.1f} ms)\n")
+                self.log.append(
+                    f" - {item.plugin_id}: {state} ({item.duration_ms:.1f} ms)\n"
+                )
             self.log.append(report.summary() + "\n")
         return report
     except Exception as e:
