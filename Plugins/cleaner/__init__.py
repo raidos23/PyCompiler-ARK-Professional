@@ -63,7 +63,7 @@ class Cleaner(Bc_PluginBase):
             ),
             default_yes=False,
         ):
-            sctx.log_warn("Nettoyage annulé par l'utilisateur")
+            sctx.log_warn(tr.get("cancelled", "Nettoyage annulé par l'utilisateur"))
             return
 
         # 1) Analyse (comptage des éléments à supprimer) avec progression indéterminée
@@ -88,8 +88,8 @@ class Cleaner(Bc_PluginBase):
                             total += 1
 
             if total == 0:
-                ph.update(text="Rien à supprimer")
-                sctx.log_info("Aucun fichier .pyc ou dossier __pycache__ à supprimer.")
+                ph.update(text=tr.get("nothing_to_delete", "Rien à supprimer"))
+                sctx.log_info(tr.get("nothing_to_delete", "Aucun fichier .pyc ou dossier __pycache__ à supprimer."))
                 return
 
             # 2) Suppression avec progression déterminée
@@ -106,16 +106,16 @@ class Cleaner(Bc_PluginBase):
                         if _is_excluded(path):
                             continue
                         if ph.canceled:
-                            sctx.log_warn("Nettoyage annulé par l'utilisateur")
+                            sctx.log_warn(tr.get("cancelled", "Nettoyage annulé par l'utilisateur"))
                             return
                         try:
                             os.remove(path)
                             pyc_count += 1
                         except Exception as e:
-                            sctx.log_warn(f"Erreur suppression {file}: {e}")
+                            sctx.log_warn(tr.get("error_deleting", "Erreur suppression {name}: {error}").format(name=file, error=e))
                         finally:
                             current += 1
-                            ph.update(current, f"Suppression .pyc ({current}/{total})")
+                            ph.update(current, tr.get("deletion_pyc", "Suppression des fichiers .pyc") + f" ({current}/{total})")
 
                 # Supprimer les dossiers __pycache__
                 for d in dirs:
@@ -124,22 +124,22 @@ class Cleaner(Bc_PluginBase):
                         if _is_excluded(path):
                             continue
                         if ph.canceled:
-                            sctx.log_warn("Nettoyage annulé par l'utilisateur")
+                            sctx.log_warn(tr.get("cancelled", "Nettoyage annulé par l'utilisateur"))
                             return
                         try:
                             shutil.rmtree(path)
                             pycache_count += 1
                         except Exception as e:
-                            sctx.log_warn(f"Erreur suppression {d}: {e}")
+                            sctx.log_warn(tr.get("error_deleting", "Erreur suppression {name}: {error}").format(name=d, error=e))
                         finally:
                             current += 1
                             ph.update(
-                                current, f"Suppression __pycache__ ({current}/{total})"
+                                current, tr.get("deletion_pycache", "Suppression des dossiers __pycache__") + f" ({current}/{total})"
                             )
 
             # 3) Logs UI
             sctx.log_info(
-                f"🗑️ Nettoyage terminé : {pyc_count} fichier(s) .pyc et {pycache_count} dossier(s) __pycache__ supprimés."
+                tr.get("completed", "🗑️ Nettoyage terminé : {pyc_count} fichier(s) .pyc et {pycache_count} dossier(s) __pycache__ supprimés.").format(pyc_count=pyc_count, pycache_count=pycache_count)
             )
         finally:
             ph.close()

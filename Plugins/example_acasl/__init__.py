@@ -43,21 +43,27 @@ class ExampleAcaslPlugin(Ac_PluginBase):
             print(f"[ERROR][example_acasl] {exc}")
             return
 
-        sctx.log_info("🔍 Example ACASL Plugin: Starting post-compilation analysis")
+        # Load plugin translations (apply_plugin_i18n returns a mapping-like object)
+        tr = apply_plugin_i18n(self, __file__, getattr(sctx, "_tr", {}))
+
+        sctx.log_info(tr.get("starting_analysis", "🔍 Example ACASL Plugin: Starting post-compilation analysis"))
 
         # Access compiled artifacts
         artifacts = list(ctx.iter_artifacts())
-        sctx.log_info(f"📦 Found {len(artifacts)} artifact(s)")
+        sctx.log_info(tr.get("artifacts_found", "📦 Found {count} artifact(s)").format(count=len(artifacts)))
         for art in artifacts:
-            sctx.log_info(f"  - {art.name} ({art.stat().st_size} bytes)")
+            try:
+                sctx.log_info(f"  - {art.name} ({art.stat().st_size} bytes)")
+            except Exception:
+                sctx.log_info(f"  - {art}")
 
         # Access project files
         py_files = list(
             ctx.iter_files(["**/*.py"], exclude=["venv/**", "**/__pycache__/**"])
         )
-        sctx.log_info(f"📄 Found {len(py_files)} Python file(s)")
+        sctx.log_info(tr.get("python_files_found", "📄 Found {count} Python file(s)").format(count=len(py_files)))
 
-        sctx.log_info("✅ Example ACASL Plugin: Post-compilation analysis complete")
+        sctx.log_info(tr.get("analysis_complete", "✅ Example ACASL Plugin: Post-compilation analysis complete"))
 
 
 # Create plugin instance
