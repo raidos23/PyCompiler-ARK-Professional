@@ -303,3 +303,22 @@ async def clear_translation_cache() -> None:
             _LANGUAGES_CACHE = None
     except Exception:
         pass
+
+
+def get_current_language_sync() -> str:
+    """Retourne la langue actuelle depuis les préférences utilisateur (synchrone)."""
+    try:
+        # Importer ici pour éviter les imports circulaires
+        from .preferences import PREFS_FILE
+
+        if os.path.isfile(PREFS_FILE):
+            with open(PREFS_FILE, encoding="utf-8") as f:
+                prefs = json.load(f)
+            lang_pref = prefs.get("language_pref", prefs.get("language", "System"))
+            if lang_pref == "System":
+                return _resolve_system_language_sync()
+            return lang_pref
+        else:
+            return _resolve_system_language_sync()
+    except Exception:
+        return "en"

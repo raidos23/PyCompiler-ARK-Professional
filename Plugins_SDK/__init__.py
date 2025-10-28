@@ -309,6 +309,130 @@ def run_command(
 
 
 # -----------------------------
+# Global tr function for plugins (real-time translation)
+# -----------------------------
+
+
+def tr(key_or_fr: str, en_or_fallback: str = "", *, plugin_file: Optional[str] = None) -> str:
+    """Translate text in real-time based on current user language preference.
+
+    This function provides a flexible API for plugins to translate text strings.
+    It can work in two modes:
+
+    1. Simple mode (legacy): tr("French text", "English text")
+    2. Key-based mode: tr("key_name", "fallback text", plugin_file=__file__)
+
+    In key-based mode, it loads translations from the plugin's languages/ directory
+    and merges with core translations.
+
+    Args:
+        key_or_fr: Either a translation key (if plugin_file provided) or French text
+        en_or_fallback: Either English text (simple mode) or fallback text (key mode)
+        plugin_file: Optional path to plugin file (__file__) to enable key-based translation
+
+    Returns:
+        Translated text based on current language
+
+    Usage:
+        from Plugins_SDK import tr
+
+        # Simple mode (legacy)
+        msg = tr("Bonjour", "Hello")
+
+        # Key-based mode with plugin translations
+        msg = tr("hello_world", "Hello World", plugin_file=__file__)
+    """
+    try:
+        # Get current language synchronously
+        from Core.i18n import get_current_language_sync
+
+        lang = get_current_language_sync()
+
+        if plugin_file is not None:
+            # Key-based mode: load plugin translations synchronously
+            try:
+                translations = _load_plugin_translations_for_tr_sync(plugin_file, lang)
+                # Get the translation for the key
+                if isinstance(translations, dict) and key_or_fr in translations:
+                    return str(translations[key_or_fr])
+                # Fallback to provided fallback or key itself
+                return en_or_fallback or key_or_fr
+            except Exception:
+                # Fallback to simple mode
+                pass
+
+        # Simple mode: determine if French or English based on language
+        lang_lower = (lang or "").lower()
+        if lang_lower in ("fr", "français", "francais"):
+            return key_or_fr
+        else:
+            return en_or_fallback
+    except Exception:
+        # Fallback to English/simple
+        return en_or_fallback or key_or_fr
+
+
+def _load_plugin_translations_for_tr_sync(plugin_file: str, lang: str) -> dict[str, Any]:
+    """Helper to load plugin translations for tr function synchronously."""
+    try:
+        from pathlib import Path
+        import json
+
+        plugin_dir = Path(plugin_file).parent
+        lang_dir = plugin_dir / "languages"
+
+        # Try to load the language file
+        lang_file = lang_dir / f"{lang}.json"
+        if not lang_file.exists():
+            # Try base language if it's a variant (e.g., en-US -> en)
+            if "-" in lang:
+                base_lang = lang.split("-")[0]
+                lang_file = lang_dir / f"{base_lang}.json"
+            if not lang_file.exists():
+                lang_file = lang_dir / "en.json"  # Ultimate fallback
+
+        if lang_file.exists():
+            with open(lang_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+
+        return {}
+    except Exception:
+        return {}
+
+
+async def _load_plugin_translations_for_tr(plugin_file: str, lang: str) -> dict[str, Any]:
+    """Helper to load plugin translations for tr function."""
+    try:
+        from pathlib import Path
+        import json
+
+        plugin_dir = Path(plugin_file).parent
+        lang_dir = plugin_dir / "languages"
+
+        # Try to load the language file
+        lang_file = lang_dir / f"{lang}.json"
+        if not lang_file.exists():
+            # Try base language if it's a variant (e.g., en-US -> en)
+            if "-" in lang:
+                base_lang = lang.split("-")[0]
+                lang_file = lang_dir / f"{base_lang}.json"
+            if not lang_file.exists():
+                lang_file = lang_dir / "en.json"  # Ultimate fallback
+
+        if lang_file.exists():
+            with open(lang_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+
+        return {}
+    except Exception:
+        return {}
+
+
+# -----------------------------
 # Per-plugin i18n loader (from local languages/)
 # -----------------------------
 
@@ -608,6 +732,7 @@ __all__ = [
     "plugin",
     "wrap_context",
     # i18n helpers
+    "tr",
     "normalize_lang_pref",
     "available_languages",
     "resolve_system_language",
