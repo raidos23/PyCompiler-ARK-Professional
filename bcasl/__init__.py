@@ -36,7 +36,6 @@ from .bcasl_loader import (
     run_pre_compile_async,
 )
 
-
 __all__ = [
     # Coeur
     "BCASL",

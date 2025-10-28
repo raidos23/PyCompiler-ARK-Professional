@@ -13,7 +13,6 @@ import os
 MAX_PARALLEL = 3
 PREFS_BASENAME = "pycompiler_gui_prefs.json"
 
-
 def _user_config_dir() -> str:
     """
     Retourne le dossier de préférences au sein du projet source: <project_root>/.pref
@@ -29,7 +28,6 @@ def _user_config_dir() -> str:
             os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".pref")
         )
 
-
 def _prefs_path() -> str:
     cfgdir = _user_config_dir()
     try:
@@ -38,9 +36,7 @@ def _prefs_path() -> str:
         pass
     return os.path.join(cfgdir, PREFS_BASENAME)
 
-
 PREFS_FILE = _prefs_path()
-
 
 def _atomic_write_json(path: str, data: dict):
     tmp = path + ".tmp"
@@ -48,7 +44,6 @@ def _atomic_write_json(path: str, data: dict):
         json.dump(data, f, indent=4)
     # os.replace is atomic on POSIX/Windows
     os.replace(tmp, path)
-
 
 def load_preferences(self):
     try:
@@ -107,7 +102,6 @@ def load_preferences(self):
         # Thème UI par défaut
         self.theme = "System"
 
-
 def save_preferences(self):
     # Minimal persisted preferences: only language/theme; other UI states omitted by design.
     prefs = {
@@ -138,7 +132,6 @@ def save_preferences(self):
     except Exception as e:
         self.log.append(f"⚠️ Impossible de sauvegarder les préférences : {e}")
 
-
 def update_ui_state(self):
     self.opt_onefile.setChecked(self.opt_onefile_state)
     self.opt_windowed.setChecked(self.opt_windowed_state)
@@ -155,9 +148,7 @@ def update_ui_state(self):
         self.log.append(f"🎨 Icône chargée depuis préférences : {self.icon_path}")
     self.update_command_preview()
 
-
 # --- System preference detection helpers ---
-
 
 def detect_system_color_scheme() -> str:
     """
@@ -255,7 +246,6 @@ def detect_system_color_scheme() -> str:
     except Exception:
         return "light"
 
-
 def detect_system_language() -> tuple[str, str]:
     """
     Detect the system language and return a pair (code, display_name),
@@ -271,7 +261,6 @@ def detect_system_language() -> tuple[str, str]:
         return ("en", "English")
     except Exception:
         return ("en", "English")
-
 
 def preferences_system_info() -> dict:
     """
@@ -298,7 +287,6 @@ def preferences_system_info() -> dict:
         "system_language_name": name,
         "system_theme": theme,
     }
-
 
 def export_system_preferences_json(path: str | None = None) -> str:
     """

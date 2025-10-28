@@ -24,7 +24,6 @@ _latest_gui_instance = None
 _workspace_dir_cache = None
 _workspace_dir_lock = threading.RLock()
 
-
 def get_selected_workspace() -> Optional[str]:
     """Retourne le workspace sélectionné d'une manière non bloquante et thread-safe."""
     # Fast path: cached value with lock, no UI access
@@ -44,7 +43,6 @@ def get_selected_workspace() -> Optional[str]:
         pass
     return None
 
-
 class _UiInvoker(QObject):
     _sig = Signal(object)
 
@@ -63,7 +61,6 @@ class _UiInvoker(QObject):
             fn()
         except Exception:
             pass
-
 
 def _run_coro_async(coro, on_result, ui_owner=None):
     invoker = None
@@ -88,14 +85,11 @@ def _run_coro_async(coro, on_result, ui_owner=None):
                 QTimer.singleShot(0, lambda: on_result(res))
         except Exception:
             pass
-
     threading.Thread(target=_runner, daemon=True).start()
-
 
 # Synchronous request from background threads to change workspace via GUI thread
 # Ensures confirmation dialog is shown and result returned to caller
 from PySide6.QtCore import QEventLoop as _QEventLoop
-
 
 def request_workspace_change_from_api(folder: str) -> bool:
     try:
@@ -128,7 +122,6 @@ def request_workspace_change_from_api(folder: str) -> bool:
                     loop.quit()
                 except Exception:
                     pass
-
         try:
             invoker.post(_do)
         except Exception:
@@ -142,7 +135,6 @@ def request_workspace_change_from_api(folder: str) -> bool:
     except Exception:
         # Accept by contract even on unexpected errors
         return True
-
 
 class PyInstallerWorkspaceGUI(QWidget):
     def __init__(self):
@@ -214,12 +206,10 @@ class PyInstallerWorkspaceGUI(QWidget):
                         )
                     except Exception:
                         pass
-
                 _run_coro_async(_fetch_tr(), _apply_label, ui_owner=self)
         except Exception:
             pass
         self.update_ui_state()
-
     from .init_ui import init_ui
 
     def add_pyinstaller_data(self):
@@ -899,7 +889,6 @@ class PyInstallerWorkspaceGUI(QWidget):
             self.save_preferences()
         except Exception:
             pass
-
     from .compiler import build_nuitka_command, build_pyinstaller_command
 
     def select_nuitka_icon(self):
@@ -1071,7 +1060,6 @@ class PyInstallerWorkspaceGUI(QWidget):
                                 async def _fetch_sys():
                                     code = await resolve_system_language()
                                     return await get_translations(code)
-
                                 _run_coro_async(
                                     _fetch_sys(),
                                     lambda tr: self.select_lang.setText(
@@ -1146,7 +1134,6 @@ class PyInstallerWorkspaceGUI(QWidget):
         if self.output_dir_input.text().strip():
             summary.append(f"Sortie: {self.output_dir_input.text().strip()}")
         # Widget options_summary supprimé; plus de mise à jour de résumé visuel
-
     from .compiler import (
         cancel_all_compilations,
         compile_all,
@@ -1262,7 +1249,6 @@ class PyInstallerWorkspaceGUI(QWidget):
         except Exception:
             pass
         # self.custom_args supprimé (widget supprimé)
-
     from .preferences import load_preferences, save_preferences, update_ui_state
 
     def show_statistics(self):
@@ -1295,7 +1281,6 @@ class PyInstallerWorkspaceGUI(QWidget):
         QMessageBox.information(
             self, self.tr("Statistiques de compilation", "Build statistics"), msg
         )
-
     # Internationalization using JSON language files
     current_language = "English"
 
@@ -1309,7 +1294,6 @@ class PyInstallerWorkspaceGUI(QWidget):
                     getattr(widget, method)(value)
             except Exception:
                 pass
-
         # Sidebar & main buttons
         _set("btn_select_folder", "select_folder")
         _set("btn_select_files", "select_files")
@@ -1451,7 +1435,6 @@ class PyInstallerWorkspaceGUI(QWidget):
                 )
             except Exception:
                 pass
-
         _run_coro_async(_do(), _on_result, ui_owner=self)
 
     def register_language_refresh(self, callback):
@@ -1539,7 +1522,6 @@ class PyInstallerWorkspaceGUI(QWidget):
                         async def _fetch_sys():
                             code = await resolve_system_language()
                             return await get_translations(code)
-
                         _run_coro_async(
                             _fetch_sys(),
                             lambda tr: self.select_lang.setText(
@@ -1571,9 +1553,7 @@ class PyInstallerWorkspaceGUI(QWidget):
                     )
                 except Exception:
                     pass
-
         _run_coro_async(_prepare(), _after_prepared, ui_owner=self)
-
     from .dependency_analysis import (
         _install_next_dependency,
         _on_dep_pip_finished,

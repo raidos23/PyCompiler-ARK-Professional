@@ -53,7 +53,6 @@ __all__ = [
     "BCASL",
 ]
 
-
 # Configuration logger par défaut (faible verbosité pour embarqué)
 _logger = logging.getLogger("bcasl")
 if not _logger.handlers:
@@ -63,9 +62,7 @@ if not _logger.handlers:
     _logger.addHandler(_handler)
     _logger.setLevel(logging.INFO)
 
-
 BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
-
 
 @dataclass(frozen=True)
 class PluginMeta:
@@ -89,7 +86,6 @@ class PluginMeta:
         if not nid:
             raise ValueError("PluginMeta invalide: 'id' requis")
         object.__setattr__(self, "id", nid)
-
 
 class Bc_PluginBase:
     """Classe de base minimale que doivent étendre les plugins BCASL.
@@ -121,7 +117,6 @@ class Bc_PluginBase:
         self.meta = meta
         self.requires = tuple(str(r).strip() for r in requires if str(r).strip())
         self.priority = int(priority)
-
     # Hook principal
     def on_pre_compile(
         self, ctx: PreCompileContext
@@ -130,7 +125,6 @@ class Bc_PluginBase:
 
     def __repr__(self) -> str:
         return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority}>"
-
 
 @dataclass
 class PreCompileContext:
@@ -186,7 +180,6 @@ class PreCompileContext:
                 if fnmatch.fnmatch(s, pat):
                     return True
             return False
-
         collected: list[Path] = []
         for pat in inc:
             for path in root.glob(pat):
@@ -200,7 +193,6 @@ class PreCompileContext:
             except Exception:
                 pass
 
-
 @dataclass
 class ExecutionItem:
     plugin_id: str
@@ -208,7 +200,6 @@ class ExecutionItem:
     success: bool
     duration_ms: float
     error: str = ""
-
 
 @dataclass
 class ExecutionReport:
@@ -233,9 +224,7 @@ class ExecutionReport:
     def __iter__(self):
         return iter(self.items)
 
-
 # Worker d'exécution sandboxé (processus séparé)
-
 
 def _plugin_worker(
     module_path: str, plugin_id: str, project_root: str, config: dict[str, Any], q
@@ -376,7 +365,6 @@ def _plugin_worker(
                     _res.setrlimit(limit, (soft, hard))
                 except Exception:
                     pass
-
             if _mem_mb > 0:
                 _set(_res.RLIMIT_AS, _mem_mb * 1024 * 1024, _mem_mb * 1024 * 1024)
             if _cpu_s > 0:
@@ -437,7 +425,6 @@ def _plugin_worker(
     except Exception:
         q.put({"ok": False, "error": _tb.format_exc(), "duration_ms": 0.0})
 
-
 class _PluginRecord:
     __slots__ = (
         "plugin",
@@ -460,7 +447,6 @@ class _PluginRecord:
         self.module_path: Optional[Path] = None
         self.module_name: Optional[str] = None
 
-
 class BCASL:
     """Gestionnaire principal des plugins et de leur exécution avant compilation."""
 
@@ -479,7 +465,6 @@ class BCASL:
         # Sandbox settings
         self.sandbox = bool(sandbox)
         self.plugin_timeout_s = float(plugin_timeout_s)
-
     # API publique
     def add_plugin(self, plugin: Bc_PluginBase) -> None:
         if not isinstance(plugin, Bc_PluginBase):
@@ -526,7 +511,6 @@ class BCASL:
         rec.priority = int(priority)
         rec.plugin.priority = int(priority)
         return True
-
     # Chargement automatique
     def load_plugins_from_directory(
         self, directory: Path
@@ -598,7 +582,6 @@ class BCASL:
                 errors.append((pkg_dir.name, msg))
                 _logger.error("%s: %s", pkg_dir.name, msg)
         return count, errors
-
     # Ordonnancement et exécution
     def _resolve_order(self) -> list[str]:
         """Résout l'ordre d'exécution en respectant dépendances et priorités.
@@ -957,14 +940,12 @@ class BCASL:
         _logger.info(report.summary())
         return report
 
-
 # Petit utilitaire: décorateur d'enregistrement (optionnel pour les plugins)
 # Usage dans un plugin:
 #   @register_plugin
 #   class MyPlugin(PluginBase): ...
 # Puis dans bcasl_register(manager): manager.add_plugin(MyPlugin(...))
 # (Ce décorateur ne fait que marquer la classe; utile si l'auteur veut introspecter)
-
 
 def register_plugin(cls: Any) -> Any:
     setattr(cls, "__bcasl_plugin__", True)

@@ -29,16 +29,13 @@ except Exception:  # pragma: no cover
     Slot = None  # type: ignore
     Qt = None  # type: ignore
 
-
 # --- Utilitaires ---
-
 
 def _has_bcasl_marker(pkg_dir: Path) -> bool:
     try:
         return (pkg_dir / "__init__.py").exists()
     except Exception:
         return False
-
 
 def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     """Découvre les plugins en important chaque package et en appelant bcasl_register(manager).
@@ -107,7 +104,6 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
         pass
     return meta
 
-
 def _compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
     """Trie les plugins par score de tag (plus petit d'abord), puis par id.
     Tags pris depuis meta_map[pid]["tags"]. Inconnu => 100.
@@ -171,12 +167,9 @@ def _compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
         except Exception:
             pass
         return 100
-
     return sorted(meta_map.keys(), key=lambda x: (_score(x), x))
 
-
 # --- Chargement config (JSON uniquement) ---
-
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     """Charge bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit."""
@@ -186,7 +179,6 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             return json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             return {}
-
     # 1) Fichiers candidats (JSON uniquement)
     for name in ("bcasl.json", ".bcasl.json"):
         p = workspace_root / name
@@ -262,10 +254,8 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         pass
     return default_cfg
 
-
 # --- Worker et bridge (Qt) ---
 if QObject is not None and Signal is not None:  # pragma: no cover
-
     class _BCASLWorker(QObject):
         finished = Signal(object)  # report or None
         log = Signal(str)
@@ -352,9 +342,7 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                     pass
                 self.finished.emit(None)
 
-
 if QObject is not None and Signal is not None:  # pragma: no cover
-
     class _BCASLUiBridge(QObject):
         def __init__(self, gui, on_done, thread) -> None:
             super().__init__()
@@ -402,9 +390,7 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                 except Exception:
                     pass
 
-
 # --- API publique attendue par le reste de l'app ---
-
 
 def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
     """Arrête proprement un thread BCASL en cours (si présent)."""
@@ -439,7 +425,6 @@ def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
     except Exception:
         pass
 
-
 def resolve_bcasl_timeout(self) -> float:
     """Résout le timeout effectif des plugins à partir de la config et de l'env.
     <= 0 => illimité (0.0 renvoyé)
@@ -470,7 +455,6 @@ def resolve_bcasl_timeout(self) -> float:
         )
     except Exception:
         return 0.0
-
 
 def open_api_loader_dialog(self) -> None:  # UI minimale
     """Fenêtre simple pour activer/désactiver et réordonner les plugins(BCASL).
@@ -621,7 +605,6 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
             it = lst.takeItem(row)
             lst.insertItem(new_row, it)
             lst.setCurrentRow(new_row)
-
         btn_up.clicked.connect(lambda: _move_sel(-1))
         btn_down.clicked.connect(lambda: _move_sel(1))
         btns.addWidget(btn_up)
@@ -668,7 +651,6 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
                         f"Failed to write bcasl.json: {e}",
                     ),
                 )
-
         btn_save.clicked.connect(do_save)
         btn_cancel.clicked.connect(dlg.reject)
         try:
@@ -692,9 +674,7 @@ def open_api_loader_dialog(self) -> None:  # UI minimale
         except Exception:
             pass
 
-
 # API
-
 
 def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
     """Lance BCASL en arrière-plan si QtCore est dispo; sinon, exécution bloquante rapide.
@@ -851,7 +831,6 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                 self.log.append(f"⚠️ Erreur BCASL (async): {e}\n")
         except Exception:
             pass
-
 
 def run_pre_compile(self) -> Optional[object]:
     """Exécute la phase BCASL de pré-compilation (chemin synchrone, simple)."""

@@ -8,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 class ValidationResult:
     def __init__(self):
         self.passed = 0
@@ -48,7 +47,6 @@ class ValidationResult:
             )
 
         return self.failed == 0
-
 
 def validate_file_structure(result: ValidationResult):
     """Validate that all required files are present."""
@@ -106,7 +104,6 @@ def validate_file_structure(result: ValidationResult):
                 "Missing required directory",
             )
 
-
 def validate_python_syntax(result: ValidationResult):
     """Validate Python syntax for all Python files."""
     print("🐍 Validating Python Syntax...")
@@ -129,7 +126,6 @@ def validate_python_syntax(result: ValidationResult):
             result.add_result(
                 "Syntax", f"Python: {py_file}", "WARN", f"Could not validate: {e}"
             )
-
 
 def validate_configuration_files(result: ValidationResult):
     """Validate configuration files."""
@@ -179,7 +175,6 @@ def validate_configuration_files(result: ValidationResult):
             "Config", ".pre-commit-config.yaml", "FAIL", f"Invalid YAML: {e}"
         )
 
-
 def validate_dependencies(result: ValidationResult):
     """Validate that dependencies can be resolved."""
     print("📦 Validating Dependencies...")
@@ -222,7 +217,6 @@ def validate_dependencies(result: ValidationResult):
         result.add_result(
             "Dependencies", "constraints.txt", "FAIL", f"Cannot read: {e}"
         )
-
 
 def validate_git_setup(result: ValidationResult):
     """Validate Git repository setup."""
@@ -267,7 +261,6 @@ def validate_git_setup(result: ValidationResult):
     except subprocess.CalledProcessError:
         result.add_result("Git", "Commits", "WARN", "Cannot check commit history")
 
-
 def validate_tools(result: ValidationResult):
     """Validate that development tools are available."""
     print("🛠️  Validating Development Tools...")
@@ -308,7 +301,6 @@ def validate_tools(result: ValidationResult):
                     "FAIL",
                     "Required tool not available",
                 )
-
 
 def validate_security_setup(result: ValidationResult):
     """Validate security configuration."""
@@ -359,7 +351,6 @@ def validate_security_setup(result: ValidationResult):
             "Cannot validate security config",
         )
 
-
 def main():
     """Main validation function."""
     print("🔍 PyCompiler ARK++ Professional Edition - Validation")
@@ -393,7 +384,6 @@ def main():
     # Print summary and return exit code
     success = result.print_summary()
     sys.exit(0 if success else 1)
-
 
 if __name__ == "__main__":
     main()

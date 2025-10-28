@@ -21,7 +21,6 @@ try:
 except Exception:
     pass
 
-
 def _auto_import_all() -> None:
     """
     Import all Python modules and subpackages contained in this package.
@@ -45,6 +44,5 @@ def _auto_import_all() -> None:
     except Exception:
         # Be resilient to environments where __path__ is unusual
         pass
-
 
 _auto_import_all()

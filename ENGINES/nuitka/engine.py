@@ -17,7 +17,6 @@ from engine_sdk import (
 )
 from Core.auto_plugins import _tr
 
-
 class NuitkaEngine(CompilerEngine):
     id = "nuitka"
     name = "Nuitka"
@@ -35,7 +34,6 @@ class NuitkaEngine(CompilerEngine):
                     return gui.tr(fr, en)
                 except Exception:
                     return fr
-
             os_name = platform.system()
             if os_name == "Linux":
                 import shutil as _shutil
@@ -311,7 +309,6 @@ class NuitkaEngine(CompilerEngine):
                     return ok
                 except Exception:
                     return False
-
             if vm:
                 # Fast non-blocking heuristic; if present, proceed
                 if vm.is_tool_installed(vroot, "nuitka"):
@@ -343,7 +340,6 @@ class NuitkaEngine(CompilerEngine):
                             vm.ensure_tools_installed(vroot, ["nuitka"])
                     except Exception:
                         pass
-
                 try:
                     vm.is_tool_installed_async(vroot, "nuitka", _on_check)
                 except Exception:

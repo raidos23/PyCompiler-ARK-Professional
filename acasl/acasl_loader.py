@@ -30,7 +30,6 @@ except Exception:  # pragma: no cover
     Signal = None  # type: ignore
     Slot = None  # type: ignore
 
-
 # -----------------
 # Contexte ACASL
 # -----------------
@@ -46,7 +45,6 @@ class ACASLContext:
             self.workspace_root = Path(os.getcwd()).resolve()
         self.artifacts = [str(Path(a)) for a in artifacts or []]
         self.output_dir = str(output_dir).strip() if output_dir else None
-
     # Logging helpers (post to GUI thread via Qt when available)
     def _post_ui(self, fn) -> None:
         try:
@@ -77,11 +75,9 @@ class ACASLContext:
     def log_error(self, msg: str) -> None:
         self.log_info(f"❌ {msg}")
 
-
 # -----------------
 # Découverte plugins via acasl_register
 # -----------------
-
 
 class _ACASLTempManager:
     """Manager temporaire passé à acasl_register(manager) pour collecter les plugins.
@@ -95,11 +91,9 @@ class _ACASLTempManager:
 
     def add_plugin(self, plugin: Any) -> None:
         self._plugins.append(plugin)
-
     # Compat API (si certains plugins utilisent une autre méthode)
     def add_task(self, plugin: Any) -> None:  # alias permissif
         self.add_plugin(plugin)
-
 
 def _extract_meta_from_plugin(plg: Any) -> Optional[dict[str, Any]]:
     def _get_attr_chain(obj: Any, chain: list[str]) -> Optional[Any]:
@@ -109,7 +103,6 @@ def _extract_meta_from_plugin(plg: Any) -> Optional[dict[str, Any]]:
             except Exception:
                 return None
         return obj
-
     try:
         pid = (
             _get_attr_chain(plg, ["meta", "id"])
@@ -156,7 +149,6 @@ def _extract_meta_from_plugin(plg: Any) -> Optional[dict[str, Any]]:
         }
     except Exception:
         return None
-
 
 def _discover_acasl_meta(plugins_dir: Path) -> dict[str, dict[str, Any]]:
     """Importe chaque package Plugins, appelle acasl_register(manager) et construit un mapping id -> meta.
@@ -209,11 +201,9 @@ def _discover_acasl_meta(plugins_dir: Path) -> dict[str, dict[str, Any]]:
         pass
     return meta
 
-
 # -----------------
 # Config JSON-only
 # -----------------
-
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     """Charge acasl.json si présent; sinon génère un défaut minimal et l'écrit."""
@@ -223,7 +213,6 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             return json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             return {}
-
     for name in ("acasl.json", ".acasl.json"):
         p = workspace_root / name
         if p.exists() and p.is_file():
@@ -259,12 +248,10 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         pass
     return default_cfg
 
-
 # -----------------
 # Worker Qt
 # -----------------
 if QObject is not None and Signal is not None:  # pragma: no cover
-
     class _ACASLWorker(QObject):
         finished = Signal(object)  # report dict or None
         log = Signal(str)
@@ -366,7 +353,6 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                                     runner(ctx)
                                 except Exception as e:
                                     holder["err"] = e
-
                             th = threading.Thread(
                                 target=_call, name=f"ACASL-{pid}", daemon=True
                             )
@@ -410,11 +396,9 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                     pass
                 self.finished.emit(None)
 
-
 # -----------------
 # API publique
 # -----------------
-
 
 def ensure_acasl_thread_stopped(gui=None) -> None:
     """Arrêt propre d'un thread ACASL actif (Qt)."""
@@ -435,7 +419,6 @@ def ensure_acasl_thread_stopped(gui=None) -> None:
             pass
     except Exception:
         pass
-
 
 def resolve_acasl_timeout(self) -> float:
     """Résout le timeout effectif des plugins ACASL (secondes) à partir de la config et de l'env.
@@ -463,7 +446,6 @@ def resolve_acasl_timeout(self) -> float:
         return float(raw) if raw and raw > 0 else 0.0
     except Exception:
         return 0.0
-
 
 def open_acasl_loader_dialog(self) -> None:
     """UI minimale pour activer/désactiver et réordonner les plugins ACASL (JSON-only)."""
@@ -599,7 +581,6 @@ def open_acasl_loader_dialog(self) -> None:
             it = lst.takeItem(row)
             lst.insertItem(new_row, it)
             lst.setCurrentRow(new_row)
-
         btn_up.clicked.connect(lambda: _move_sel(-1))
         btn_down.clicked.connect(lambda: _move_sel(1))
         btns.addWidget(btn_up)
@@ -634,7 +615,6 @@ def open_acasl_loader_dialog(self) -> None:
                 QMessageBox.critical(
                     dlg, "Erreur", f"Impossible d'écrire acasl.json: {e}"
                 )
-
         btn_save.clicked.connect(do_save)
         btn_cancel.clicked.connect(dlg.reject)
         try:
@@ -657,7 +637,6 @@ def open_acasl_loader_dialog(self) -> None:
                 self.log.append(f"❌ ACASL Loader Error: {e}")
         except Exception:
             pass
-
 
 def run_post_compile_async(
     gui, artifacts: list[str], finished_cb: Optional[Callable[[dict], None]] = None
@@ -743,7 +722,6 @@ def run_post_compile_async(
                     thread.quit()
                 except Exception:
                     pass
-
             worker.finished.connect(_on_finished)
             worker.finished.connect(worker.deleteLater)
             thread.finished.connect(thread.deleteLater)

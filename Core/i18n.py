@@ -66,7 +66,6 @@ _TRANSLATION_CACHE: dict[str, dict[str, Any]] = {}
 _LANGUAGES_CACHE: list[dict[str, str]] | None = None
 _CACHE_LOCK = asyncio.Lock()
 
-
 def _project_root() -> str:
     """Retourne le chemin racine du projet (synchrone, pas d'I/O bloquant)."""
     try:
@@ -74,14 +73,12 @@ def _project_root() -> str:
     except Exception:
         return os.getcwd()
 
-
 def _languages_dir() -> str:
     """Retourne le chemin du dossier languages (synchrone, pas d'I/O bloquant)."""
     try:
         return os.path.join(_project_root(), "languages")
     except Exception:
         return "languages"
-
 
 # Normalization helper must be pure (no I/O or system lookups)
 # Leave "System" unresolved; callers must resolve system language asynchronously when needed.
@@ -96,9 +93,7 @@ async def normalize_lang_pref(pref: str | None) -> str:
     # Arbitrary language code - accept as-is
     return pref
 
-
 # Internal sync helpers (non-public); used via asyncio.to_thread
-
 
 def _resolve_system_language_sync() -> str:
     try:
@@ -106,7 +101,6 @@ def _resolve_system_language_sync() -> str:
         return "fr" if loc.lower().startswith(("fr", "fr_")) else "en"
     except Exception:
         return "en"
-
 
 def _load_language_file_sync(code: str) -> dict[str, Any] | None:
     fpath = os.path.join(_languages_dir(), f"{code}.json")
@@ -117,7 +111,6 @@ def _load_language_file_sync(code: str) -> dict[str, Any] | None:
             return json.load(f)
     except Exception:
         return None
-
 
 def _available_languages_sync() -> list[dict[str, str]]:
     langs: list[dict[str, str]] = []
@@ -164,9 +157,7 @@ def _available_languages_sync() -> list[dict[str, str]]:
         ]
     return langs
 
-
 # Public async API with real-time caching and error handling
-
 
 async def resolve_system_language() -> str:
     """Résout la langue système en temps réel avec gestion d'erreurs."""
@@ -174,7 +165,6 @@ async def resolve_system_language() -> str:
         return await asyncio.to_thread(_resolve_system_language_sync)
     except Exception:
         return "en"
-
 
 async def available_languages() -> list[dict[str, str]]:
     """Retourne les langues disponibles avec caching thread-safe."""
@@ -196,7 +186,6 @@ async def available_languages() -> list[dict[str, str]]:
     except Exception:
         # Fallback: retourner au moins l'anglais
         return [{"code": "en", "name": "English"}]
-
 
 async def get_translations(lang_pref: str | None) -> dict[str, Any]:
     """Charge les traductions en temps réel avec caching et fallbacks robustes."""
@@ -232,7 +221,6 @@ async def get_translations(lang_pref: str | None) -> dict[str, Any]:
         # Fallback ultime: retourner l'anglais avec métadonnées normalisées
         return _normalize_translation_meta(FALLBACK_EN.copy(), "en")
 
-
 def _normalize_translation_meta(data: dict[str, Any], code: str) -> dict[str, Any]:
     """Normalise les métadonnées de traduction (synchrone, pas d'I/O)."""
     try:
@@ -266,7 +254,6 @@ def _normalize_translation_meta(data: dict[str, Any], code: str) -> dict[str, An
             "_meta": {"code": code or "en", "name": _get_language_name(code or "en")}
         }
 
-
 def _get_language_name(code: str) -> str:
     """Retourne le nom de la langue pour un code donné (synchrone, pas d'I/O)."""
     code_lower = (code or "").lower()
@@ -292,7 +279,6 @@ def _get_language_name(code: str) -> str:
     else:
         # Retourner le code en majuscule comme fallback
         return code.upper() if code else "Unknown"
-
 
 async def clear_translation_cache() -> None:
     """Vide le cache des traductions (utile pour les tests ou rechargements)."""

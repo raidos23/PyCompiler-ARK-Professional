@@ -5,7 +5,6 @@ from __future__ import annotations
 # Signature required by host: (matched: dict, pkg_to_import: dict) -> list[str]
 from engine_sdk import register_auto_builder  # type: ignore
 
-
 def _normalize_plugin_arg(val: str) -> str:
     v = (val or "").strip()
     if not v:
@@ -14,7 +13,6 @@ def _normalize_plugin_arg(val: str) -> str:
         name = v.split("=", 1)[1]
         return f"--enable-plugin={name}"
     return f"--enable-plugin={v}"
-
 
 def AUTO_BUILDER(
     matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]
@@ -54,7 +52,6 @@ def AUTO_BUILDER(
                 seen.add(a)
 
     return out
-
 
 # Register at import time via the SDK facade
 try:

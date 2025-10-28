@@ -93,7 +93,6 @@ EXCLUDED_STDLIB = {
     "tkinter",
 }
 
-
 @functools.lru_cache(maxsize=256)
 def _is_stdlib_module(module_name: str) -> bool:
     """
@@ -133,7 +132,6 @@ def _is_stdlib_module(module_name: str) -> bool:
     except Exception:
         return False
 
-
 def _check_module_installed(module: str) -> bool:
     """
     Vérifie si un module est installé via importlib.metadata (plus rapide que subprocess pip show).
@@ -146,7 +144,6 @@ def _check_module_installed(module: str) -> bool:
     except Exception:
         # Fallback: considérer comme non installé en cas d'erreur
         return False
-
 
 def suggest_missing_dependencies(self):
     """
@@ -335,7 +332,6 @@ def suggest_missing_dependencies(self):
             "✅ Tous les modules nécessaires sont déjà installés dans le venv."
         )
 
-
 # Installation automatique des dépendances manquantes (récursif)
 def _install_next_dependency(self):
     # Si tous les modules ont été installés, termine le processus
@@ -376,7 +372,6 @@ def _install_next_dependency(self):
     )
     process.start()
 
-
 # Affiche la sortie de pip dans la ProgressDialog et les logs
 def _on_dep_pip_output(self, process, error=False):
     data = (
@@ -389,7 +384,6 @@ def _on_dep_pip_output(self, process, error=False):
         if lines:
             self.dep_progress_dialog.set_message(lines[-1])
     self.log.append(data)
-
 
 # Callback après l'installation d'un module (pip)
 def _on_dep_pip_finished(self, process, code, status):

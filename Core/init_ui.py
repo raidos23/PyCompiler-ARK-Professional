@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 
 from Core import i18n as _i18n
 
-
 def _detect_system_color_scheme() -> str:
     """
     Retourne "dark" ou "light" selon le thème système détecté.
@@ -117,7 +116,6 @@ def _detect_system_color_scheme() -> str:
         return "light"
     except Exception:
         return "light"
-
 
 def init_ui(self):
     loader = QUiLoader()
@@ -476,7 +474,6 @@ def init_ui(self):
                 if result:
                     return result
         return None
-
     self.btn_browse_output_dir = (
         find_widget_recursive(
             self.tab_pyinstaller, QPushButton, "btn_browse_output_dir"
@@ -499,7 +496,6 @@ def init_ui(self):
             )
             if dir_path:
                 self.output_dir_input.setText(dir_path)
-
         self.btn_browse_output_dir.clicked.connect(browse_output_dir)
     if self.output_dir_input:
         try:
@@ -673,7 +669,6 @@ def init_ui(self):
             ]:
                 if w:
                     w.setEnabled(False)
-
     self.compiler_tabs.currentChanged.connect(update_compiler_options_enabled)
     update_compiler_options_enabled()
 
@@ -693,7 +688,6 @@ def init_ui(self):
                 self.nuitka_onefile.setEnabled(False)
             else:
                 self.nuitka_onefile.setEnabled(True)
-
         self.nuitka_onefile.stateChanged.connect(nuitka_onefile_changed)
         self.nuitka_standalone.stateChanged.connect(nuitka_standalone_changed)
 
@@ -730,7 +724,6 @@ def init_ui(self):
             pass
     except Exception:
         pass
-
 
 def add_pyinstaller_data(self):
     import os
@@ -783,7 +776,6 @@ def add_pyinstaller_data(self):
                         f"Dossier ajouté à PyInstaller : {dir_path} => {dest}"
                     )
 
-
 def add_nuitka_data_file(self):
     import os
 
@@ -835,7 +827,6 @@ def add_nuitka_data_file(self):
                 self.nuitka_data_dirs.append((dir_path, dest))
                 if hasattr(self, "log"):
                     self.log.append(f"Dossier ajouté à Nuitka : {dir_path} => {dest}")
-
 
 def show_language_dialog(self):
     from PySide6.QtWidgets import QInputDialog
@@ -913,12 +904,10 @@ def show_language_dialog(self):
         if hasattr(self, "log") and self.log:
             self.log.append("Sélection de la langue annulée.")
 
-
 def _themes_dir() -> str:
     return os.path.abspath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "themes")
     )
-
 
 def _list_available_themes() -> list[tuple[str, str]]:
     """
@@ -938,7 +927,6 @@ def _list_available_themes() -> list[tuple[str, str]]:
     except Exception:
         pass
     return themes
-
 
 def _is_qss_dark(css: str) -> bool:
     """Heuristic to determine if a QSS stylesheet is dark or light.
@@ -1004,7 +992,6 @@ def _is_qss_dark(css: str) -> bool:
             except Exception:
                 return None
             return None
-
         rgbs = []
         for t in tokens:
             rgb = _to_rgb(t)
@@ -1016,7 +1003,6 @@ def _is_qss_dark(css: str) -> bool:
         return avg < 128.0
     except Exception:
         return False
-
 
 def _apply_translations(self, tr: dict[str, object]) -> None:
     try:
@@ -1206,7 +1192,6 @@ def _apply_translations(self, tr: dict[str, object]) -> None:
                 except Exception:
                     pass
                 return current
-
             if getattr(self, "btn_select_folder", None):
                 self.btn_select_folder.setToolTip(
                     _tt("tt_select_folder", self.btn_select_folder.toolTip())
@@ -1312,7 +1297,6 @@ def _apply_translations(self, tr: dict[str, object]) -> None:
             pass
     except Exception:
         pass
-
 
 def apply_theme(self, pref: str):
     """Applique un thème depuis themes.
@@ -1440,7 +1424,6 @@ def apply_theme(self, pref: str):
                 self.log.append(f"⚠️ Échec d'application du thème: {e}")
         except Exception:
             pass
-
 
 def show_theme_dialog(self):
     from PySide6.QtWidgets import QInputDialog

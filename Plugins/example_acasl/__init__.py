@@ -18,7 +18,6 @@ from Plugins_SDK.ACASL_SDK import (
     wrap_post_context,
 )
 
-
 # Plugin metadata with tags for classification
 META = PluginMeta(
     id="example_acasl",
@@ -28,7 +27,6 @@ META = PluginMeta(
     author="PyCompiler Team",
     tags=("example", "demo", "post-compile"),
 )
-
 
 class ExampleAcaslPlugin(Ac_PluginBase):
     """Example ACASL plugin showing post-compilation actions."""
@@ -60,14 +58,12 @@ class ExampleAcaslPlugin(Ac_PluginBase):
 
         sctx.log_info("✅ Example ACASL Plugin: Post-compilation analysis complete")
 
-
 # Create plugin instance
 PLUGIN = ExampleAcaslPlugin(
     META,
     requires=[],  # No dependencies
     priority=100,  # Standard priority
 )
-
 
 # ACASL registration function (required)
 def acasl_register(manager):

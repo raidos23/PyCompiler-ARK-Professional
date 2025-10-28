@@ -75,7 +75,6 @@ if IS_LINUX:
     if not os.environ.get("LC_ALL") and not os.environ.get("LANG"):
         os.environ["LC_ALL"] = "C.UTF-8"
 
-
 # Determine a platform-appropriate crash log directory
 def _platform_log_dir() -> Path:
     try:
@@ -92,7 +91,6 @@ def _platform_log_dir() -> Path:
         return Path.home() / ".cache" / "PyCompiler_ProPP"
     except Exception:
         return Path.cwd() / "logs"
-
 
 # Enable faulthandler with persistent log file
 try:
@@ -134,7 +132,6 @@ except Exception:
 
 # Trigger dynamic discovery of engine plugins at startup (after env/Qt attributes)
 
-
 def _qt_message_handler(mode, context, message):
     # Silence warnings/debug/info unless verbose requested
     if not os.environ.get("PYCOMPILER_VERBOSE") and mode in (
@@ -147,7 +144,6 @@ def _qt_message_handler(mode, context, message):
         sys.__stderr__.write((message or "") + "\n")
     except Exception:
         pass
-
 
 def _excepthook(etype, value, tb):
     # Global last-chance handler: print to stderr and crash log
@@ -179,11 +175,9 @@ def _excepthook(etype, value, tb):
             pass
         os._exit(1)
 
-
 # Install handlers early
 qInstallMessageHandler(_qt_message_handler)
 sys.excepthook = _excepthook
-
 
 # Graceful termination on signals
 def _handle_signal(signum, _frame):
@@ -193,7 +187,6 @@ def _handle_signal(signum, _frame):
             app.quit()
     except Exception:
         pass
-
 
 for _sig in (getattr(signal, "SIGINT", None), getattr(signal, "SIGTERM", None)):
     try:
@@ -209,7 +202,6 @@ if IS_WINDOWS and hasattr(signal, "SIGBREAK"):
         pass
 
 from Core.worker import PyInstallerWorkspaceGUI
-
 
 def main(argv: list[str]) -> int:
     try:
@@ -366,7 +358,6 @@ def main(argv: list[str]) -> int:
                         pass
                 except Exception:
                     _excepthook(*sys.exc_info())
-
             QTimer.singleShot(max(0, delay_ms), _launch_main)
         else:
             w = PyInstallerWorkspaceGUI()
@@ -412,7 +403,6 @@ def main(argv: list[str]) -> int:
     except Exception:
         _excepthook(*sys.exc_info())
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

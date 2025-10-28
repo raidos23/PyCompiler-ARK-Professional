@@ -16,7 +16,6 @@ from engine_sdk import (
     resolve_project_venv,
 )
 
-
 class PyInstallerEngine(CompilerEngine):
     id = "pyinstaller"
     name = "PyInstaller"
@@ -84,7 +83,6 @@ class PyInstallerEngine(CompilerEngine):
                         return gui.tr(fr, en)
                     except Exception:
                         return fr
-
                 if platform.system() == "Linux":
                     missing = []
                     if not _shutil.which("patchelf"):
@@ -219,7 +217,6 @@ class PyInstallerEngine(CompilerEngine):
                             vm.ensure_tools_installed(vroot, ["pyinstaller"])
                     except Exception:
                         pass
-
                 try:
                     vm.is_tool_installed_async(vroot, "pyinstaller", _on_check)
                 except Exception:

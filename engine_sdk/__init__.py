@@ -59,9 +59,7 @@ try:
 except Exception:  # pragma: no cover
     registry = None  # type: ignore
 
-
 __version__ = "3.2.3"
-
 
 # Lazy attribute resolver to reduce import overhead in plugin environments
 def __getattr__(name: str):
@@ -74,7 +72,6 @@ def __getattr__(name: str):
         return attr
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
-
 def __dir__():
     try:
         base = set(globals().keys()) | set(__all__)
@@ -82,9 +79,7 @@ def __dir__():
     except Exception:
         return sorted(globals().keys())
 
-
 # Version helpers and capability report
-
 
 def _parse_version(v: str) -> tuple:
     try:
@@ -96,7 +91,6 @@ def _parse_version(v: str) -> tuple:
     except Exception:
         return (0, 0, 0)
 
-
 def ensure_min_sdk(required: str) -> bool:
     """Return True if the current SDK version satisfies the minimal required semver (major.minor.patch).
     Example: ensure_min_sdk("3.2.2") -> True/False
@@ -107,7 +101,6 @@ def ensure_min_sdk(required: str) -> bool:
         return cur >= need
     except Exception:
         return False
-
 
 def get_capabilities() -> dict:
     """Return a dictionary of SDK runtime capabilities for feature detection."""
@@ -127,7 +120,6 @@ def get_capabilities() -> dict:
     }
     return caps
 
-
 def sdk_info() -> dict:
     """Return SDK metadata, exported symbols and capabilities."""
     return {
@@ -135,7 +127,6 @@ def sdk_info() -> dict:
         "exports": sorted(list(__all__)),
         "capabilities": get_capabilities(),
     }
-
 
 __all__ = [
     "CompilerEngine",
