@@ -203,5 +203,6 @@ security-*.json
 
 # Exclude tests folder
 tests/
+
 #PREFERENCE
 .pref
