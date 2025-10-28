@@ -17,6 +17,7 @@ META = PluginMeta(
     description="clean the workspace (.pyc and __pycache__)",
 )
 
+
 class Cleaner(Bc_PluginBase):
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         try:
@@ -52,6 +53,7 @@ class Cleaner(Bc_PluginBase):
                 except Exception:
                     continue
             return False
+
         # Demande de confirmation avant une opération potentiellement destructive
         if not sctx.msg_question(
             tr.get("title", "Nettoyeur"),
@@ -142,9 +144,11 @@ class Cleaner(Bc_PluginBase):
         finally:
             ph.close()
 
+
 PLUGIN = Cleaner(META)
 
 # Fonction requise par le chargeur BCASL
+
 
 def bcasl_register(manager):
     manager.add_plugin(PLUGIN)

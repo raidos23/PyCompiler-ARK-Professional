@@ -63,6 +63,7 @@ if not _logger.handlers:
 
 ACASL_PLUGIN_REGISTER_FUNC = "acasl_register"
 
+
 @dataclass(frozen=True)
 class PluginMeta:
     """Métadonnées d'un plugin ACASL.
@@ -96,6 +97,7 @@ class PluginMeta:
         except Exception:
             object.__setattr__(self, "tags", tuple())
 
+
 class Ac_PluginBase:
     """Classe de base minimale que doivent étendre les plugins ACASL.
 
@@ -127,6 +129,7 @@ class Ac_PluginBase:
         self.meta = meta
         self.requires = tuple(str(r).strip() for r in requires if str(r).strip())
         self.priority = int(priority)
+
     # Hook principal
     def on_post_compile(
         self, ctx: PostCompileContext
@@ -135,6 +138,7 @@ class Ac_PluginBase:
 
     def __repr__(self) -> str:
         return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority} tags={self.meta.tags}>"
+
 
 @dataclass
 class PostCompileContext:
@@ -169,6 +173,7 @@ class PostCompileContext:
                 if fnmatch.fnmatch(s, pat):
                     return True
             return False
+
         for art_str in self.artifacts or []:
             try:
                 art_path = Path(art_str)
@@ -204,10 +209,12 @@ class PostCompileContext:
                 if fnmatch.fnmatch(s, pat):
                     return True
             return False
+
         for pat in inc:
             for path in root.glob(pat):
                 if path.is_file() and not is_excluded(path):
                     yield path
+
 
 @dataclass
 class ExecutionItem:
@@ -217,6 +224,7 @@ class ExecutionItem:
     duration_ms: float
     error: str = ""
     tags: tuple[str, ...] = field(default_factory=tuple)
+
 
 @dataclass
 class ExecutionReport:
@@ -248,6 +256,7 @@ class ExecutionReport:
     def __iter__(self):
         return iter(self.items)
 
+
 class _PluginRecord:
     __slots__ = (
         "plugin",
@@ -270,6 +279,7 @@ class _PluginRecord:
         self.module_path: Optional[Path] = None
         self.module_name: Optional[str] = None
 
+
 class ACASL:
     """Gestionnaire principal des plugins et de leur exécution après compilation."""
 
@@ -286,6 +296,7 @@ class ACASL:
         self._insert_counter = 0
         # Timeout settings
         self.plugin_timeout_s = float(plugin_timeout_s)
+
     # API publique
     def add_plugin(self, plugin: Ac_PluginBase) -> None:
         if not isinstance(plugin, Ac_PluginBase):
@@ -337,6 +348,7 @@ class ACASL:
         rec.priority = int(priority)
         rec.plugin.priority = int(priority)
         return True
+
     # Chargement automatique
     def load_plugins_from_directory(
         self, directory: Path
@@ -408,6 +420,7 @@ class ACASL:
                 errors.append((pkg_dir.name, msg))
                 _logger.error("%s: %s", pkg_dir.name, msg)
         return count, errors
+
     # Ordonnancement et exécution
     def _resolve_order(self) -> list[str]:
         """Résout l'ordre d'exécution en respectant dépendances et priorités.
@@ -527,12 +540,14 @@ class ACASL:
         _logger.info(report.summary())
         return report
 
+
 # Petit utilitaire: décorateur d'enregistrement (optionnel pour les plugins)
 # Usage dans un plugin:
 #   @register_acasl_plugin
 #   class MyPlugin(Ac_PluginBase): ...
 # Puis dans acasl_register(manager): manager.add_plugin(MyPlugin(...))
 # (Ce décorateur ne fait que marquer la classe; utile si l'auteur veut introspecter)
+
 
 def register_acasl_plugin(cls: Any) -> Any:
     setattr(cls, "__acasl_plugin__", True)

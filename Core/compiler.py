@@ -27,6 +27,7 @@ from engine_sdk.utils import clamp_text, redact_secrets
 from .auto_plugins import compute_for_all
 from .preferences import MAX_PARALLEL
 
+
 # Helper to terminate a whole process tree robustly, with OS fallbacks
 # Attempts: psutil terminate/kill -> OS-specific commands (taskkill/pkill+killpg)
 # Returns True if the routine executed (not a guarantee the OS reaped every zombie)
@@ -37,6 +38,7 @@ def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
                 log(msg)
         except Exception:
             pass
+
     import platform as _plat
     import subprocess as _sp
     import time
@@ -226,6 +228,7 @@ def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
             pass
         return True
 
+
 def _kill_all_descendants(timeout: float = 2.0, log=None) -> None:
     """Kill every descendant process of the current GUI process (best-effort)."""
     try:
@@ -260,6 +263,7 @@ def _kill_all_descendants(timeout: float = 2.0, log=None) -> None:
             )
         except Exception:
             pass
+
 
 def compile_all(self):
     import os
@@ -332,6 +336,7 @@ def compile_all(self):
                     )
                 except Exception:
                     pass
+
         _run_bcasl_async(self, _after_bcasl)
         return  # différer la suite dans le callback pour ne pas bloquer
     except Exception as e:
@@ -375,6 +380,7 @@ def compile_all(self):
         except Exception as e:
             self.log.append(f"⏩ Ignoré (erreur lecture) : {path} ({e})")
             return False
+
     # Détection du compilateur actif
     use_nuitka = False
     if hasattr(self, "compiler_tabs") and self.compiler_tabs:
@@ -426,7 +432,9 @@ def compile_all(self):
     self.set_controls_enabled(False)
     self.try_start_processes()
 
+
 # Nouvelle version de try_start_processes pour gérer les fichiers ignorés dynamiquement
+
 
 def _continue_compile_all(self):
     # Déplacé depuis compile_all pour poursuivre après BCASL sans bloquer l'UI
@@ -452,6 +460,7 @@ def _continue_compile_all(self):
         except Exception as e:
             self.log.append(f"⏩ Ignoré (erreur lecture) : {path} ({e})")
             return False
+
     # Détection du compilateur actif
     use_nuitka = False
     if hasattr(self, "compiler_tabs") and self.compiler_tabs:
@@ -502,6 +511,7 @@ def _continue_compile_all(self):
 
     self.set_controls_enabled(False)
     self.try_start_processes()
+
 
 def try_start_processes(self):
     from PySide6.QtWidgets import QApplication
@@ -565,6 +575,7 @@ def try_start_processes(self):
                         self.save_preferences()
                     except Exception:
                         pass
+
                 QTimer.singleShot(
                     0,
                     lambda a=list(artifacts): run_post_compile_async(
@@ -577,6 +588,7 @@ def try_start_processes(self):
                     self.compiler_tabs.setEnabled(True)
                 self.set_controls_enabled(True)
                 self.save_preferences()
+
 
 def start_compilation_process(self, file):
     import time
@@ -735,9 +747,11 @@ def start_compilation_process(self, file):
                             p.kill()
                         except Exception:
                             pass
+
                 grace.timeout.connect(_force_kill)
                 grace.start(10000)  # 10s grâce
                 proc._grace_kill_timer = grace
+
             t.timeout.connect(_on_timeout)
             t.start(int(timeout_sec * 1000))
             process._timeout_timer = t
@@ -747,12 +761,14 @@ def start_compilation_process(self, file):
                     timer.stop()
                 except Exception:
                     pass
+
             process.finished.connect(_cancel_timer)
             # Ensure QProcess object is deleted later to avoid dangling C++ objects
             process.finished.connect(lambda _ec, _es, p=process: p.deleteLater())
     except Exception:
         pass
     process.start()
+
 
 def handle_stdout(self, process):
     data = process.readAllStandardOutput().data().decode()
@@ -803,6 +819,7 @@ def handle_stdout(self, process):
                                         process.flush()
                                     except Exception:
                                         pass
+
                                 # 1) Message boxes {type,title,text,default_yes,id}
                                 msg = ui_req.get("msg_box")
                                 if isinstance(msg, dict):
@@ -935,6 +952,7 @@ def handle_stdout(self, process):
                                                     _w.setToolTip(str(props["tooltip"]))
                                             except Exception:
                                                 pass
+
                                         lay = cont.layout()
                                         if op == "add":
                                             wtype = widget.get("type")
@@ -1046,9 +1064,11 @@ def handle_stdout(self, process):
     # Désormais, la barre reste indéterminée pendant toute la compilation
     # (aucune mise à jour de valeur ici)
 
+
 def handle_stderr(self, process):
     data = process.readAllStandardError().data().decode()
     self.log.append(f"<span style='color:red;'>{data}</span>")
+
 
 def handle_finished(self, process, exit_code, exit_status):
     # Suppression de la réactivation ici (gérée à la toute fin dans try_start_processes)
@@ -1176,6 +1196,7 @@ def handle_finished(self, process, exit_code, exit_status):
     # Essaye de lancer d’autres compilations dans la file d’attente
     self.try_start_processes()
 
+
 def try_install_missing_modules(self, process):
     output = process.readAllStandardError().data().decode()
     missing_modules = re.findall(r"No module named '([\w\d_]+)'", output)
@@ -1262,6 +1283,7 @@ def try_install_missing_modules(self, process):
             self._already_tried_modules.clear()
             self._install_report.clear()
 
+
 def show_error_dialog(
     self, filename, filepath=None, exit_code=None, error_details=None
 ):
@@ -1283,6 +1305,7 @@ def show_error_dialog(
     dlg.setText(msg)
     dlg.setIcon(QMessageBox.Icon.Critical)
     dlg.exec()
+
 
 def cancel_all_compilations(self):
     # Flag to prevent new spawns during hard cancel
@@ -1368,6 +1391,7 @@ def cancel_all_compilations(self):
             "⛔ Toutes les compilations ont été annulées et tous les processus enfants tués.\n"
         )
 
+
 def build_pyinstaller_command(self, file):
     cmd = ["pyinstaller"]
     if self.opt_onefile.isChecked():
@@ -1419,6 +1443,7 @@ def build_pyinstaller_command(self, file):
         cmd += ["--distpath", output_dir]
 
     return cmd
+
 
 def build_nuitka_command(self, file):
     cmd = ["python3", "-m", "nuitka"]

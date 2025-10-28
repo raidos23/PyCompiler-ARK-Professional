@@ -14,6 +14,7 @@ _TAB_INDEX: dict[str, int] = {}
 # Keep live engine instances to support dynamic interactions (e.g., i18n refresh)
 _INSTANCES: dict[str, CompilerEngine] = {}
 
+
 def unregister(eid: str) -> None:
     """Unregister an engine id and its tab mapping if present."""
     try:
@@ -25,6 +26,7 @@ def unregister(eid: str) -> None:
             del _TAB_INDEX[eid]
     except Exception:
         pass
+
 
 def register(engine_cls: type[CompilerEngine]):
     """Register an engine class. Enforces a non-empty unique id.
@@ -48,17 +50,20 @@ def register(engine_cls: type[CompilerEngine]):
         # Fail closed: do not crash the app
         return engine_cls
 
+
 def get_engine(eid: str) -> Optional[type[CompilerEngine]]:
     try:
         return _REGISTRY.get(eid)
     except Exception:
         return None
 
+
 def available_engines() -> list[str]:
     try:
         return list(_ORDER)
     except Exception:
         return []
+
 
 def bind_tabs(gui) -> None:
     """Create tabs for all registered engines that expose create_tab and store indexes.
@@ -104,6 +109,7 @@ def bind_tabs(gui) -> None:
         # Swallow to avoid breaking app init
         pass
 
+
 def apply_translations(gui, tr: dict) -> None:
     """Propagate i18n translations to all engines that expose 'apply_i18n(gui, tr)'."""
     try:
@@ -117,6 +123,7 @@ def apply_translations(gui, tr: dict) -> None:
     except Exception:
         pass
 
+
 def get_engine_for_tab(index: int) -> Optional[str]:
     try:
         for eid, idx in _TAB_INDEX.items():
@@ -125,6 +132,7 @@ def get_engine_for_tab(index: int) -> Optional[str]:
     except Exception:
         pass
     return None
+
 
 def create(eid: str) -> CompilerEngine:
     cls = get_engine(eid)

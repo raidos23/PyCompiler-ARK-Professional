@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from .dialogs import ProgressDialog
 
+
 class VenvManager:
     """
     Encapsulates all virtual environment (venv) related operations for the GUI.
@@ -60,6 +61,7 @@ class VenvManager:
 
         # Internal timers to enforce timeouts on background processes
         self._proc_timers: list[QTimer] = []
+
     # ---------- Public helpers for engines ----------
     def resolve_project_venv(self) -> str | None:
         """Resolve the venv root to use based on manual selection or workspace.
@@ -148,6 +150,7 @@ class VenvManager:
                     callback(code == 0)
                 except Exception:
                     pass
+
             proc.finished.connect(_done)
             proc.setProgram(pip_exe)
             proc.setArguments(["show", tool])
@@ -175,6 +178,7 @@ class VenvManager:
             self._check_next_venv_pkg()
         except Exception as e:
             self._safe_log(f"❌ Erreur ensure_tools_installed: {e}")
+
     # ---------- Utility ----------
     def _safe_log(self, text: str):
         try:
@@ -248,6 +252,7 @@ class VenvManager:
             return False
         except Exception:
             return False
+
     # ---------- Venv validation ----------
     def _is_within(self, path: str, root: str) -> bool:
         try:
@@ -315,6 +320,7 @@ class VenvManager:
     def is_valid_venv(self, venv_root: str) -> bool:
         ok, _ = self.validate_venv_strict(venv_root)
         return ok
+
     # ---------- Manual selection ----------
     def select_venv_manually(self):
         folder = QFileDialog.getExistingDirectory(
@@ -337,6 +343,7 @@ class VenvManager:
             self.parent.venv_path_manuel = None
             if hasattr(self.parent, "venv_label") and self.parent.venv_label:
                 self.parent.venv_label.setText("Venv sélectionné : Aucun")
+
     # ---------- Existing venv: check and install tools ----------
     def check_tools_in_venv(self, venv_path: str):
         try:
@@ -373,6 +380,7 @@ class VenvManager:
                 self.venv_check_progress.set_progress(0, len(self._venv_check_pkgs))
                 self.venv_check_progress.show()
                 self._check_next_venv_pkg()
+
             self._verify_venv_binding_async(venv_path, _after_binding)
         except Exception as e:
             self._safe_log(f"❌ Erreur lors de la vérification du venv: {e}")
@@ -552,6 +560,7 @@ class VenvManager:
                             callback(self._is_within(site_path, venv_root))
                         except Exception:
                             callback(False)
+
                     p2.finished.connect(_p2_finished)
                     p2.setProgram(vpip)
                     p2.setArguments(["--version"])
@@ -559,6 +568,7 @@ class VenvManager:
                     p2.start()
                 except Exception:
                     callback(False)
+
             p1.finished.connect(_p1_finished)
             p1.setProgram(vpython)
             p1.setArguments(
@@ -585,6 +595,7 @@ class VenvManager:
                             process.kill()
                     except Exception:
                         pass
+
                 t.timeout.connect(_on_timeout)
                 t.start(timeout_ms)
                 # keep reference to avoid GC
@@ -597,6 +608,7 @@ class VenvManager:
                             t.stop()
                     except Exception:
                         pass
+
                 process.finished.connect(_clear_timer)
         except Exception:
             pass
@@ -631,6 +643,7 @@ class VenvManager:
         except Exception:
             pass
         self._check_next_venv_pkg()
+
     # ---------- Create venv if needed ----------
     def create_venv_if_needed(self, path: str):
         existing, default_path = self._detect_venv_in(path)
@@ -778,6 +791,7 @@ class VenvManager:
             except Exception:
                 pass
         QApplication.processEvents()
+
     # ---------- Install requirements.txt ----------
     def install_requirements_if_needed(self, path: str):
         req_path = os.path.join(path, "requirements.txt")
@@ -807,6 +821,7 @@ class VenvManager:
                 )
                 return
             self._start_requirements_install(path, venv_root, req_path)
+
         self._verify_venv_binding_async(venv_root, _after_binding)
 
     def _start_requirements_install(self, path: str, venv_root: str, req_path: str):
@@ -1000,6 +1015,7 @@ class VenvManager:
         except Exception:
             pass
         QApplication.processEvents()
+
     # ---------- Background tasks status/control ----------
     def has_active_tasks(self) -> bool:
         try:

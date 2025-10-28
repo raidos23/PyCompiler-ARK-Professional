@@ -1,4 +1,3 @@
-
 """
 Analyse des dépendances Python pour PyCompiler Pro++.
 Inclut la détection, la suggestion et l'installation automatique des modules manquants.
@@ -17,8 +16,21 @@ sont conservées.
 """
 
 from __future__ import annotations
-from analyser import ( _install_next_dependency, _check_module_installed,
-                      _is_stdlib_module, _on_dep_pip_finished, _on_dep_pip_output, suggest_missing_dependencies)
+from analyser import (
+    _install_next_dependency,
+    _check_module_installed,
+    _is_stdlib_module,
+    _on_dep_pip_finished,
+    _on_dep_pip_output,
+    suggest_missing_dependencies,
+)
 
 
-__all__ = ["_install_next_dependency", "_check_module_installed", "_is_stdlib_module", "_on_dep_pip_finished", "suggest_missing_dependencies", "_on_dep_pip_output"]
+__all__ = [
+    "_install_next_dependency",
+    "_check_module_installed",
+    "_is_stdlib_module",
+    "_on_dep_pip_finished",
+    "suggest_missing_dependencies",
+    "_on_dep_pip_output",
+]

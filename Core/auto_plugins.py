@@ -62,6 +62,7 @@ except Exception:  # fallback au cas où
         except Exception:
             return False
 
+
 # Cache mapping (path -> data)
 _MAPPING_CACHE: dict[str, dict[str, dict[str, Optional[str]]]] = {}
 # Collect validation warnings to surface them later in compute_auto_for_engine
@@ -72,6 +73,7 @@ ALIASES_IMPORT_TO_PACKAGE: dict[str, str] = {}
 
 # Aliases package_name -> import_name canonique utilisé pour PyInstaller --collect-all. Extensible à l'exécution.
 PACKAGE_TO_IMPORT_NAME: dict[str, str] = {}
+
 
 # Fonctions d'extension d'alias (plug-and-play)
 def register_import_alias(import_name: str, package_name: str) -> None:
@@ -85,6 +87,7 @@ def register_import_alias(import_name: str, package_name: str) -> None:
     except Exception:
         pass
 
+
 def register_package_import_name(package_name: str, import_name: str) -> None:
     try:
         if (
@@ -95,6 +98,7 @@ def register_package_import_name(package_name: str, import_name: str) -> None:
             PACKAGE_TO_IMPORT_NAME[package_name] = import_name
     except Exception:
         pass
+
 
 def register_aliases(
     *,
@@ -111,6 +115,7 @@ def register_aliases(
     except Exception:
         pass
 
+
 # Bilingual translation helper (fallback to English if self.tr is unavailable)
 def _tr(self, fr: str, en: str) -> str:
     try:
@@ -121,9 +126,11 @@ def _tr(self, fr: str, en: str) -> str:
         pass
     return en
 
+
 # Normalisation des noms (pour matcher mapping keys insensibles à la casse/aux tirets)
 def _norm(s: str) -> str:
     return s.replace("_", "-").lower().strip()
+
 
 def _read_json_file(path: str) -> dict[str, dict[str, Optional[str]]]:
     with open(path, encoding="utf-8-sig") as f:  # support BOM
@@ -165,6 +172,7 @@ def _read_json_file(path: str) -> dict[str, dict[str, Optional[str]]]:
         _VALIDATION_WARNINGS.append(f"Top-level mapping is not an object in '{path}'")
     return normed
 
+
 def _load_mapping(
     base_dir: str, workspace_dir: Optional[str] = None
 ) -> tuple[dict[str, dict[str, Optional[str]]], Optional[str]]:
@@ -184,6 +192,7 @@ def _load_mapping(
     except Exception:
         pass
     return {}, None
+
 
 def _parse_requirements(requirements_path: str) -> set[str]:
     """Extract package names from requirements.txt, handling URLs, VCS, and extras.
@@ -245,6 +254,7 @@ def _parse_requirements(requirements_path: str) -> set[str]:
         return found
     return found
 
+
 def _scan_imports(py_files: list[str], workspace_dir: str) -> set[str]:
     """Analyse les fichiers .py et retourne les noms de modules importés (top-level).
     - Ignore venv/, __pycache__/ et dossiers cachés
@@ -295,6 +305,7 @@ def _scan_imports(py_files: list[str], workspace_dir: str) -> set[str]:
     result = {m for m in found if not _is_stdlib_module(m) and m not in internal_names}
     return result
 
+
 def _match_modules_to_mapping(
     modules: set[str], mapping: dict[str, dict[str, Optional[str]]]
 ) -> tuple[dict[str, dict[str, Optional[str]]], dict[str, str]]:
@@ -328,6 +339,7 @@ def _match_modules_to_mapping(
 
     return matched, pkg_to_import
 
+
 # Default builder for unknown engines: interpret mapping values as final CLI args
 # Supported value types per package entry and engine_id key:
 # - str: a single CLI argument (e.g., "--enable-feature=foo")
@@ -336,6 +348,7 @@ def _match_modules_to_mapping(
 # - True: ignored by default (requires engine-specific semantics); provide a custom builder
 # The default builder performs simple de-duplication while preserving order.
 from typing import Optional as _Optional  # local alias to avoid confusion
+
 
 def _default_builder_for_engine(engine_id: str):
     def _builder(
@@ -370,10 +383,13 @@ def _default_builder_for_engine(engine_id: str):
                 seen.add(a)
                 dedup.append(a)
         return dedup
+
     return _builder
+
 
 # --------- Engine builders registry (plug-and-play) ---------
 _ENGINE_BUILDERS: dict[str, callable] = {}
+
 
 def register_auto_builder(engine_id: str, builder) -> None:
     """Register a builder function for a given engine_id.
@@ -382,6 +398,7 @@ def register_auto_builder(engine_id: str, builder) -> None:
     if not engine_id or not callable(builder):
         return
     _ENGINE_BUILDERS[engine_id] = builder
+
 
 def _maybe_load_plugin_auto_builder(engine_id: str) -> None:
     """Optionally load a plugin-provided auto builder for engine_id.
@@ -405,6 +422,7 @@ def _maybe_load_plugin_auto_builder(engine_id: str) -> None:
             return
     except Exception:
         return
+
 
 def _write_report_if_enabled(self, report: dict):
     """Ecrit un rapport JSON si activé via attribut ou variable d'env (écriture atomique)."""
@@ -462,6 +480,7 @@ def _write_report_if_enabled(self, report: dict):
             )
         except Exception:
             pass
+
 
 def _detect_modules_preferring_requirements(self) -> tuple[set[str], str]:
     """Retourne (modules_detectés, source: 'requirements'|'pyproject'|'imports')."""
@@ -527,6 +546,7 @@ def _detect_modules_preferring_requirements(self) -> tuple[set[str], str]:
     mods = _scan_imports(py_files, self.workspace_dir)
     return mods, "imports"
 
+
 def _match_with_requirements_aware(
     modules: set[str], mapping: dict[str, dict[str, Optional[str]]]
 ) -> tuple[dict[str, dict[str, Optional[str]]], dict[str, str]]:
@@ -554,6 +574,7 @@ def _match_with_requirements_aware(
     matched.update(add)
     pkg_to_import.update(add_imp)
     return matched, pkg_to_import
+
 
 def compute_for_all(
     self, engine_ids: Optional[list[str]] = None
@@ -619,6 +640,7 @@ def compute_for_all(
             args = []
         results[e] = args
     return results
+
 
 def _load_engine_package_mapping(
     engine_id: str,
@@ -708,6 +730,7 @@ def _load_engine_package_mapping(
         pass
 
     return combined, used
+
 
 def compute_auto_for_engine(self, engine_id: str) -> list[str]:
     """Calcule les arguments auto pour un moteur donné (plug-and-play)."""

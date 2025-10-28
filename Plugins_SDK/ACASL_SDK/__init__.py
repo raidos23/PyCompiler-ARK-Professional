@@ -65,6 +65,7 @@ from Plugins_SDK import (
 
 # --- Unified i18n helper for BCASL/ACASL plugins ---
 
+
 def apply_plugin_i18n(
     plugin_instance, plugin_file_or_dir, tr_dict: dict, *, fallback_to_core: bool = True
 ) -> dict:
@@ -148,9 +149,11 @@ def apply_plugin_i18n(
                             return json.load(f) or {}
                     except Exception:
                         return {}
+
                 return await loop.run_in_executor(None, _read)
             except Exception:
                 return {}
+
         # Try each candidate
         for cand in candidates:
             try:
@@ -186,6 +189,7 @@ def apply_plugin_i18n(
                 pass
             return merged
         return data
+
     # Run async function synchronously
     try:
         loop = asyncio.get_event_loop()
@@ -202,7 +206,9 @@ def apply_plugin_i18n(
         # Fallback: return empty dict on error
         return tr_dict if isinstance(tr_dict, dict) else {}
 
+
 # --- System installation helpers for ACASL plugins ---
+
 
 def _is_noninteractive(sctx) -> bool:
     try:
@@ -212,6 +218,7 @@ def _is_noninteractive(sctx) -> bool:
         )
     except Exception:
         return False
+
 
 def ensure_system_pip_install(
     sctx,
@@ -289,11 +296,13 @@ def ensure_system_pip_install(
         pass
     return False
 
+
 def _has_cmd(cmd: str) -> bool:
     try:
         return shutil.which(cmd) is not None
     except Exception:
         return False
+
 
 def ensure_system_packages(
     sctx,
@@ -460,6 +469,7 @@ def ensure_system_packages(
         except Exception:
             pass
     return bool(ok_all)
+
 
 # Ac_PluginBase is imported from acasl module above
 

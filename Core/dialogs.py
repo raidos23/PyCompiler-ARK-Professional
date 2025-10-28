@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+
 class ProgressDialog(QDialog):
     def __init__(self, title="Progression", parent=None, cancelable=False):
         super().__init__(parent)

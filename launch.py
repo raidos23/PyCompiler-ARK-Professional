@@ -10,6 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def check_python_version():
     """Check if Python version meets requirements."""
     if sys.version_info < (3, 10):
@@ -22,6 +23,7 @@ def check_python_version():
 
     print(f"✅ Python {sys.version.split()[0]} - Compatible")
     return True
+
 
 def check_virtual_environment():
     """Check if running in a virtual environment."""
@@ -39,6 +41,7 @@ def check_virtual_environment():
         print("   Recommendation: Use 'python -m venv .venv' and activate it")
 
     return in_venv
+
 
 def check_dependencies():
     """Check if required dependencies are installed."""
@@ -60,6 +63,7 @@ def check_dependencies():
         return False
 
     return True
+
 
 def check_development_tools():
     """Check if development tools are available."""
@@ -85,6 +89,7 @@ def check_development_tools():
         except (subprocess.TimeoutExpired, FileNotFoundError):
             print(f"❌ {tool} - {description} (Not installed)")
 
+
 def check_platform_specific():
     """Check platform-specific requirements."""
     system = platform.system().lower()
@@ -101,6 +106,7 @@ def check_platform_specific():
     elif system == "windows":
         # Windows specific checks
         print("   Windows-specific checks passed")
+
 
 def run_quality_checks():
     """Run basic quality checks."""
@@ -123,6 +129,7 @@ def run_quality_checks():
 
     return True
 
+
 def launch_application():
     """Launch the main application."""
     print("\n🚀 Launching PyCompiler ARK++ Professional Edition...")
@@ -143,6 +150,7 @@ def launch_application():
         return False
 
     return True
+
 
 def main():
     """Main launcher function."""
@@ -181,6 +189,7 @@ def main():
     launch_application()
     print("=" * 60)
     print("✅ PyCompiler ARK++ Professional Edition session completed")
+
 
 if __name__ == "__main__":
     main()

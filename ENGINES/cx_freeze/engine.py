@@ -15,6 +15,7 @@ from engine_sdk import (
     resolve_project_venv,
 )
 
+
 class CxFreezeEngine(CompilerEngine):
     id = "cx_freeze"
     name = "cx_Freeze"
@@ -165,6 +166,7 @@ class CxFreezeEngine(CompilerEngine):
                     return gui.tr(fr, en)
                 except Exception:
                     return fr
+
             os_name = platform.system()
             if os_name == "Linux":
                 # Vérification complète des outils nécessaires
@@ -464,6 +466,7 @@ class CxFreezeEngine(CompilerEngine):
                             vm.ensure_tools_installed(vroot, ["cx_Freeze"])
                     except Exception:
                         pass
+
                 try:
                     vm.is_tool_installed_async(vroot, "cx_Freeze", _on_check)
                 except Exception:
@@ -869,6 +872,7 @@ class CxFreezeEngine(CompilerEngine):
                         gui.output_dir_input.setText(d)
                 except Exception:
                     pass
+
         try:
             browse_btn.clicked.connect(_browse)
         except Exception:
@@ -955,6 +959,7 @@ class CxFreezeEngine(CompilerEngine):
                 )
             if p:
                 icon_edit.setText(p)
+
         try:
             icon_btn.clicked.connect(_browse_icon)
         except Exception:
@@ -1070,6 +1075,7 @@ class CxFreezeEngine(CompilerEngine):
                 except Exception:
                     pass
                 return False
+
             for cand in candidates:
                 if _load_lang(cand):
                     break
@@ -1081,6 +1087,7 @@ class CxFreezeEngine(CompilerEngine):
                     return v if isinstance(v, str) and v.strip() else None
                 except Exception:
                     return None
+
             # Apply title text
             try:
                 if getattr(self, "_cx_title", None):

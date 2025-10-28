@@ -22,6 +22,7 @@ from .progress import show_msgbox
 Pathish = Union[str, Path]
 LogFn = Callable[[str], None]
 
+
 @dataclass
 class SDKContext:
     """Execution context passed to API plugins (BCASL/ACASL).
@@ -72,6 +73,7 @@ class SDKContext:
 
     def log_error(self, message: str) -> None:
         self.log(f"[ERROR] {message}")
+
     # ---------- Message boxes ----------
     def show_msgbox(
         self, kind: str, title: str, text: str, *, default: Optional[str] = None
@@ -91,6 +93,7 @@ class SDKContext:
         return bool(
             show_msgbox("question", title, text, default="Yes" if default_yes else "No")
         )
+
     # ---------- Environment/policy ----------
     @property
     def noninteractive(self) -> bool:
@@ -113,6 +116,7 @@ class SDKContext:
             return _QtW2.QApplication.instance() is not None
         except Exception:
             return False
+
     # ---------- Cancelation (ACASL-safe default) ----------
     def is_canceled(self) -> bool:
         """Return True if the current operation should be canceled.
@@ -120,6 +124,7 @@ class SDKContext:
         by the host or extended context.
         """
         return False
+
     # ---------- Subprocess convenience ----------
     def run_command(
         self,
@@ -173,12 +178,14 @@ class SDKContext:
 
             def _clamp(s: str, n: int = 4000) -> str:
                 return s if len(s) <= n else (s[:n] + "\n<...truncated...>")
+
             if rc == -999:
                 self.log_warn(f"run_command timeout ({timeout_s}s): {cmd}")
             self.log_info(f"$ {cmd}\n[stdout]\n{_clamp(out)}\n[stderr]\n{_clamp(err)}")
         except Exception:
             pass
         return rc, out, err
+
     # ---------- File helpers ----------
     def path(self, *parts: Pathish) -> Path:
         p = self.workspace_root
@@ -239,6 +246,7 @@ class SDKContext:
             return p.read_text(encoding="utf-8", errors="ignore")
         except Exception:
             return None
+
     # ---------- Workspace scanning ----------
     def iter_files(
         self,
@@ -327,6 +335,7 @@ class SDKContext:
                 self._iter_cache[key] = matches
             except Exception:
                 pass
+
     # ---------- Replace helpers ----------
     def write_text_atomic(
         self,
@@ -452,6 +461,7 @@ class SDKContext:
                 except Exception:
                     pass
         return stats
+
     # ---------- Timing ----------
     def time_step(self, label: str):
         import contextlib
@@ -466,7 +476,9 @@ class SDKContext:
             finally:
                 dt = (_t.perf_counter() - t0) * 1000.0
                 self.log_info(f"{label} done in {dt:.1f} ms")
+
         return _ctx()
+
     # ---------- Parallel map ----------
     def parallel_map(
         self,
@@ -495,6 +507,7 @@ class SDKContext:
                 except Exception as e:
                     self.log_error(f"parallel_map item {idx} failed: {e}")
         return results
+
 
 __all__ = [
     "SDKContext",

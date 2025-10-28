@@ -29,6 +29,7 @@ from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 
 from .dialogs import ProgressDialog
 
+
 class SysDependencyManager:
     def __init__(self, parent_widget=None):
         self.parent_widget = parent_widget
@@ -76,6 +77,7 @@ class SysDependencyManager:
                     tasks.remove(t)
         except Exception:
             pass
+
     # ------------- Debug/telemetry helpers -------------
     def set_debug(self, enabled: bool = True) -> None:
         self._debug_enabled = bool(enabled)
@@ -115,6 +117,7 @@ class SysDependencyManager:
             return "\n".join(getattr(self, "_debug_buffer", [])[-1000:])
         except Exception:
             return ""
+
     # ------------- Generic helpers -------------
     def tr(self, fr: str, en: str) -> str:
         try:
@@ -146,6 +149,7 @@ class SysDependencyManager:
         if ok and pwd:
             return pwd
         return None
+
     # ------------- MessageBox helpers -------------
     def msg_info(
         self, title_fr: str, title_en: str, body_fr: str, body_en: str
@@ -287,6 +291,7 @@ class SysDependencyManager:
                         on_finished(ec, es)
                 finally:
                     self._unregister_task(proc)
+
             proc.readyReadStandardOutput.connect(lambda p=proc: _emit_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _emit_output(p, True))
             proc.finished.connect(_on_finished)
@@ -395,6 +400,7 @@ class SysDependencyManager:
                         on_finished(ec, es)
                 finally:
                     self._unregister_task(proc)
+
             proc.started.connect(_on_started)
             proc.readyReadStandardOutput.connect(lambda p=proc: _emit_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _emit_output(p, True))
@@ -442,6 +448,7 @@ class SysDependencyManager:
                 webbrowser.open(u)
             except Exception:
                 pass
+
     # ------------- Windows package installs (winget) -------------
     def detect_windows_package_manager(self) -> Optional[str]:
         """Detect winget (preferred) or choco on Windows."""
@@ -567,6 +574,7 @@ class SysDependencyManager:
 
             def _on_finished(_ec, _es):
                 _start_next()
+
             proc.readyReadStandardOutput.connect(lambda p=proc: _on_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _on_output(p, True))
             proc.finished.connect(_on_finished)
@@ -578,6 +586,7 @@ class SysDependencyManager:
             return proc
         except Exception:
             return None
+
     # ------------- Progress helpers for system installs -------------
     def start_process_with_progress(
         self,
@@ -618,6 +627,7 @@ class SysDependencyManager:
                         dlg.set_message(lines[-1])
                 except Exception:
                     pass
+
             proc.readyReadStandardOutput.connect(lambda p=proc: _on_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _on_output(p, True))
 
@@ -628,6 +638,7 @@ class SysDependencyManager:
                     pass
                 finally:
                     self._unregister_task(proc)
+
             proc.finished.connect(_on_finished_wrapper)
             # Register task for global coordination (quit handling)
             self._register_task(
@@ -727,6 +738,7 @@ class SysDependencyManager:
                         proc.write((password + "\n").encode("utf-8"))
                 except Exception:
                     pass
+
             proc.started.connect(_on_started)
             proc.readyReadStandardOutput.connect(lambda p=proc: _on_output(p, False))
             proc.readyReadStandardError.connect(lambda p=proc: _on_output(p, True))
@@ -738,6 +750,7 @@ class SysDependencyManager:
                     pass
                 finally:
                     self._unregister_task(proc)
+
             proc.finished.connect(_on_finished_wrapper)
             # Register task for global coordination (quit handling)
             self._register_task(

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+
 class CompilerEngine:
     """
     Base class for a pluggable compilation engine.

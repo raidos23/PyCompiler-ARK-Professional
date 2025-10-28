@@ -13,6 +13,7 @@ from typing import Any, Optional, Union
 # -----------------------------
 __version__ = "3.2.3"
 
+
 def _parse_version(v: str) -> tuple:
     try:
         parts = v.strip().split("+")[0].split("-")[0].split(".")
@@ -23,6 +24,7 @@ def _parse_version(v: str) -> tuple:
     except Exception:
         return (0, 0, 0)
 
+
 def ensure_min_sdk(required: str) -> bool:
     """Return True if current API_SDK version >= required (semver)."""
     try:
@@ -31,6 +33,7 @@ def ensure_min_sdk(required: str) -> bool:
         return cur >= need
     except Exception:
         return False
+
 
 # -----------------------------
 # Modular re-exports (progress, config, context)
@@ -84,8 +87,10 @@ try:  # noqa: E402
         def register_plugin(cls: Any) -> Any:  # type: ignore
             setattr(cls, "__bcasl_plugin__", True)
             return cls
+
         BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
 except Exception:  # pragma: no cover — dev fallback when BCASL is not importable
+
     class Bc_PluginBase:  # type: ignore
         pass
 
@@ -104,14 +109,17 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
     def register_plugin(cls: Any) -> Any:  # type: ignore
         setattr(cls, "__bcasl_plugin__", True)
         return cls
+
     BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
 
 # ACASL PostCompileContext facade (optional, available when acasl package is present)
 try:
     from acasl import ACASLContext as PostCompileContext  # type: ignore
 except Exception:
+
     class PostCompileContext:  # type: ignore
         pass
+
 
 # ACASL PluginBase (post-compile plugins)
 class Ac_PluginBase:  # type: ignore
@@ -119,11 +127,14 @@ class Ac_PluginBase:  # type: ignore
 
     pass
 
+
 Pathish = Union[str, Path]
+
 
 def _sdk_snake_case(name: str) -> str:
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
 
 def plugin(id: Optional[str] = None, version: str = "", description: str = ""):
     """Decorator to declare plugin metadata quickly.
@@ -141,7 +152,9 @@ def plugin(id: Optional[str] = None, version: str = "", description: str = ""):
         cls.version = version
         cls.description = description
         return cls
+
     return _wrap
+
 
 def _detect_workspace_root(pre_ctx: Any) -> Path:
     # 1) Use the workspace selected by the application (UI)
@@ -169,6 +182,7 @@ def _detect_workspace_root(pre_ctx: Any) -> Path:
         "Workspace not found: select a folder in the UI or provide 'workspace_root' in context."
     )
 
+
 def wrap_context(
     pre_ctx: PreCompileContext,
     *,
@@ -184,6 +198,7 @@ def wrap_context(
         log_fn=log_fn,
         engine_id=engine,
     )
+
 
 def wrap_post_context(
     post_ctx: PostCompileContext, *, log_fn: Optional[Any] = None
@@ -236,9 +251,11 @@ def wrap_post_context(
         allowed_dir=allowed_dir,
     )
 
+
 # -----------------------------
 # Subprocess helper (safe run)
 # -----------------------------
+
 
 def run_command(
     cmd: list[str] | str,
@@ -290,9 +307,11 @@ def run_command(
         )
         return -999, out, err
 
+
 # -----------------------------
 # Per-plugin i18n loader (from local languages/)
 # -----------------------------
+
 
 def _parse_local_lang_text(text: str, suffix: str) -> dict[str, Any]:
     try:
@@ -317,6 +336,7 @@ def _parse_local_lang_text(text: str, suffix: str) -> dict[str, Any]:
     except Exception:
         return {}
     return {}
+
 
 async def load_plugin_translations(
     plugin_file_or_dir: Pathish,
@@ -385,6 +405,7 @@ async def load_plugin_translations(
         pass
     return merged
 
+
 def _load_local_lang_file_any(lang_dir: Path, code: str) -> Optional[dict[str, Any]]:
     if not lang_dir.exists() or not lang_dir.is_dir():
         return None
@@ -406,6 +427,7 @@ def _load_local_lang_file_any(lang_dir: Path, code: str) -> Optional[dict[str, A
         except Exception:
             continue
     return None
+
 
 # Optional parsers for plugin-level i18n files
 try:
@@ -452,6 +474,7 @@ PLUGIN_TEMPLATE += "\n".join(
     ]
 )
 
+
 def scaffold_plugin(
     target_dir: Pathish,
     plugin_id: str,
@@ -480,9 +503,11 @@ def scaffold_plugin(
     file_path.write_text(content + "\n", encoding="utf-8")
     return file_path
 
+
 # -----------------------------
 # Public bridge to set selected workspace from plugins
 # -----------------------------
+
 
 def set_selected_workspace(path: Pathish) -> bool:
     """Always accept workspace change requests (SDK-level contract).
@@ -514,9 +539,11 @@ def set_selected_workspace(path: Pathish) -> bool:
         pass
     return True
 
+
 # -----------------------------
 # Capabilities report
 # -----------------------------
+
 
 def get_capabilities() -> dict:
     return {
@@ -543,12 +570,14 @@ def get_capabilities() -> dict:
         },
     }
 
+
 def sdk_info() -> dict:
     return {
         "version": __version__,
         "exports": sorted(list(__all__)),
         "capabilities": get_capabilities(),
     }
+
 
 __all__ = [
     # Progress/messaging

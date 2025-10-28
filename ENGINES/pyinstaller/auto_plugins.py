@@ -5,6 +5,7 @@ from __future__ import annotations
 # Signature required by host: (matched: dict, pkg_to_import: dict) -> list[str]
 from engine_sdk import register_auto_builder  # type: ignore
 
+
 def AUTO_BUILDER(
     matched: dict[str, dict[str, object]], pkg_to_import: dict[str, str]
 ) -> list[str]:
@@ -90,6 +91,7 @@ def AUTO_BUILDER(
             i += 1
 
     return out
+
 
 # Register at import time via the SDK facade
 try:

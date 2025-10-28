@@ -31,6 +31,7 @@ except Exception:  # pragma: no cover
 
 Pathish = Union[str, Path]
 
+
 class ConfigView:
     """Convenient read/write view over the global configuration.
 
@@ -53,6 +54,7 @@ class ConfigView:
             plugin_cfg = {}
             plugins[plugin_id] = plugin_cfg
         return ConfigView(plugin_cfg)
+
     # Common helpers
     @property
     def required_files(self) -> list[str]:
@@ -73,6 +75,7 @@ class ConfigView:
     def engine_id(self) -> Optional[str]:
         v = self._data.get("engine_id")
         return str(v) if isinstance(v, (str, bytes)) else None
+
 
 def load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     """Read bcasl.* or .bcasl.* at the workspace root, supporting JSON/YAML/TOML/INI/CFG."""
@@ -129,6 +132,7 @@ def load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             except Exception:
                 continue
         return {}
+
     candidates = [
         "bcasl.json",
         ".bcasl.json",
@@ -159,6 +163,7 @@ def load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             if isinstance(cfg, dict):
                 return cfg
     return {}
+
 
 def ensure_settings_file(
     sctx: Any,
@@ -257,6 +262,7 @@ def ensure_settings_file(
     except Exception as e:
         raise RuntimeError(f"Unable to write settings file: {target}") from e
     return target
+
 
 __all__ = [
     "ConfigView",

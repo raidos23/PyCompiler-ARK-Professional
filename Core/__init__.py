@@ -56,6 +56,7 @@ _LOCK = RLock()
 # Cache per-module candidate targets to avoid rebuilding lists on each access
 _CANDIDATES_CACHE: dict[str, list[tuple[str, str | None]]] = {}
 
+
 def _get_candidates(mod_name: str) -> list[tuple[str, str | None]]:
     """Build and cache a prioritized list of import targets for a module name.
 
@@ -75,6 +76,7 @@ def _get_candidates(mod_name: str) -> list[tuple[str, str | None]]:
         if key not in seen:
             seen.add(key)
             lst.append((t, p))
+
     # 1) As declared
     if mod_name.startswith("."):
         add(mod_name, _PKG)
@@ -87,6 +89,7 @@ def _get_candidates(mod_name: str) -> list[tuple[str, str | None]]:
         add(f"{_NAME}.{tail}", None)
     _CANDIDATES_CACHE[mod_name] = lst
     return lst
+
 
 # Map public names to (module, attribute) pairs for lazy resolution
 _EXPORTS: dict[str, tuple[str, str]] = {
@@ -137,6 +140,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
 # These are not executed at runtime because the condition is constant False.
 if False:  # pragma: no cover
     pass
+
 
 def _load_export(name: str) -> Any:
     """Resolve and cache a public symbol lazily.
@@ -238,6 +242,7 @@ def _load_export(name: str) -> Any:
         f"Failed to load export '{name}' ({pkg}.{tail}.{attr}): {last_err}"
     ) from last_err
 
+
 def __getattr__(name: str) -> Any:
     """Lazy attribute resolver for the public utils API (PEP 562).
 
@@ -305,7 +310,9 @@ def __getattr__(name: str) -> Any:
         return api
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
+
 # Internal maintenance helper (not exported): clear lazy-load caches
+
 
 def _clear_lazy_caches() -> None:
     """Clear all lazy-load caches (for tests/debugging)."""
@@ -319,10 +326,13 @@ def _clear_lazy_caches() -> None:
     except Exception:
         pass
 
+
 # Precompute directory listing and __all__ for faster introspection
 _DIR: list[str] = sorted(list(_EXPORTS.keys()) + ["api", "__version__"])
 
+
 def __dir__() -> list[str]:  # aid IDEs and dir(utils)
     return _DIR
+
 
 __all__ = tuple(_DIR)

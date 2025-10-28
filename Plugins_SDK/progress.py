@@ -27,6 +27,7 @@ try:
 except Exception:
     _AppProgressDialog = None
 
+
 def _is_noninteractive() -> bool:
     try:
         import os as _os
@@ -37,6 +38,7 @@ def _is_noninteractive() -> bool:
         return str(v).strip().lower() not in ("", "0", "false", "no")
     except Exception:
         return False
+
 
 def _qt_active_parent():
     if _QtW is None:
@@ -57,6 +59,7 @@ def _qt_active_parent():
         return None
     except Exception:
         return None
+
 
 def show_msgbox(
     kind: str, title: str, text: str, *, parent=None, buttons=None, default=None
@@ -118,6 +121,7 @@ def show_msgbox(
                 else False
             )
         return None
+
 
 class ProgressHandle:
     """UI/console progress dialog with optional cancelation support.
@@ -320,6 +324,7 @@ class ProgressHandle:
             pass
         return False
 
+
 def create_progress(
     title: str, text: str = "", maximum: int = 0, cancelable: bool = False
 ) -> ProgressHandle:
@@ -327,12 +332,14 @@ def create_progress(
         title=title, text=text, maximum=maximum, cancelable=cancelable
     )
 
+
 def progress(
     title: str, text: str = "", maximum: int = 0, cancelable: bool = False
 ) -> ProgressHandle:
     return create_progress(
         title=title, text=text, maximum=maximum, cancelable=cancelable
     )
+
 
 def sys_msgbox_for_installing(
     subject: str,
@@ -397,6 +404,7 @@ def sys_msgbox_for_installing(
         return ("sudo", pwd) if pwd else None
     except Exception:
         return None
+
 
 __all__ = [
     "ProgressHandle",

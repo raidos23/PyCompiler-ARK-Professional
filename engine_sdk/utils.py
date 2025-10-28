@@ -55,6 +55,7 @@ _REDACT_PATTERNS = [
     re.compile(r"(token\s*[:=]\s*)([A-Za-z0-9\-_.]{12,})", re.IGNORECASE),
 ]
 
+
 def redact_secrets(text: str) -> str:
     """Return text with obvious secrets masked to avoid log leakage."""
     if not text:
@@ -67,9 +68,11 @@ def redact_secrets(text: str) -> str:
         pass
     return redacted
 
+
 # -------------------------------
 # Workspace path safety
 # -------------------------------
+
 
 def is_within_workspace(workspace: Pathish, p: Pathish) -> bool:
     """True if path p resolves within workspace."""
@@ -80,6 +83,7 @@ def is_within_workspace(workspace: Pathish, p: Pathish) -> bool:
         return True
     except Exception:
         return False
+
 
 def safe_join(workspace: Pathish, *parts: Pathish) -> Path:
     """Join parts under workspace and ensure the resolved path stays within it.
@@ -94,9 +98,11 @@ def safe_join(workspace: Pathish, *parts: Pathish) -> Path:
         raise ValueError(f"Path escapes workspace: {rp}")
     return rp
 
+
 # -------------------------------
 # Args and environment hardening
 # -------------------------------
+
 
 def validate_args(args: Sequence[Any], *, max_len: int = 4096) -> list[str]:
     """Normalize/validate CLI arguments:
@@ -116,7 +122,9 @@ def validate_args(args: Sequence[Any], *, max_len: int = 4096) -> list[str]:
         out.append(s)
     return out
 
+
 _DEF_ENV_KEYS = ("PATH", "LANG", "LC_ALL", "LC_CTYPE", "TMP", "TEMP")
+
 
 def build_env(
     base: Optional[Mapping[str, str]] = None,
@@ -145,9 +153,11 @@ def build_env(
                 env[k] = v
     return env
 
+
 # -------------------------------
 # Output/log safety
 # -------------------------------
+
 
 def clamp_text(text: str, *, max_len: int = 10000) -> str:
     """Clamp long text to max_len characters (suffix with …)."""
@@ -156,9 +166,11 @@ def clamp_text(text: str, *, max_len: int = 10000) -> str:
     s = str(text)
     return s if len(s) <= max_len else (s[: max_len - 1] + "…")
 
+
 # -------------------------------
 # Normalization helpers
 # -------------------------------
+
 
 def normalized_program_and_args(
     program: Pathish, args: Sequence[Any]
@@ -170,9 +182,11 @@ def normalized_program_and_args(
     prog_str = str(program)
     return prog_str, validate_args(args)
 
+
 # -------------------------------
 # i18n & logging helpers
 # -------------------------------
+
 
 def tr(gui: Any, fr: str, en: str) -> str:
     """Robust translator wrapper using the host GUI translator when available."""
@@ -191,7 +205,9 @@ def tr(gui: Any, fr: str, en: str) -> str:
         pass
     return fr
 
+
 essential_log_max_len = 10000
+
 
 def safe_log(gui: Any, text: str, *, redact: bool = True, clamp: bool = True) -> None:
     """Append text to GUI log safely (or print), with optional redaction and clamping."""
@@ -214,9 +230,11 @@ def safe_log(gui: Any, text: str, *, redact: bool = True, clamp: bool = True) ->
         except Exception:
             pass
 
+
 # -------------------------------
 # Executable resolution helper
 # -------------------------------
+
 
 def resolve_executable(
     program: Pathish, base_dir: Optional[Pathish] = None, *, prefer_path: bool = True
@@ -250,6 +268,7 @@ def resolve_executable(
         # Fallback: return the original string
         return prog
 
+
 # Fallback: host-level resolver override if available; else use SDK's resolve_executable
 try:  # pragma: no cover
     from Core.engines_loader.external import resolve_executable_path as resolve_executable_path  # type: ignore
@@ -263,9 +282,11 @@ except Exception:  # pragma: no cover
     ) -> str:  # type: ignore
         return resolve_executable(program, base_dir, prefer_path=prefer_path)
 
+
 # -------------------------------
 # OS helpers
 # -------------------------------
+
 
 def open_path(path: Pathish) -> bool:
     """Open a file or directory with the OS default handler. Returns True on attempt."""
@@ -286,6 +307,7 @@ def open_path(path: Pathish) -> bool:
     except Exception:
         return False
 
+
 def open_dir_candidates(candidates: Sequence[Pathish]) -> Optional[str]:
     """Open the first existing directory from candidates, return the opened path or None."""
     for c in candidates:
@@ -298,10 +320,12 @@ def open_dir_candidates(candidates: Sequence[Pathish]) -> Optional[str]:
             continue
     return None
 
+
 # ---------------------------------------------
 # Universal output directory discovery and open
 # ---------------------------------------------
 from collections.abc import Sequence as _Seq
+
 
 def discover_output_candidates(
     gui: Any,
@@ -329,6 +353,7 @@ def discover_output_candidates(
                 cands.append(s)
         except Exception:
             pass
+
     try:
         ws = getattr(gui, "workspace_dir", None) or os.getcwd()
     except Exception:
@@ -414,6 +439,7 @@ def discover_output_candidates(
 
     return cands
 
+
 def open_output_directory(
     gui: Any,
     engine_id: Optional[str] = None,
@@ -433,7 +459,9 @@ def open_output_directory(
     except Exception:
         return None
 
+
 # Filesystem safety helpers
+
 
 def ensure_dir(path: Pathish) -> Path:
     """Ensure directory exists and return its Path."""
@@ -443,6 +471,7 @@ def ensure_dir(path: Pathish) -> Path:
     except Exception:
         pass
     return p
+
 
 def atomic_write_text(path: Pathish, text: str, *, encoding: str = "utf-8") -> bool:
     """Write text atomically with a temp file and rename. Returns True on success."""
@@ -473,7 +502,9 @@ def atomic_write_text(path: Pathish, text: str, *, encoding: str = "utf-8") -> b
     except Exception:
         return False
 
+
 # Generic process runner for engines
+
 
 def run_process(
     gui: Any,
@@ -589,9 +620,11 @@ def run_process(
     except Exception as e:
         return 1, "", str(e)
 
+
 # -------------------------------
 # venv/pip helpers
 # -------------------------------
+
 
 def resolve_project_venv(gui: Any) -> Optional[str]:
     """Resolve the project venv path using VenvManager when available, else workspace/venv."""
@@ -612,12 +645,14 @@ def resolve_project_venv(gui: Any) -> Optional[str]:
         pass
     return None
 
+
 def pip_executable(vroot: str) -> str:
     """Return pip executable path under a venv root (cross-platform)."""
     name = "pip.exe" if platform.system() == "Windows" else "pip"
     return os.path.join(
         vroot, "Scripts" if platform.system() == "Windows" else "bin", name
     )
+
 
 def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) -> int:
     """Run 'pip show <package>' and return exit code (0 if installed).
@@ -642,6 +677,7 @@ def pip_show(gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 180000) 
             args = ["show", package]
     code, _out, _err = run_process(gui, prog, args, timeout_ms=timeout_ms)
     return int(code)
+
 
 def pip_install(
     gui: Any, pip_exe: str, package: str, *, timeout_ms: int = 600000

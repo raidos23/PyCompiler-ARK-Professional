@@ -14,6 +14,7 @@ import sys
 from . import registry as registry  # re-export registry module
 from .base import CompilerEngine  # re-export base type
 
+
 def _discover_external_plugins(base_path: str) -> None:
     """Import all top-level modules and packages under base_path (ENGINES/),
     recursively importing subpackages to trigger engine registration side-effects.
@@ -48,6 +49,7 @@ def _discover_external_plugins(base_path: str) -> None:
         # Never let discovery break the host application
         pass
 
+
 def _auto_discover() -> None:
     """Discover and register external engine plugins ONLY from the 'ENGINES' folder at project root."""
     base_dir = os.path.dirname(__file__)
@@ -57,6 +59,7 @@ def _auto_discover() -> None:
         _discover_external_plugins(external_dir)
     except Exception:
         pass
+
 
 # Perform discovery at import-time so engines are ready for UI/compile usage (packages under ENGINES/ only)
 try:
