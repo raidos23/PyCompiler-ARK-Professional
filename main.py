@@ -118,7 +118,7 @@ from PySide6.QtCore import (
     QtMsgType,
     qInstallMessageHandler,
 )
-from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtGui import QColor, QPixmap, QIcon
 from PySide6.QtWidgets import QApplication, QSplashScreen
 
 # Application metadata and high-DPI attributes BEFORE QApplication
@@ -214,6 +214,14 @@ from Core.worker import PyInstallerWorkspaceGUI
 def main(argv: list[str]) -> int:
     try:
         app = QApplication(argv)
+        # Use logo/logo.png as application icon if available
+        try:
+            _icon_path = os.path.join(ROOT_DIR, "logo", "logo.png")
+            if os.path.isfile(_icon_path):
+                app.setWindowIcon(QIcon(_icon_path))
+        except Exception:
+            pass
+
         # Splash screen: affiche l'image 'splash.*' depuis le dossier 'logo' si disponible
         splash = None
         try:
@@ -317,7 +325,14 @@ def main(argv: list[str]) -> int:
             def _launch_main():
                 try:
                     w = PyInstallerWorkspaceGUI()
+                    # ensure main window uses the same icon if available
+                    try:
+                        if os.path.isfile(_icon_path):
+                            w.setWindowIcon(QIcon(_icon_path))
+                    except Exception:
+                        pass
                     w.show()
+
                     # Resserrement auto pour très petits écrans
                     try:
                         from PySide6.QtWidgets import QLabel, QLayout
@@ -360,6 +375,7 @@ def main(argv: list[str]) -> int:
                                 pass
                     except Exception:
                         pass
+
                     try:
                         splash.finish(w)
                     except Exception:
@@ -370,6 +386,12 @@ def main(argv: list[str]) -> int:
             QTimer.singleShot(max(0, delay_ms), _launch_main)
         else:
             w = PyInstallerWorkspaceGUI()
+            # ensure main window uses the same icon if available
+            try:
+                if os.path.isfile(_icon_path):
+                    w.setWindowIcon(QIcon(_icon_path))
+            except Exception:
+                pass
             w.show()
             # Resserrement auto pour très petits écrans
             try:
