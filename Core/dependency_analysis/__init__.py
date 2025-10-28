@@ -16,7 +16,7 @@ sont conservées.
 """
 
 from __future__ import annotations
-from analyser import (
+from .analyser import (
     _install_next_dependency,
     _check_module_installed,
     _is_stdlib_module,
