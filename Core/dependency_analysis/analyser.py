@@ -1,22 +1,3 @@
-# SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2025 Samuel Amen Ague
-
-"""
-Analyse des dépendances Python pour PyCompiler Pro++.
-Inclut la détection, la suggestion et l'installation automatique des modules manquants.
-
-Optimisations appliquées:
-- Caching des résultats stdlib via @lru_cache
-- Parallélisation des vérifications pip via ThreadPoolExecutor
-- Utilisation de importlib.metadata au lieu de subprocess pip show
-- Async I/O pour les opérations bloquantes
-
-Statut: module utilisable pour une suggestion/installation basique. Les
-fonctions d'auto-analyse avancée mentionnées dans la feuille de route ne sont
-pas nécessaires à l'exécution et sont désactivées/neutralisées pour éviter tout
-impact en production. Les entrées publiques référencées par l'UI (suggest_missing_dependencies)
-sont conservées.
-"""
 import asyncio
 import functools
 import os
@@ -29,7 +10,7 @@ from importlib.metadata import distribution, PackageNotFoundError
 from PySide6.QtCore import QProcess
 from PySide6.QtWidgets import QMessageBox
 
-from .dialogs import ProgressDialog
+from Core.dialogs import ProgressDialog
 
 # NOTE PRODUCTION-HARDENING:
 # Les fonctionnalités non finalisées sont encapsulées dans des gardes afin de ne jamais
