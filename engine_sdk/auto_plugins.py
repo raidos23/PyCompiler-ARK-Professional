@@ -9,6 +9,7 @@ from Core.auto_plugins import (
     register_auto_builder,
     register_import_alias,
     register_package_import_name,
+    _tr
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "register_aliases",
     "register_import_alias",
     "register_package_import_name",
+    "_tr",
 ]
