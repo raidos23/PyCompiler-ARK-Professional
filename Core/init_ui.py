@@ -122,7 +122,7 @@ def _detect_system_color_scheme() -> str:
 def init_ui(self):
     loader = QUiLoader()
     ui_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "ui", "ui_design.ui"
+        os.path.dirname(os.path.abspath(__file__)), "..", "ui", "ui_design_improved.ui"
     )
     ui_file = QFile(os.path.abspath(ui_path))
     ui_file.open(QFile.ReadOnly)
