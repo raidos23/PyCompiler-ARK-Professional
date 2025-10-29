@@ -313,7 +313,9 @@ def run_command(
 # -----------------------------
 
 
-def tr(key_or_fr: str, en_or_fallback: str = "", *, plugin_file: Optional[str] = None) -> str:
+def tr(
+    key_or_fr: str, en_or_fallback: str = "", *, plugin_file: Optional[str] = None
+) -> str:
     """Translate text in real-time based on current user language preference.
 
     This function provides a flexible API for plugins to translate text strings.
@@ -372,7 +374,9 @@ def tr(key_or_fr: str, en_or_fallback: str = "", *, plugin_file: Optional[str] =
         return en_or_fallback or key_or_fr
 
 
-def _load_plugin_translations_for_tr_sync(plugin_file: str, lang: str) -> dict[str, Any]:
+def _load_plugin_translations_for_tr_sync(
+    plugin_file: str, lang: str
+) -> dict[str, Any]:
     """Helper to load plugin translations for tr function synchronously."""
     try:
         from pathlib import Path
@@ -402,7 +406,9 @@ def _load_plugin_translations_for_tr_sync(plugin_file: str, lang: str) -> dict[s
         return {}
 
 
-async def _load_plugin_translations_for_tr(plugin_file: str, lang: str) -> dict[str, Any]:
+async def _load_plugin_translations_for_tr(
+    plugin_file: str, lang: str
+) -> dict[str, Any]:
     """Helper to load plugin translations for tr function."""
     try:
         from pathlib import Path
