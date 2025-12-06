@@ -9,7 +9,7 @@ from Core.auto_plugins import (
     register_auto_builder,
     register_import_alias,
     register_package_import_name,
-    _tr
+    _tr,
 )
 
 __all__ = [

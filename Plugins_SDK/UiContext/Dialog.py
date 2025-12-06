@@ -1,10 +1,16 @@
-#Prototypage du système de Dialog pour Plugins
+# Prototypage du système de Dialog pour Plugins
 
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QTextEdit, QHBoxLayout
+    QDialog,
+    QVBoxLayout,
+    QLabel,
+    QPushButton,
+    QTextEdit,
+    QHBoxLayout,
 )
 from PySide6.QtCore import Qt
+
 
 class Dialog(QDialog):
     """
@@ -15,7 +21,9 @@ class Dialog(QDialog):
     - Callbacks
     """
 
-    def __init__(self, title="ARK++ Dialog", width=500, height=400, parent=None):
+    def __init__(
+        self, title="ARK++ Plugins Dialog", width=500, height=400, parent=None
+    ):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setFixedSize(width, height)

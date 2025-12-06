@@ -1,8 +1,0 @@
- {
-  "_meta": {"code": "fr", "name": "Français"},
-  "title": "Plugin ACASL Exemple",
-  "starting_analysis": "🔍 Plugin ACASL Exemple : Démarrage de l'analyse post-compilation",
-  "artifacts_found": "📦 {count} artefact(s) trouvé(s)",
-  "python_files_found": "📄 {count} fichier(s) Python trouvé(s)",
-  "analysis_complete": "✅ Plugin ACASL Exemple : Analyse post-compilation terminée"
-}
