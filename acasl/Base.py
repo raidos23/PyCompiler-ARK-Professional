@@ -245,13 +245,6 @@ class _PluginRecord:
         self.module_name: Optional[str] = None
 
 
-# Petit utilitaire: décorateur d'enregistrement (optionnel pour les plugins)
-# Usage dans un plugin:
-#   @register_acasl_plugin
-#   class MyPlugin(Ac_PluginBase): ...
-# Puis dans acasl_register(manager): manager.add_plugin(MyPlugin(...))
-# (Ce décorateur ne fait que marquer la classe; utile si l'auteur veut introspecter)
-
 
 def register_acasl_plugin(cls: Any) -> Any:
     setattr(cls, "__acasl_plugin__", True)
