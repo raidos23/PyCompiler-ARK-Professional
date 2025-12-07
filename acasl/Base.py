@@ -245,7 +245,6 @@ class _PluginRecord:
         self.module_name: Optional[str] = None
 
 
-
 def register_acasl_plugin(cls: Any) -> Any:
     setattr(cls, "__acasl_plugin__", True)
     return cls

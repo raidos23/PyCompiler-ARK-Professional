@@ -217,7 +217,6 @@ class _PluginRecord:
         self.module_name: Optional[str] = None
 
 
-
 def register_plugin(cls: Any) -> Any:
     setattr(cls, "__bcasl_plugin__", True)
     return cls

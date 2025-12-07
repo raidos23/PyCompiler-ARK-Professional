@@ -401,8 +401,6 @@ class NuitkaEngine(CompilerEngine):
         except Exception:
             return None
 
-    
-
     def environment(self, gui, file: str) -> Optional[dict[str, str]]:
         return None
 
