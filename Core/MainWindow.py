@@ -1652,7 +1652,7 @@ class PyCompilerArkGui(QWidget):
                 self._terminate_background_tasks()
                 # Arrêt propre des threads BCASL si actifs
                 try:
-                    from bcasl.bcasl_loader import ensure_bcasl_thread_stopped
+                    from bcasl.Loader import ensure_bcasl_thread_stopped
 
                     ensure_bcasl_thread_stopped(self)
                 except Exception:
@@ -1663,7 +1663,7 @@ class PyCompilerArkGui(QWidget):
         else:
             # Arrêt propre des threads BCASL si actifs
             try:
-                from bcasl.bcasl_loader import ensure_bcasl_thread_stopped
+                from bcasl.Loader import ensure_bcasl_thread_stopped
 
                 ensure_bcasl_thread_stopped(self)
             except Exception:

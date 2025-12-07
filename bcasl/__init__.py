@@ -16,9 +16,10 @@ Point d'entrée du package: expose l'API publique minimale et stable.
 """
 from __future__ import annotations
 
+from .executor import BCASL
+
 # Coeur BCASL (moteur de plugins et contexte)
-from .bcasl import (
-    BCASL,
+from .Base import (
     ExecutionReport,
     Bc_PluginBase,
     PluginMeta,
@@ -28,7 +29,7 @@ from .bcasl import (
 )
 
 # Chargeur (exécution asynchrone, UI, annulation, configuration)
-from .bcasl_loader import (
+from .Loader import (
     ensure_bcasl_thread_stopped,
     open_api_loader_dialog,
     resolve_bcasl_timeout,
@@ -38,7 +39,7 @@ from .bcasl_loader import (
 
 __all__ = [
     # Coeur
-    "BCASL",
+    "executor",
     "Bc_PluginBase",
     "PluginMeta",
     "PreCompileContext",

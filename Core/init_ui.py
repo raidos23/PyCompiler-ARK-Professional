@@ -1049,6 +1049,12 @@ def _apply_translations(self, tr: dict[str, object]) -> None:
             self.btn_suggest_deps.setText(
                 str(tr.get("suggest_deps", self.btn_suggest_deps.text()))
             )
+
+        if getattr(self, "btn_remove_file", None):
+            self.btn_remove_file.setText(
+                str(tr.get("remove_file", self.btn_remove_file.text()))
+                )
+            
         if getattr(self, "btn_help", None):
             self.btn_help.setText(str(tr.get("help", self.btn_help.text())))
         if getattr(self, "btn_show_stats", None):

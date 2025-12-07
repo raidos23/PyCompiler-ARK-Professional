@@ -63,7 +63,7 @@ def compile_all(self):
 
     # BCASL: exécution des plugins API avant compilation, sans bloquer l'UI
     try:
-        from bcasl.bcasl_loader import run_pre_compile_async as _run_bcasl_async
+        from bcasl.Loader import run_pre_compile_async as _run_bcasl_async
 
         # Drapeau de poursuite pour éviter le double déclenchement
         try:
@@ -1083,7 +1083,7 @@ def cancel_all_compilations(self):
         pass
     # Stop BCASL (pre-compile) threads/processes explicitly
     try:
-        from bcasl.bcasl_loader import ensure_bcasl_thread_stopped
+        from bcasl.Loader import ensure_bcasl_thread_stopped
 
         ensure_bcasl_thread_stopped(self)
     except Exception:
