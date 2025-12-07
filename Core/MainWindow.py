@@ -144,7 +144,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
         return True
 
 
-class PyInstallerWorkspaceGUI(QWidget):
+class PyCompilerArkGui(QWidget):
     def __init__(self):
         super().__init__()
         global _latest_gui_instance

@@ -208,7 +208,7 @@ if IS_WINDOWS and hasattr(signal, "SIGBREAK"):
     except Exception:
         pass
 
-from Core.worker import PyInstallerWorkspaceGUI
+from Core.MainWindow import PyCompilerArkGui
 
 
 def main(argv: list[str]) -> int:
@@ -324,7 +324,7 @@ def main(argv: list[str]) -> int:
 
             def _launch_main():
                 try:
-                    w = PyInstallerWorkspaceGUI()
+                    w = PyCompilerArkGui()
                     # ensure main window uses the same icon if available
                     try:
                         if os.path.isfile(_icon_path):
@@ -385,7 +385,7 @@ def main(argv: list[str]) -> int:
 
             QTimer.singleShot(max(0, delay_ms), _launch_main)
         else:
-            w = PyInstallerWorkspaceGUI()
+            w = PyCompilerArkGui()
             # ensure main window uses the same icon if available
             try:
                 if os.path.isfile(_icon_path):
