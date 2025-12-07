@@ -175,6 +175,7 @@ user_preferences.json
 logs/
 *.log
 crash_reports/
+work_notes.txt
 
 # Temporary files
 temp/
