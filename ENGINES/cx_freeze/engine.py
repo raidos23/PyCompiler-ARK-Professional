@@ -748,53 +748,8 @@ class CxFreezeEngine(CompilerEngine):
         except Exception:
             return None
 
-    def get_output_directory(self, gui) -> Optional[str]:
-        """Return the cx_Freeze output directory for ACASL.
-        ACASL-only method: engines define their output directory but never open it themselves.
-        """
-        try:
-            # Try engine-specific output field first (cx_output_dir objectName)
-            try:
-                from PySide6.QtWidgets import QWidget
 
-                if hasattr(gui, "findChild") and callable(gui.findChild):
-                    le = gui.findChild(QWidget, "cx_output_dir")
-                    if le and hasattr(le, "text") and callable(le.text):
-                        v = str(le.text()).strip()
-                        if v:
-                            return v
-            except Exception:
-                pass
-
-            # Try engine tab field if present
-            try:
-                if getattr(self, "_output_dir_input", None) is not None:
-                    v = self._output_dir_input.text().strip()
-                    if v:
-                        return v
-            except Exception:
-                pass
-
-            # Fallback to global output_dir_input
-            w = getattr(gui, "output_dir_input", None)
-            if w and hasattr(w, "text") and callable(w.text):
-                v = str(w.text()).strip()
-                if v:
-                    return v
-
-            # Final fallback to workspace/dist
-            ws = getattr(gui, "workspace_dir", None) or os.getcwd()
-            return os.path.join(ws, "dist")
-        except Exception:
-            # Ultimate fallback
-            return os.path.join(os.getcwd(), "dist")
-
-    def on_success(self, gui, file: str) -> None:
-        # ACASL-only policy: engines must not open output directories. Use this hook only for lightweight metadata/logging if needed.
-        try:
-            return
-        except Exception:
-            pass
+  
 
     def environment(self, gui, file: str) -> Optional[dict[str, str]]:
         return None
