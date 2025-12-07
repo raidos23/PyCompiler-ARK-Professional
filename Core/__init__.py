@@ -3,29 +3,7 @@
 
 # Author: Samuel Amen Ague
 """
-PyCompiler Pro++ - Package Public API (lazy-loaded)
-
-This module exposes the high-level API of the utils package while avoiding
-heavy imports at module import-time. Public attributes are resolved lazily
-via __getattr__ (PEP 562), which speeds up startup and reduces side effects
-until a symbol is actually used.
-
-Exports (stable):
-- Preferences: MAX_PARALLEL, PREFS_FILE, load_preferences, save_preferences, update_ui_state
-- Compiler:   compile_all, try_start_processes, start_compilation_process,
-              handle_stdout, handle_stderr, handle_finished,
-              try_install_missing_modules, show_error_dialog, cancel_all_compilations,
-              build_pyinstaller_command, build_nuitka_command
-- Dependency analysis: suggest_missing_dependencies,
-                       _install_next_dependency, _on_dep_pip_output, _on_dep_pip_finished
-- Dialogs:    ProgressDialog
-- UI:         PyInstallerWorkspaceGUI
-- BCASL/api_loader: run_pre_compile (exécute les plugins API avant compilation)
-- api:        structured dictionary view of the API (constructed on first access)
-
-Notes
-- Private helpers beginning with '_' are intentionally exposed for internal wiring
-  consistency across modules; avoid relying on them from external code.
+PyCompiler Ark++ - Package Public Core
 """
 
 from __future__ import annotations

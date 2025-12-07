@@ -3,7 +3,7 @@
 
 """
 Détection automatique des modules sensibles et application des hooks/plugins
-pour les moteurs, basée sur un mapping JSON piloté par les moteurs (engine_plugins).
+pour les moteurs, basée sur un mapping JSON piloté par les moteurs (ENGINES).
 
 Règles clés:
 - La détection est automatique et non désactivable par l'utilisateur.
