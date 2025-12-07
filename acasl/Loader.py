@@ -21,6 +21,8 @@ import threading
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+from acasl.executor import ACASL
+
 # Qt (facultatif). Ne pas importer QtWidgets au niveau module pour compatibilité headless.
 try:  # pragma: no cover
     from PySide6.QtCore import QObject, QThread, Signal, Slot
@@ -505,7 +507,7 @@ def open_acasl_loader_dialog(self) -> None:
             return
 
         # Utiliser le système ACASL complet pour découvrir les plugins
-        from acasl import ACASL
+        from acasl.executor import ACASL
 
         manager = ACASL(workspace_root)
         loaded, errors = manager.load_plugins_from_directory(plugins_dir)
@@ -664,7 +666,7 @@ def run_post_compile_async(
 ) -> None:
     """Exécute les plugins ACASL en arrière-plan (Qt) ou de façon synchrone en repli."""
     try:
-        from acasl import ACASL, PostCompileContext
+        from acasl import PostCompileContext
 
         try:
             ws = getattr(gui, "workspace_dir", None)

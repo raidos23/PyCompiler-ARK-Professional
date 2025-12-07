@@ -1,17 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 from __future__ import annotations
 
-"""
-ACASL (After Compilation Action System Loader)
+from .executor import ACASL
 
-This package exposes the public ACASL API for post‑compilation steps.
-Primary exports:
-- run_post_compile_async(gui, artifacts, finished_cb=None)
-- ensure_acasl_thread_stopped(gui=None)
-- ACASLContext
-
-Preferred loader in-package: 'acasl/acasl_loader.py'; fallback to 'utils/acasl_loader.py' for backward compatibility.
-"""
 
 __all__ = (
     # Loader API
@@ -24,14 +15,14 @@ __all__ = (
     "PluginMeta",
     "PostCompileContext",
     "ExecutionReport",
-    "ACASL",
+    "executor",
 )
 
 __version__ = "1.1.0"
 
 # Preferred: loader in this package
 try:  # pragma: no cover
-    from .acasl_loader import (  # type: ignore
+    from .Loader import (  # type: ignore
         ACASLContext,
         ensure_acasl_thread_stopped,
         open_acasl_loader_dialog,
@@ -39,8 +30,7 @@ try:  # pragma: no cover
     )
 
     # Also import plugin system
-    from .acasl import (  # type: ignore
-        ACASL,
+    from .Base import (  # type: ignore
         Ac_PluginBase,
         ExecutionReport,
         PluginMeta,
