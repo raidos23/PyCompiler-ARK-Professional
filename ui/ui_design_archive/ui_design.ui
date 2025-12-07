@@ -11,38 +11,17 @@
    </rect>
   </property>
   <layout class="QHBoxLayout" name="mainLayout">
-   <property name="spacing">
-    <number>0</number>
-   </property>
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
    <item>
     <widget class="QScrollArea" name="sidebarScrollArea">
      <property name="widgetResizable">
       <bool>true</bool>
-     </property>
-     <property name="maximumWidth">
-      <number>320</number>
-     </property>
-     <property name="minimumWidth">
-      <number>280</number>
      </property>
      <widget class="QFrame" name="sidebar">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>320</width>
+        <width>626</width>
         <height>700</height>
        </rect>
       </property>
@@ -50,20 +29,8 @@
        <enum>QFrame::Shape::NoFrame</enum>
       </property>
       <layout class="QVBoxLayout" name="sidebarLayout">
-       <property name="spacing">
-        <number>12</number>
-       </property>
        <property name="leftMargin">
-        <number>16</number>
-       </property>
-       <property name="topMargin">
-        <number>16</number>
-       </property>
-       <property name="rightMargin">
-        <number>16</number>
-       </property>
-       <property name="bottomMargin">
-        <number>16</number>
+        <number>12</number>
        </property>
        <item>
         <widget class="QLabel" name="sidebar_logo">
@@ -75,8 +42,8 @@
          </property>
          <property name="maximumSize">
           <size>
-           <width>200</width>
-           <height>200</height>
+           <width>220</width>
+           <height>220</height>
           </size>
          </property>
          <property name="alignment">
@@ -85,209 +52,94 @@
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame_main_actions">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+        <widget class="QPushButton" name="btn_select_folder">
+         <property name="text">
+          <string>📁 Workspace</string>
          </property>
-         <layout class="QVBoxLayout" name="layout_main_actions">
-          <property name="spacing">
-           <number>8</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_main_actions">
-            <property name="text">
-             <string>Actions principales</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_select_folder">
-            <property name="text">
-             <string>📁 Workspace</string>
-            </property>
-            <property name="toolTip">
-             <string>Sélectionner le dossier de travail</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_select_files">
-            <property name="text">
-             <string>📋 Fichiers</string>
-            </property>
-            <property name="toolTip">
-             <string>Ajouter des fichiers à compiler</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_build_all">
-            <property name="text">
-             <string>🚀 Compiler</string>
-            </property>
-            <property name="toolTip">
-             <string>Lancer la compilation</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_cancel_all">
-            <property name="text">
-             <string>⛔ Annuler</string>
-            </property>
-            <property name="toolTip">
-             <string>Annuler la compilation en cours</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame_config_actions">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+        <widget class="QPushButton" name="btn_select_files">
+         <property name="text">
+          <string>📋 Fichiers</string>
          </property>
-         <layout class="QVBoxLayout" name="layout_config_actions">
-          <property name="spacing">
-           <number>8</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_config_actions">
-            <property name="text">
-             <string>Configuration</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_export_config">
-            <property name="text">
-             <string>💾 Exporter</string>
-            </property>
-            <property name="toolTip">
-             <string>Exporter la configuration actuelle</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_import_config">
-            <property name="text">
-             <string>📥 Importer</string>
-            </property>
-            <property name="toolTip">
-             <string>Importer une configuration</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame_tools">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+        <widget class="QPushButton" name="btn_build_all">
+         <property name="text">
+          <string>🚀 Compiler</string>
          </property>
-         <layout class="QVBoxLayout" name="layout_tools">
-          <property name="spacing">
-           <number>8</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_tools">
-            <property name="text">
-             <string>Outils</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_suggest_deps">
-            <property name="text">
-             <string>🔎 Dépendances</string>
-            </property>
-            <property name="toolTip">
-             <string>Analyser les dépendances du projet</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_api_loader">
-            <property name="text">
-             <string>🔌 BCASL API</string>
-            </property>
-            <property name="toolTip">
-             <string>Charger BCASL API Loader</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_acasl_loader">
-            <property name="text">
-             <string>🔌 ACASL API</string>
-            </property>
-            <property name="toolTip">
-             <string>Charger ACASL API Loader</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_show_stats">
-            <property name="text">
-             <string>📊 Statistiques</string>
-            </property>
-            <property name="toolTip">
-             <string>Afficher les statistiques de compilation</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_help">
-            <property name="text">
-             <string>❓ Aide</string>
-            </property>
-            <property name="toolTip">
-             <string>Afficher l'aide</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame_settings">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+        <widget class="QPushButton" name="btn_export_config">
+         <property name="text">
+          <string>💾 Exporter config</string>
          </property>
-         <layout class="QVBoxLayout" name="layout_settings">
-          <property name="spacing">
-           <number>8</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_settings">
-            <property name="text">
-             <string>Paramètres</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="select_lang">
-            <property name="text">
-             <string>🌐 Langue</string>
-            </property>
-            <property name="toolTip">
-             <string>Choisir la langue de l'interface</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="select_theme">
-            <property name="text">
-             <string>🎨 Thème</string>
-            </property>
-            <property name="toolTip">
-             <string>Choisir le thème de l'interface</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_import_config">
+         <property name="text">
+          <string>📥 Importer config</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_cancel_all">
+         <property name="text">
+          <string>⛔ Annuler</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_suggest_deps">
+         <property name="text">
+          <string>🔎 Analyser les dépendances</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_api_loader">
+         <property name="text">
+          <string>🔌 BCASL API Loader</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_acasl_loader">
+         <property name="text">
+          <string>🔌 ACASL API Loader</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_help">
+         <property name="text">
+          <string>❓ Aide</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_show_stats">
+         <property name="text">
+          <string>📊 Statistiques</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="select_lang">
+         <property name="text">
+          <string>Choisir une langue</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="select_theme">
+         <property name="text">
+          <string>Choisir un thème</string>
+         </property>
         </widget>
        </item>
        <item>
@@ -316,36 +168,18 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
-        <width>940</width>
-        <height>700</height>
+        <y>-481</y>
+        <width>618</width>
+        <height>1339</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="contentLayout">
-       <property name="spacing">
-        <number>16</number>
-       </property>
-       <property name="leftMargin">
-        <number>20</number>
-       </property>
-       <property name="topMargin">
-        <number>20</number>
-       </property>
-       <property name="rightMargin">
-        <number>20</number>
-       </property>
-       <property name="bottomMargin">
-        <number>20</number>
-       </property>
        <item>
         <widget class="QFrame" name="frame_workspace">
          <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+          <enum>QFrame::Shape::NoFrame</enum>
          </property>
          <layout class="QVBoxLayout" name="layout_workspace">
-          <property name="spacing">
-           <number>12</number>
-          </property>
           <item>
            <widget class="QLabel" name="label_workspace_section">
             <property name="text">
@@ -380,12 +214,9 @@
        <item>
         <widget class="QFrame" name="frame_files">
          <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+          <enum>QFrame::Shape::NoFrame</enum>
          </property>
          <layout class="QVBoxLayout" name="layout_files">
-          <property name="spacing">
-           <number>12</number>
-          </property>
           <item>
            <widget class="QLabel" name="label_files_section">
             <property name="text">
@@ -394,11 +225,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="file_list">
-            <property name="minimumHeight">
-             <number>150</number>
-            </property>
-           </widget>
+           <widget class="QListWidget" name="file_list"/>
           </item>
           <item>
            <widget class="QPushButton" name="btn_remove_file">
@@ -413,19 +240,9 @@
        <item>
         <widget class="QFrame" name="frame_options">
          <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+          <enum>QFrame::Shape::NoFrame</enum>
          </property>
          <layout class="QVBoxLayout" name="layout_options">
-          <property name="spacing">
-           <number>12</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_options_section">
-            <property name="text">
-             <string>3. Options de compilation</string>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QTabWidget" name="compiler_tabs">
             <property name="currentIndex">
@@ -436,9 +253,6 @@
               <string>PyInstaller</string>
              </attribute>
              <layout class="QVBoxLayout" name="pyinstaller_options_layout">
-              <property name="spacing">
-               <number>10</number>
-              </property>
               <item>
                <widget class="QCheckBox" name="opt_onefile">
                 <property name="text">
@@ -520,9 +334,6 @@
               <string>Nuitka</string>
              </attribute>
              <layout class="QVBoxLayout" name="nuitka_options_layout">
-              <property name="spacing">
-               <number>10</number>
-              </property>
               <item>
                <widget class="QCheckBox" name="nuitka_onefile">
                 <property name="text">
@@ -582,60 +393,24 @@
        <item>
         <widget class="QFrame" name="frame_logs">
          <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
+          <enum>QFrame::Shape::NoFrame</enum>
          </property>
          <layout class="QVBoxLayout" name="layout_logs">
-          <property name="spacing">
-           <number>12</number>
-          </property>
           <item>
            <widget class="QLabel" name="label_logs_section">
             <property name="text">
-             <string>4. Logs de compilation</string>
+             <string>Logs de compilation</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QTextEdit" name="log">
-            <property name="minimumHeight">
-             <number>200</number>
-            </property>
-           </widget>
+           <widget class="QTextEdit" name="log"/>
           </item>
          </layout>
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame_progress">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
-         </property>
-         <layout class="QVBoxLayout" name="layout_progress">
-          <property name="spacing">
-           <number>8</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_progress">
-            <property name="text">
-             <string>Progression</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QProgressBar" name="progress">
-            <property name="value">
-             <number>0</number>
-            </property>
-            <property name="textVisible">
-             <bool>true</bool>
-            </property>
-            <property name="minimumHeight">
-             <number>24</number>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+        <widget class="QProgressBar" name="progress"/>
        </item>
       </layout>
      </widget>
