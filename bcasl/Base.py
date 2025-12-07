@@ -1,36 +1,3 @@
-"""
-BCASL - Before-Compilation Actions System & Loader
-
-Système modulaire de plugins pour exécuter des actions AVANT la compilation.
-
-Caractéristiques principales:
-- Détection et chargement automatiques des plugins depuis le dossier "Plugins" à la racine du projet
-- Enregistrement des plugins avec identifiant unique et métadonnées
-- Hook d'exécution avant compilation (on_pre_compile)
-- Isolation des erreurs (un plugin défaillant ne bloque pas les autres)
-- Gestion des dépendances et ordre d'exécution (topologie + priorité)
-- API publique pour ajouter, supprimer, lister, activer, désactiver des plugins
-- Optimisé pour environnements à ressources limitées (stdlib uniquement, I/O minimisées)
-
-Convention de plugin:
-- Chaque package plugin dans Plugins/ doit exposer une fonction: bcasl_register(manager: BCASL) -> None
-  Cette fonction doit instancier le plugin (sous-classe de PluginBase) et l'enregistrer via manager.add_plugin(...).
-
-
-
-    from pathlib import Path
-    from bcasl import BCASL, PreCompileContext
-
-    project_root = Path(__file__).resolve().parent
-    bcasl = BCASL(project_root)
-    bcasl.load_plugins_from_directory(project_root / "Plugins")
-    ctx = PreCompileContext(project_root)
-    results = bcasl.run_pre_compile(ctx)
-    for r in results:
-        print(r)
-
-"""
-
 from __future__ import annotations
 
 import fnmatch
@@ -46,7 +13,7 @@ __all__ = [
     "PluginMeta",
     "PreCompileContext",
     "ExecutionReport",
-    ]
+]
 
 # Configuration logger par défaut (faible verbosité pour embarqué)
 _logger = logging.getLogger("bcasl")
@@ -225,7 +192,6 @@ class ExecutionReport:
 
     def __iter__(self):
         return iter(self.items)
-
 
 
 class _PluginRecord:

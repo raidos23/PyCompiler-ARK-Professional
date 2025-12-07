@@ -1,5 +1,13 @@
-from .Base import BCASL_PLUGIN_REGISTER_FUNC, _PluginRecord, Bc_PluginBase, ExecutionItem, ExecutionReport, PluginMeta, PreCompileContext, _logger
-
+from .Base import (
+    BCASL_PLUGIN_REGISTER_FUNC,
+    _PluginRecord,
+    Bc_PluginBase,
+    ExecutionItem,
+    ExecutionReport,
+    PluginMeta,
+    PreCompileContext,
+    _logger,
+)
 
 import heapq
 import importlib.util
@@ -9,7 +17,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Optional
-
 
 
 class BCASL:
@@ -507,7 +514,7 @@ class BCASL:
                 time.sleep(0.01)
         _logger.info(report.summary())
         return report
-    
+
 
 def _plugin_worker(
     module_path: str, plugin_id: str, project_root: str, config: dict[str, Any], q
@@ -708,4 +715,3 @@ def _plugin_worker(
         q.put({"ok": True, "error": "", "duration_ms": dur})
     except Exception:
         q.put({"ok": False, "error": _tb.format_exc(), "duration_ms": 0.0})
-

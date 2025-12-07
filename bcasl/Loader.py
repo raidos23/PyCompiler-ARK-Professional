@@ -20,7 +20,7 @@ from typing import Any, Optional
 from .executor import BCASL
 
 from .Base import PreCompileContext
-from .tags_ordainer import compute_tag_order
+from .tagging import compute_tag_order
 
 # Qt (facultatif). Ne pas importer QtWidgets au niveau module pour compatibilité headless.
 try:  # pragma: no cover
