@@ -1,16 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-"""
-ACASL loader (simplifié, découverte via acasl_register uniquement)
 
-Objectifs de simplification (parité avec BCASL):
-- Config JSON uniquement (acasl.json ou .acasl.json)
-- Découverte FORCÉE: packages dans Plugins/ UNIQUEMENT ayant __init__.py et exposant acasl_register(manager)
-  Le manager temporaire collecte des objets plugins avec métadonnées et un runner (callable).
-- Ordre: plugin_order depuis config sinon alphabétique
-- UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
-- Async via QThread si QtCore dispo, sinon repli synchrone
-- Journalisation concise dans gui.log si disponible
-"""
 from __future__ import annotations
 
 import importlib.util
@@ -21,7 +10,7 @@ import threading
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from acasl.executor import ACASL
+from .executor import ACASL
 
 # Qt (facultatif). Ne pas importer QtWidgets au niveau module pour compatibilité headless.
 try:  # pragma: no cover
