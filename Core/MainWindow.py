@@ -1574,7 +1574,7 @@ class PyCompilerArkGui(QWidget):
 
         _run_coro_async(_prepare(), _after_prepared, ui_owner=self)
 
-    from .dependency_analysis import (
+    from .deps_analyser import (
         _install_next_dependency,
         _on_dep_pip_finished,
         _on_dep_pip_output,

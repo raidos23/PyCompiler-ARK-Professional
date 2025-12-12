@@ -35,7 +35,7 @@ except Exception:
 
 # Import utilitaire d'exclusion stdlib
 try:
-    from .dependency_analysis import _is_stdlib_module
+    from .deps_analyser import _is_stdlib_module
 except Exception:  # fallback au cas où
 
     def _is_stdlib_module(name: str) -> bool:

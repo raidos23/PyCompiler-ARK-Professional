@@ -51,7 +51,7 @@ from .i18n import (
     normalize_lang_pref,
     resolve_system_language,
 )
-from .sysdep import SysDependencyManager  # type: ignore
+from .Sys_Deps import SysDependencyManager  # type: ignore
 
 # Re-export engines registry for self-registration from engine packages
 try:
