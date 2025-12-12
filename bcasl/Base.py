@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 
 __all__ = [
-    "PluginBase",
+    "BcPluginBase",
     "PluginMeta",
     "PreCompileContext",
     "ExecutionReport",
@@ -51,7 +51,7 @@ class PluginMeta:
         object.__setattr__(self, "id", nid)
 
 
-class Bc_PluginBase:
+class BcPluginBase:
     """Classe de base minimale que doivent étendre les plugins BCASL.
 
     Un plugin doit fournir:
@@ -206,7 +206,7 @@ class _PluginRecord:
         "module_name",
     )
 
-    def __init__(self, plugin: Bc_PluginBase, insert_idx: int) -> None:
+    def __init__(self, plugin: BcPluginBase, insert_idx: int) -> None:
         self.plugin = plugin
         self.active = True
         self.requires = tuple(plugin.requires)

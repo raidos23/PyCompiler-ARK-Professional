@@ -525,18 +525,16 @@ def init_ui(self):
     self.btn_cancel_all.clicked.connect(self.cancel_all_compilations)
     self.btn_export_config.clicked.connect(self.export_config)
     self.btn_import_config.clicked.connect(self.import_config)
-    try:
-        from acasl import open_acasl_loader_dialog
-        from bcasl import open_api_loader_dialog
+    
+    from acasl import open_acasl_loader_dialog
+    from bcasl import open_api_loader_dialog
 
-        if self.btn_api_loader:
-            self.btn_api_loader.clicked.connect(lambda: open_api_loader_dialog(self))
-        if self.btn_acasl_loader:
-            self.btn_acasl_loader.clicked.connect(
-                lambda: open_acasl_loader_dialog(self)
-            )
-    except Exception:
-        pass
+        
+    self.btn_api_loader.clicked.connect(lambda: open_api_loader_dialog(self))
+    self.btn_acasl_loader.clicked.connect(
+            lambda: open_acasl_loader_dialog(self)
+        )
+    
     if self.btn_help:
         self.btn_help.clicked.connect(self.show_help_dialog)
     if self.btn_show_stats:

@@ -1,7 +1,7 @@
 from .Base import (
     ACASL_PLUGIN_REGISTER_FUNC,
     _PluginRecord,
-    Ac_PluginBase,
+    AcPluginBase,
     ExecutionItem,
     ExecutionReport,
     PluginMeta,
@@ -36,9 +36,9 @@ class ACASL:
         self.plugin_timeout_s = float(plugin_timeout_s)
 
     # API publique
-    def add_plugin(self, plugin: Ac_PluginBase) -> None:
-        if not isinstance(plugin, Ac_PluginBase):
-            raise TypeError("Le plugin doit être une instance de Ac_PluginBase")
+    def add_plugin(self, plugin: AcPluginBase) -> None:
+        if not isinstance(plugin, AcPluginBase):
+            raise TypeError("Le plugin doit être une instance de AcPluginBase")
         pid = plugin.meta.id
         if pid in self._registry:
             raise ValueError(f"Plugin id déjà enregistré: {pid}")

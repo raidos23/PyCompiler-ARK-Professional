@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 __all__ = [
-    "Ac_PluginBase",
+    "AcPluginBase",
     "PluginMeta",
     "PostCompileContext",
     "ExecutionReport",
@@ -63,7 +63,7 @@ class PluginMeta:
             object.__setattr__(self, "tags", tuple())
 
 
-class Ac_PluginBase:
+class AcPluginBase:
     """Classe de base minimale que doivent étendre les plugins ACASL.
 
     Un plugin doit fournir:
@@ -234,7 +234,7 @@ class _PluginRecord:
         "module_name",
     )
 
-    def __init__(self, plugin: Ac_PluginBase, insert_idx: int) -> None:
+    def __init__(self, plugin: AcPluginBase, insert_idx: int) -> None:
         self.plugin = plugin
         self.active = True
         self.requires = tuple(plugin.requires)

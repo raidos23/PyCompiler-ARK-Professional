@@ -11,14 +11,14 @@ __all__ = (
     "ACASLContext",
     "open_acasl_loader_dialog",
     # Plugin system
-    "Ac_PluginBase",
+    "AcPluginBase",
     "PluginMeta",
     "PostCompileContext",
     "ExecutionReport",
     "executor",
 )
 
-__version__ = "1.1.0"
+__version__ = "1.0.0"
 
 # Preferred: loader in this package
 try:  # pragma: no cover
@@ -31,7 +31,7 @@ try:  # pragma: no cover
 
     # Also import plugin system
     from .Base import (  # type: ignore
-        Ac_PluginBase,
+        AcPluginBase,
         ExecutionReport,
         PluginMeta,
         PostCompileContext,

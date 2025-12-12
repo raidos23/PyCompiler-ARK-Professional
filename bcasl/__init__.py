@@ -21,7 +21,7 @@ from .executor import BCASL
 # Coeur BCASL (moteur de plugins et contexte)
 from .Base import (
     ExecutionReport,
-    Bc_PluginBase,
+    BcPluginBase,
     PluginMeta,
     PreCompileContext,
     register_plugin,
@@ -40,7 +40,7 @@ from .Loader import (
 __all__ = [
     # Coeur
     "executor",
-    "Bc_PluginBase",
+    "BcPluginBase",
     "PluginMeta",
     "PreCompileContext",
     "ExecutionReport",
@@ -54,4 +54,4 @@ __all__ = [
     "resolve_bcasl_timeout",
 ]
 
-__version__ = "1.1.0"
+__version__ = "1.0.0"

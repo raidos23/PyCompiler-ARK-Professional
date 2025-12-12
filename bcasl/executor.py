@@ -1,7 +1,7 @@
 from .Base import (
     BCASL_PLUGIN_REGISTER_FUNC,
     _PluginRecord,
-    Bc_PluginBase,
+    BcPluginBase,
     ExecutionItem,
     ExecutionReport,
     PluginMeta,
@@ -39,9 +39,9 @@ class BCASL:
         self.plugin_timeout_s = float(plugin_timeout_s)
 
     # API publique
-    def add_plugin(self, plugin: Bc_PluginBase) -> None:
-        if not isinstance(plugin, Bc_PluginBase):
-            raise TypeError("Le plugin doit être une instance de PluginBase")
+    def add_plugin(self, plugin: BcPluginBase) -> None:
+        if not isinstance(plugin, BcPluginBase):
+            raise TypeError("Le plugin doit être une instance de BcPluginBase")
         pid = plugin.meta.id
         if pid in self._registry:
             raise ValueError(f"Plugin id déjà enregistré: {pid}")
