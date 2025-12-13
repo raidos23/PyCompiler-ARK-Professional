@@ -43,5 +43,5 @@ __all__ = [
     "compiler",
     "compute_for_all",
     "engines_loader",
-    "compile_all"
+    "compile_all",
 ]

@@ -1158,7 +1158,7 @@ class PyCompilerArkGui(QWidget):
         start_compilation_process,
         try_install_missing_modules,
         try_start_processes,
-        compile_all
+        compile_all,
     )
 
     def set_controls_enabled(self, enabled):
