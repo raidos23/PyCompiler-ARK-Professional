@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Samuel Amen Ague
 
 """
-Dialogues personnalisés pour PyCompiler Pro++.
+Dialogues personnalisés pour PyCompiler ARK++.
 Inclut ProgressDialog, boîtes de message, et autres dialogues spécifiques.
 """
 

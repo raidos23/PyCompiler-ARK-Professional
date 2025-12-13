@@ -15,7 +15,7 @@ from PySide6.QtGui import QDropEvent, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
 
 from .dialogs import ProgressDialog
-from .venv_manager import VenvManager
+from .Venv_Manager import VenvManager
 
 # Référence globale vers l'instance GUI pour récupération du workspace par l'API_SDK
 _latest_gui_instance = None
