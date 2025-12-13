@@ -211,20 +211,20 @@
           <item>
            <widget class="QPushButton" name="btn_api_loader">
             <property name="text">
-             <string>🔌 BCASL API</string>
+             <string>🔌 BCASL Loader</string>
             </property>
             <property name="toolTip">
-             <string>Charger BCASL API Loader</string>
+             <string>Charger BCASL Loader</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="btn_acasl_loader">
             <property name="text">
-             <string>🔌 ACASL API</string>
+             <string>🔌 ACASL Loader</string>
             </property>
             <property name="toolTip">
-             <string>Charger ACASL API Loader</string>
+             <string>Charger ACASL Loader</string>
             </property>
            </widget>
           </item>
