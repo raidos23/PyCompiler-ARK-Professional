@@ -62,9 +62,8 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
 # -----------------------------
 # Scaffolding utilities
 # -----------------------------
-PLUGIN_TEMPLATE = """# SPDX-License-Identifier: GPL-3.0-only
-"""
-PLUGIN_TEMPLATE += "\n".join([])
+
+BCPLUGIN_TEMPLATE = "\n".join([])
 
 
 
@@ -105,9 +104,9 @@ def set_selected_workspace(path: Pathish) -> bool:
     return True
 
 
-
-
-
+def Generate_Bc_Plugin_Template():
+    # Cette methode doit pouvoir créer une base de plugin de type Bc avec le contenu de la variable BCPLUGIN_TEMPLATE
+    pass
 
 
 
