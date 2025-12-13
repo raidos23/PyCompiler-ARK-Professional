@@ -97,7 +97,7 @@ def _run_coro_async(coro, on_result, ui_owner=None):
 from PySide6.QtCore import QEventLoop as _QEventLoop
 
 
-def request_workspace_change_from_api(folder: str) -> bool:
+def request_workspace_change_from_BcPlugin(folder: str) -> bool:
     try:
         gui = _latest_gui_instance
         if gui is None:
@@ -119,7 +119,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
         def _do():
             try:
                 result_holder["ok"] = bool(
-                    gui.apply_workspace_selection(str(folder), source="api")
+                    gui.apply_workspace_selection(str(folder), source="plugin")
                 )
             except Exception:
                 result_holder["ok"] = False
@@ -134,7 +134,7 @@ def request_workspace_change_from_api(folder: str) -> bool:
         except Exception:
             # Fallback: direct call in case invoker posting fails
             try:
-                return bool(gui.apply_workspace_selection(str(folder), source="api"))
+                return bool(gui.apply_workspace_selection(str(folder), source="plugin"))
             except Exception:
                 return False
         loop.exec()
@@ -433,7 +433,7 @@ class PyCompilerArkGui(QWidget):
                     except Exception:
                         pass
             # Confirmation when API requests workspace change
-            if str(source).lower() == "api":
+            if str(source).lower() == "plugin":
                 # Auto-approve API workspace switch; cancel running builds if any
                 try:
                     if getattr(self, "processes", None) and self.processes:
