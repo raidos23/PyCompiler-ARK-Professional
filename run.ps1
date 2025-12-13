@@ -150,7 +150,7 @@ if ($SkipInstall) {
 }
 
 # Read app version (best-effort)
-$APP_VERSION = (& $VENV_PY -c "import sys`ntry:`n import utils; print(getattr(utils,'__version__','?'))`nexcept Exception:`n print('?')" 2>$null)
+$APP_VERSION = (& $VENV_PY -c "import sys`ntry:`n import Core; print(getattr(Core,'__version__','?'))`nexcept Exception:`n print('?')" 2>$null)
 Write-Host "`n—— Lancement de main.py (version $APP_VERSION) ——"
 
 & $VENV_PY 'main.py' @AppArgs

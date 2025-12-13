@@ -219,8 +219,8 @@ fi
 # --- Launch ---------------------------------------------------------------
 APP_VERSION=$($VENV_PY - <<'PY'
 try:
-    import utils
-    print(getattr(utils, '__version__', '?'))
+    import Core
+    print(getattr(Core, '__version__', '?'))
 except Exception:
     print('?')
 PY
