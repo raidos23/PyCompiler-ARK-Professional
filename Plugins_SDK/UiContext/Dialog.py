@@ -1,5 +1,5 @@
-#Système de Dialog pour Plugins
-#Ce module doit posseder toute les capaciter pour manipuler l'Ui à la limite de ce que permet le logiciel 
+# Système de Dialog pour Plugins
+# Ce module doit posseder toute les capaciter pour manipuler l'Ui à la limite de ce que permet le logiciel
 
 
 from PySide6.QtWidgets import (

@@ -11,11 +11,6 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 
-
-
-
-
-
 # -----------------------------
 # Plugin base (BCASL) and decorator
 # -----------------------------
@@ -49,14 +44,11 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
     class PluginMeta:  # type: ignore
         pass
 
-
     def register_plugin(cls: Any) -> Any:  # type: ignore
         setattr(cls, "__bcasl_plugin__", True)
         return cls
 
     BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
-
-
 
 
 # -----------------------------
@@ -66,14 +58,14 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
 BCPLUGIN_TEMPLATE = "\n".join([])
 
 
-
 # -----------------------------
 # Public bridge to set selected workspace from plugins
 # -----------------------------
 
 Pathish = Union[str, Path]
+
+
 def set_selected_workspace(path: Pathish) -> bool:
-    
     """Always accept workspace change requests (SDK-level contract).
 
     - Auto-creates the target directory if missing
@@ -92,7 +84,7 @@ def set_selected_workspace(path: Pathish) -> bool:
         pass
     # Try to inform the GUI when running with UI; ignore result and accept by contract
     try:
-        from Core.MainWindow import request_workspace_change_from_BcPlugin # type: ignore
+        from Core.MainWindow import request_workspace_change_from_BcPlugin  # type: ignore
 
         try:
             request_workspace_change_from_BcPlugin(str(path))
@@ -107,7 +99,3 @@ def set_selected_workspace(path: Pathish) -> bool:
 def Generate_Bc_Plugin_Template():
     # Cette methode doit pouvoir créer une base de plugin de type Bc avec le contenu de la variable BCPLUGIN_TEMPLATE
     pass
-
-
-
-
