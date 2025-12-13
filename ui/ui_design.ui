@@ -211,7 +211,7 @@
           <item>
            <widget class="QPushButton" name="btn_api_loader">
             <property name="text">
-             <string>🔌 BCASL Loader</string>
+             <string>🧩 Bc Plugins Loader </string>
             </property>
             <property name="toolTip">
              <string>Charger BCASL Loader</string>
@@ -221,7 +221,7 @@
           <item>
            <widget class="QPushButton" name="btn_acasl_loader">
             <property name="text">
-             <string>🔌 ACASL Loader</string>
+             <string>🧩 Ac Plugins Loader</string>
             </property>
             <property name="toolTip">
              <string>Charger ACASL Loader</string>

@@ -3,9 +3,9 @@ Logique de compilation pour PyCompiler Pro++.
 Inclut la construction des commandes PyInstaller/Nuitka et la gestion des processus de compilation.
 """
 
-from .compiler import (
+from .compiler import _continue_compile_all, compile_all
+from .mainprocess import (
     _kill_process_tree,
-    _continue_compile_all,
     _kill_all_descendants,
     try_install_missing_modules,
     try_start_processes,
@@ -19,7 +19,6 @@ from .compiler import (
     handle_stderr,
     handle_stdout,
     redact_secrets,
-    compile_all,
     compute_for_all,
     engines_loader,
 )
@@ -41,7 +40,8 @@ __all__ = [
     "handle_stderr",
     "handle_stdout",
     "redact_secrets",
-    "compile_all",
+    "compiler",
     "compute_for_all",
     "engines_loader",
+    "compile_all"
 ]

@@ -14,6 +14,8 @@ from PySide6.QtCore import QObject, QProcess, Qt, QTimer, Signal
 from PySide6.QtGui import QDropEvent, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
 
+from .Compiler import compile_all
+
 from .dialogs import ProgressDialog
 from .Venv_Manager import VenvManager
 
@@ -900,7 +902,7 @@ class PyCompilerArkGui(QWidget):
         except Exception:
             pass
 
-    from .compiler import build_nuitka_command, build_pyinstaller_command
+    from .Compiler import build_nuitka_command, build_pyinstaller_command
 
     def select_nuitka_icon(self):
         import platform
@@ -1147,9 +1149,8 @@ class PyCompilerArkGui(QWidget):
             summary.append(f"Sortie: {self.output_dir_input.text().strip()}")
         # Widget options_summary supprimé; plus de mise à jour de résumé visuel
 
-    from .compiler import (
+    from .Compiler import (
         cancel_all_compilations,
-        compile_all,
         handle_finished,
         handle_stderr,
         handle_stdout,
@@ -1157,6 +1158,7 @@ class PyCompilerArkGui(QWidget):
         start_compilation_process,
         try_install_missing_modules,
         try_start_processes,
+        compile_all
     )
 
     def set_controls_enabled(self, enabled):
