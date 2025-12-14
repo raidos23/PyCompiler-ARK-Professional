@@ -51,11 +51,7 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
     BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
 
 
-# -----------------------------
-# Scaffolding utilities
-# -----------------------------
 
-BCPLUGIN_TEMPLATE = "\n".join([])
 
 
 # -----------------------------
@@ -97,5 +93,8 @@ def set_selected_workspace(path: Pathish) -> bool:
 
 
 def Generate_Bc_Plugin_Template():
+
+    BCPLUGIN_TEMPLATE = "\n".join([])
+
     # Cette methode doit pouvoir créer une base de plugin de type Bc avec le contenu de la variable BCPLUGIN_TEMPLATE
     pass

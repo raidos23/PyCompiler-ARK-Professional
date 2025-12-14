@@ -1,6 +1,7 @@
 # Système de Dialog pour Plugins
 
 from typing import Optional
+
 # Qt toolkits
 try:
     from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
@@ -40,8 +41,6 @@ def _qt_active_parent():
         return None
     except Exception:
         return None
-
-
 
 
 def show_msgbox(

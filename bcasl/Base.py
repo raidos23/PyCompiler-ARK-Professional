@@ -43,6 +43,7 @@ class PluginMeta:
     version: str
     description: str = ""
     author: str = ""
+    tag: str = ""
 
     def __post_init__(self) -> None:
         nid = (self.id or "").strip()
