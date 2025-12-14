@@ -1,5 +1,6 @@
 from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta
-from Plugins_SDK.GeneralContext import Logging, Dialog
+from Plugins_SDK.GeneralContext import Dialog
+from Plugins_SDK.GeneralContext.Logging import Logging
 
 log = Logging
 dialog = Dialog
@@ -22,10 +23,8 @@ class Cleaner(BcPluginBase):
             text="Want you clean the workspace (.pyc and __pycache__)",
             default_yes=True,
         )
-        log.log_info("not problem")
-        return super().on_pre_compile(ctx)
+        log.log_info(message = "cleaner marche correctement")
 
-    pass
 
     def apply_i18n(self, gui, tr):
         return super().apply_i18n(gui, tr)
