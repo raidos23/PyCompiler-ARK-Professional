@@ -1,114 +1,115 @@
 # Système de Dialog pour Plugins
-# Ce module doit posseder toute les capaciter pour manipuler l'Ui à la limite de ce que permet le logiciel
+
+from typing import Optional
+
+# Qt toolkits
+try:
+    from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
+except Exception:  # pragma: no cover
+    _QtW = None  # type: ignore
+    _QtC = None  # type: ignore
+
+def _is_noninteractive() -> bool:
+    try:
+        import os as _os
+
+        v = _os.environ.get("PYCOMPILER_NONINTERACTIVE")
+        if v is None:
+            return False
+        return str(v).strip().lower() not in ("", "0", "false", "no")
+    except Exception:
+        return False
 
 
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QTextEdit,
-    QHBoxLayout,
-)
-from PySide6.QtCore import Qt
+def _qt_active_parent():
+    if _QtW is None:
+        return None
+    try:
+        app = _QtW.QApplication.instance()
+        if app is None:
+            return None
+        w = app.activeWindow()
+        if w:
+            return w
+        try:
+            tls = app.topLevelWidgets()
+            if tls:
+                return tls[0]
+        except Exception:
+            pass
+        return None
+    except Exception:
+        return None
 
+    
+   
+from typing import Optional
 
-class Dialog(QDialog):
+def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, default=None):
     """
-    Dialog ARK++  pour plugins BCASL / ACASL
-    Supporte :
-    - OK / Annuler / Oui / Non / Custom buttons
-    - Logs dynamiques
-    - Callbacks
+    Show a message box if a Qt toolkit is available; fallback to console output otherwise.
+
+    kind: 'info' | 'warning' | 'error' | 'question'
+    Returns:
+      - question: True if Yes (or default), False otherwise
+      - others: None
     """
+    if _QtW is None or _QtW.QApplication.instance() is None or _is_noninteractive():
+        # Console fallback
+        print(f"[MSGBOX:{kind}] {title}: {text}")
+        if kind == "question":
+            return True if (default and str(default).lower() in ("yes", "ok", "true", "1")) else False
+        return None
+    try:
+        parent = parent or _qt_active_parent()
+        mb = _QtW.QMessageBox(parent)
+        mb.setWindowTitle(str(title))
+        mb.setText(str(text))
+        if kind == "warning":
+            mb.setIcon(_QtW.QMessageBox.Warning)
+        elif kind == "error":
+            mb.setIcon(_QtW.QMessageBox.Critical)
+        elif kind == "question":
+            mb.setIcon(_QtW.QMessageBox.Question)
+        else:
+            mb.setIcon(_QtW.QMessageBox.Information)
 
-    def __init__(
-        self, title="ARK++ Plugins Dialog", width=500, height=400, parent=None
-    ):
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setFixedSize(width, height)
+        if kind == "question":
+            yes = _QtW.QMessageBox.Yes
+            no = _QtW.QMessageBox.No
+            mb.setStandardButtons(yes | no)
+            if default and str(default).lower() == "no":
+                mb.setDefaultButton(no)
+            else:
+                mb.setDefaultButton(yes)
+            res = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
+            return res == yes
+        else:
+            ok = _QtW.QMessageBox.Ok
+            mb.setStandardButtons(ok)
+            mb.setDefaultButton(ok)
+            _ = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
+            return None
+    except Exception:
+        print(f"[MSGBOX:{kind}] {title}: {text}")
+        if kind == "question":
+            return True if (default and str(default).lower() in ("yes", "ok", "true", "1")) else False
+        return None
 
-        # Layout principal vertical
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
 
-        # Label d’instructions/messages
-        self.label = QLabel("Message")
-        self.layout.addWidget(self.label)
+class Dialog:
+    
+    def show_msgbox(self, kind: str, title: str, text: str, *, default: Optional[str] = None) -> Optional[bool]:
+        return show_msgbox(kind, title, text, default=default)
 
-        # Zone de texte pour logs dynamiques
-        self.text_area = QTextEdit()
-        self.text_area.setReadOnly(True)
-        self.layout.addWidget(self.text_area)
+    def msg_info(self, title: str, text: str) -> None:
+        show_msgbox("info", title, text)
 
-        # Layout pour boutons
-        self.button_layout = QHBoxLayout()
-        self.layout.addLayout(self.button_layout)
+    def msg_warn(self, title: str, text: str) -> None:
+        show_msgbox("warning", title, text)
 
-        # Boutons standards
-        self.ok_button = QPushButton("OK")
-        self.cancel_button = QPushButton("Annuler")
-        self.yes_button = QPushButton("Oui")
-        self.no_button = QPushButton("Non")
+    def msg_error(self, title: str, text: str) -> None:
+        show_msgbox("error", title, text)
 
-        # Connexion aux méthodes internes
-        self.ok_button.clicked.connect(lambda: self._handle_response("ok"))
-        self.cancel_button.clicked.connect(lambda: self._handle_response("cancel"))
-        self.yes_button.clicked.connect(lambda: self._handle_response("yes"))
-        self.no_button.clicked.connect(lambda: self._handle_response("no"))
-
-        # Dict pour callbacks personnalisés
-        self.callbacks = {}
-
-        # Stocke la réponse
-        self.response = None
-
-        # Ajouter boutons OK et Annuler par défaut
-        self.add_buttons(["ok", "cancel"])
-
-    # -----------------------
-    # Méthodes publiques
-    # -----------------------
-
-    def add_buttons(self, buttons: list):
-        """Ajouter des boutons par noms : ok, cancel, yes, no, custom:<label>"""
-        for btn_name in buttons:
-            if btn_name == "ok":
-                self.button_layout.addWidget(self.ok_button)
-            elif btn_name == "cancel":
-                self.button_layout.addWidget(self.cancel_button)
-            elif btn_name == "yes":
-                self.button_layout.addWidget(self.yes_button)
-            elif btn_name == "no":
-                self.button_layout.addWidget(self.no_button)
-            elif btn_name.startswith("custom:"):
-                label = btn_name.split(":", 1)[1]
-                btn = QPushButton(label)
-                btn.clicked.connect(lambda _, l=label: self._handle_response(l))
-                self.button_layout.addWidget(btn)
-
-    def set_label(self, text: str):
-        self.label.setText(text)
-
-    def log(self, message: str):
-        self.text_area.append(message)
-
-    def clear_log(self):
-        self.text_area.clear()
-
-    def set_callback(self, button_name: str, func):
-        """Associer un callback à un bouton"""
-        self.callbacks[button_name] = func
-
-    # -----------------------
-    # Méthodes internes
-    # -----------------------
-    def _handle_response(self, resp):
-        self.response = resp
-        if resp in self.callbacks:
-            try:
-                self.callbacks[resp]()
-            except Exception as e:
-                self.log(f"Erreur callback {resp}: {e}")
-        self.close()
+    def msg_question(self, title: str, text: str, default_yes: bool = True) -> bool:
+        return bool(show_msgbox("question", title, text, default="Yes" if default_yes else "No"))
