@@ -30,7 +30,7 @@ class Cleaner(BcPluginBase):
         return super().apply_i18n(gui, tr)
 
 
-# enregistrement automatique du pllugin dans le registre de bcasl
+# enregistrement automatique du plugin dans le registre de bcasl
 PLUGIN = Cleaner(META)
 
 
