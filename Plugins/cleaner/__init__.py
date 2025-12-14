@@ -10,9 +10,10 @@ META = PluginMeta(
     description="clean the workspace (.pyc and __pycache__)",
 )
 
-
+#classe principale du plugin
 class Cleaner(BcPluginBase):
-    def on_pre_compile(self, context):
+    
+    def on_pre_compile(self, context): #methode d'execution en pré_compilation
         return super().on_pre_compile(context)
 
     pass
