@@ -1,6 +1,8 @@
 from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta
 from Plugins_SDK.GeneralContext import Logging
 
+log = Logging
+
 META = PluginMeta(
     id="cleaner",
     name="cleaner",
