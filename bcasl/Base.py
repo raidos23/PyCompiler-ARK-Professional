@@ -32,7 +32,7 @@ class PluginMeta:
     """Métadonnées d'un plugin.
 
     id: identifiant unique (stable)
-    name: nom humain
+    name: nom
     version: chaîne de version
     description: courte description
     author: optionnel
