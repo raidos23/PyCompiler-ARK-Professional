@@ -15,10 +15,10 @@ Ce package expose une API stable pour les plugins tiers.
 
 from . import AcPluginContext as AcPluginContext  # noqa: F401
 from . import BcPluginContext as BcPluginContext  # noqa: F401
-from . import UiContext as UiContext  # noqa: F401
+from . import GeneralContext as GeneralContext  # noqa: F401
 
 __all__ = [
     "AcPluginContext",
     "BcPluginContext",
-    "UiContext",
+    "GeneralContext",
 ]
