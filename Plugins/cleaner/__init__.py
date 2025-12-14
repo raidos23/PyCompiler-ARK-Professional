@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2025 Samuel Amen Ague
+
 from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta, PreCompileContext
 from Plugins_SDK.GeneralContext import Dialog
 from Plugins_SDK.GeneralContext.Logging import Logging

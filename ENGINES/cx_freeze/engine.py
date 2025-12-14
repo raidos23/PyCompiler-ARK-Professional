@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2025 Samuel Amen Ague
+
 from __future__ import annotations
 
 import os

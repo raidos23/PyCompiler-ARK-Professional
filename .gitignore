@@ -112,8 +112,7 @@ ENV/
 env.bak/
 venv.bak/
 .qodo
-Plugins_SDK/GeneralContext/context.py
-
+Licence_Injector.py
 # Spyder project settings
 .spyderproject
 .spyproject
