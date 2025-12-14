@@ -1,13 +1,13 @@
 # Système de Dialog pour Plugins
 
 from typing import Optional
-
 # Qt toolkits
 try:
     from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
 except Exception:  # pragma: no cover
     _QtW = None  # type: ignore
     _QtC = None  # type: ignore
+
 
 def _is_noninteractive() -> bool:
     try:
@@ -41,11 +41,12 @@ def _qt_active_parent():
     except Exception:
         return None
 
-    
-   
-from typing import Optional
 
-def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, default=None):
+
+
+def show_msgbox(
+    kind: str, title: str, text: str, *, parent=None, buttons=None, default=None
+):
     """
     Show a message box if a Qt toolkit is available; fallback to console output otherwise.
 
@@ -58,7 +59,11 @@ def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, 
         # Console fallback
         print(f"[MSGBOX:{kind}] {title}: {text}")
         if kind == "question":
-            return True if (default and str(default).lower() in ("yes", "ok", "true", "1")) else False
+            return (
+                True
+                if (default and str(default).lower() in ("yes", "ok", "true", "1"))
+                else False
+            )
         return None
     try:
         parent = parent or _qt_active_parent()
@@ -93,13 +98,19 @@ def show_msgbox(kind: str, title: str, text: str, *, parent=None, buttons=None, 
     except Exception:
         print(f"[MSGBOX:{kind}] {title}: {text}")
         if kind == "question":
-            return True if (default and str(default).lower() in ("yes", "ok", "true", "1")) else False
+            return (
+                True
+                if (default and str(default).lower() in ("yes", "ok", "true", "1"))
+                else False
+            )
         return None
 
 
 class Dialog:
-    
-    def show_msgbox(self, kind: str, title: str, text: str, *, default: Optional[str] = None) -> Optional[bool]:
+
+    def show_msgbox(
+        self, kind: str, title: str, text: str, *, default: Optional[str] = None
+    ) -> Optional[bool]:
         return show_msgbox(kind, title, text, default=default)
 
     def msg_info(self, title: str, text: str) -> None:
@@ -112,4 +123,6 @@ class Dialog:
         show_msgbox("error", title, text)
 
     def msg_question(self, title: str, text: str, default_yes: bool = True) -> bool:
-        return bool(show_msgbox("question", title, text, default="Yes" if default_yes else "No"))
+        return bool(
+            show_msgbox("question", title, text, default="Yes" if default_yes else "No")
+        )

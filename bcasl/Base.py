@@ -84,7 +84,7 @@ class BcPluginBase:
 
     #  principal Hook
     def on_pre_compile(
-        self, context: PreCompileContext
+        self, ctx: PreCompileContext
     ) -> None:  # pragma: no cover - à surcharger
         raise NotImplementedError
 
