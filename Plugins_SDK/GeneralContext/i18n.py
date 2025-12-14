@@ -1,17 +1,14 @@
-
 """
 Apply plugin-local i18n from Plugins/<plugin_name>/languages/*.json independent of app languages.
 
 """
-
-
 
 from bcasl import BcPluginBase
 from acasl import AcPluginBase
 
 
 # Keep live PLugins Ac/Bc instances to support dynamic interactions (e.g., i18n refresh)
-INSTANCES: dict[str, BcPluginBase and AcPluginBase] = {}
+INSTANCES: dict[str, BcPluginBase, AcPluginBase] = {}
 
 
 # methode pour traduire les dialogues des PLugins Ac/Bc
@@ -27,4 +24,3 @@ def apply_translations(gui, tr: dict) -> None:
                 continue
     except Exception:
         pass
-
