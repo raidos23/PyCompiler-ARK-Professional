@@ -82,14 +82,17 @@ class BcPluginBase:
         self.requires = tuple(str(r).strip() for r in requires if str(r).strip())
         self.priority = int(priority)
 
-    # Hook principal
+    #  principal Hook
     def on_pre_compile(
-        self, ctx: PreCompileContext
+        self, context: PreCompileContext
     ) -> None:  # pragma: no cover - à surcharger
         raise NotImplementedError
 
     def __repr__(self) -> str:
         return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority}>"
+
+    def apply_i18n(self, gui, tr: dict[str, str]) -> None:
+        raise NotImplementedError
 
 
 @dataclass
