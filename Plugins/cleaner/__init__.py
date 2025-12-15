@@ -13,14 +13,16 @@ META = PluginMeta(
     name="cleaner",
     version="1.0.0",
     description="clean the workspace (.pyc and __pycache__)",
-    author= "Samuel Amen Ague",
+    author="Samuel Amen Ague",
 )
 
 
 # classe principale du plugin
 class Cleaner(BcPluginBase):
 
-    def on_pre_compile(self, ctx: PreCompileContext):  # methode d'execution en pré_compilation
+    def on_pre_compile(
+        self, ctx: PreCompileContext
+    ):  # methode d'execution en pré_compilation
         dialog.msg_question(
             self=dialog,
             title="Cleaner",

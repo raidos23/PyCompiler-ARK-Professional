@@ -1,9 +1,8 @@
 from PySide6.QtWidgets import QMessageBox
 import os
 
+
 # Nouvelle version de try_start_processes pour gérer les fichiers ignorés dynamiquement
-
-
 def _continue_compile_all(self):
     # Déplacé depuis compile_all pour poursuivre après BCASL sans bloquer l'UI
     def is_executable_script(path):

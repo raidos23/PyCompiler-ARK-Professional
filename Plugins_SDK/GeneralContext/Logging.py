@@ -1,5 +1,6 @@
 import colorama
 
+
 class Logging:
     def log_info(message: str) -> None:
         print(f"[INFO] {message}")

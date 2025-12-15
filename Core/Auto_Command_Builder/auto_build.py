@@ -35,7 +35,7 @@ except Exception:
 
 # Import utilitaire d'exclusion stdlib
 try:
-    from .deps_analyser import _is_stdlib_module
+    from ..deps_analyser import _is_stdlib_module
 except Exception:  # fallback au cas où
 
     def _is_stdlib_module(name: str) -> bool:
@@ -142,7 +142,7 @@ def _read_json_file(path: str) -> dict[str, dict[str, Optional[str]]]:
                 os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
             )
             schema_path = os.path.join(
-                repo_root, "utils", "schemas", "mapping.schema.json"
+                repo_root, "Core", "Auto_Builder", "schemas", "mapping.schema.json"
             )
             if os.path.isfile(schema_path):
                 with open(schema_path, encoding="utf-8") as sf:

@@ -677,7 +677,7 @@ class CxFreezeEngine(CompilerEngine):
             pass
         # Auto-plugins mapping for cx_Freeze
         try:
-            from engine_sdk import auto_plugins as _ap  # type: ignore
+            from engine_sdk import auto_build as _ap  # type: ignore
 
             auto_args = _ap.compute_auto_for_engine(gui, "cx_freeze") or []
         except Exception:

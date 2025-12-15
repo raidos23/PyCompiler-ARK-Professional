@@ -44,14 +44,14 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
     class PluginMeta:  # type: ignore
         pass
 
+    class PreCompileContext:
+        pass
+
     def register_plugin(cls: Any) -> Any:  # type: ignore
         setattr(cls, "__bcasl_plugin__", True)
         return cls
 
     BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
-
-
-
 
 
 # -----------------------------
