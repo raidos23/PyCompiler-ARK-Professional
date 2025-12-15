@@ -735,8 +735,8 @@ def _load_engine_package_mapping(
 def compute_auto_for_engine(self, engine_id: str) -> list[str]:
     """Calcule les arguments auto pour un moteur donné (plug-and-play)."""
     try:
-        base_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
-        workspace_dir = getattr(self, "workspace_dir", None)
+        os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
+        getattr(self, "workspace_dir", None)
         # Charge uniquement le mapping spécifique moteur (package)
         eng_mapping, eng_used_path = _load_engine_package_mapping(engine_id)
         mapping = dict(eng_mapping)

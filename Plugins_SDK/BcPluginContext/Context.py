@@ -91,7 +91,7 @@ def set_selected_workspace(path: Pathish) -> bool:
 
 def Generate_Bc_Plugin_Template():
 
-    BCPLUGIN_TEMPLATE = "\n".join([])
+    "\n".join([])
 
     # Cette methode doit pouvoir créer une base de plugin de type Bc avec le contenu de la variable BCPLUGIN_TEMPLATE
     pass

@@ -14,7 +14,7 @@ from os.path import dirname as _dirname
 from threading import RLock
 from types import ModuleType
 from typing import Any
-
+from MainWindow import PyCompilerArkGui
 __version__ = "1.0.0"
 
 # Cache of resolved attributes to avoid repeated imports
@@ -105,7 +105,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     # Dialogs
     "ProgressDialog": (".dialogs", "ProgressDialog"),
     # UI main entry point
-    "PyInstallerWorkspaceGUI": (".worker", "PyInstallerWorkspaceGUI"),
+    "PyCompilerArkGui": (".worker", "PyCompilerArkGui"),
     # BCASL integration
     "run_pre_compile": (".bcasl_loader", "run_pre_compile"),
     # Engines (external)
@@ -272,7 +272,7 @@ def __getattr__(name: str) -> Any:
                 "ProgressDialog": _load_export("ProgressDialog"),
             },
             "ui": {
-                "PyInstallerWorkspaceGUI": _load_export("PyInstallerWorkspaceGUI"),
+                "PyCompilerArkGui": _load_export("PyCompilerArkGui"),
             },
             "bcasl_loader": {
                 "run_pre_compile": _load_export("run_pre_compile"),

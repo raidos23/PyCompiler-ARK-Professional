@@ -208,7 +208,7 @@ if IS_WINDOWS and hasattr(signal, "SIGBREAK"):
     except Exception:
         pass
 
-from Core.MainWindow import PyCompilerArkGui
+from Core import PyCompilerArkGui
 
 
 def main(argv: list[str]) -> int:
