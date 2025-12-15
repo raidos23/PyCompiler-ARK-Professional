@@ -13,8 +13,8 @@ from typing import Optional
 from PySide6.QtCore import QObject, QProcess, Qt, QTimer, Signal
 from PySide6.QtGui import QDropEvent, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
-
-
+from .Auto_Command_Builder import compute_auto_for_engine, compute_for_all
+from .Compiler import compile_all, _continue_compile_all, start_compilation_process
 from .dialogs import ProgressDialog
 from .Venv_Manager import VenvManager
 
@@ -222,7 +222,7 @@ class PyCompilerArkGui(QWidget):
         self.update_ui_state()
 
     from .init_ui import init_ui
-
+    
     def add_pyinstaller_data(self):
         import os
 
