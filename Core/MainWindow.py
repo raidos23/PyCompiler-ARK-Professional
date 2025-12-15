@@ -222,7 +222,7 @@ class PyCompilerArkGui(QWidget):
         self.update_ui_state()
 
     from .init_ui import init_ui
-    
+
     def add_pyinstaller_data(self):
         import os
 

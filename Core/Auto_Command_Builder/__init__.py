@@ -18,7 +18,7 @@ from .auto_build import (
     register_import_alias,
     register_auto_builder,
     register_aliases,
-    _tr
+    _tr,
 )
 
 __all__ = [
@@ -41,5 +41,5 @@ __all__ = [
     "register_import_alias",
     "register_auto_builder",
     "register_aliases",
-    "_tr"
+    "_tr",
 ]
