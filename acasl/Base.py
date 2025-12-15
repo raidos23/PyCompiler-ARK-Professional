@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import fnmatch
 import logging
-import os
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path

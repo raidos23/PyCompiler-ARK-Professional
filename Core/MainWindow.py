@@ -14,7 +14,6 @@ from PySide6.QtCore import QObject, QProcess, Qt, QTimer, Signal
 from PySide6.QtGui import QDropEvent, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
 
-from .Compiler import compile_all
 
 from .dialogs import ProgressDialog
 from .Venv_Manager import VenvManager
@@ -1158,7 +1157,6 @@ class PyCompilerArkGui(QWidget):
         start_compilation_process,
         try_install_missing_modules,
         try_start_processes,
-        compile_all,
     )
 
     def set_controls_enabled(self, enabled):

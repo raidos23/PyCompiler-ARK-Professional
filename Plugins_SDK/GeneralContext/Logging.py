@@ -1,4 +1,3 @@
-import colorama
 
 
 class Logging:
