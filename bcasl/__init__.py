@@ -10,7 +10,7 @@ Point d'entrée du package: expose l'API publique minimale et stable.
         BCASL, PluginBase, PluginMeta, PreCompileContext, ExecutionReport,
         register_plugin, BCASL_PLUGIN_REGISTER_FUNC,
         run_pre_compile_async, run_pre_compile,
-        ensure_bcasl_thread_stopped, open_api_loader_dialog,
+        ensure_bcasl_thread_stopped, open_bc_loader_dialog,
         resolve_bcasl_timeout,
     )
 """
@@ -31,7 +31,7 @@ from .Base import (
 # Chargeur (exécution asynchrone, UI, annulation, configuration)
 from .Loader import (
     ensure_bcasl_thread_stopped,
-    open_api_loader_dialog,
+    open_bc_loader_dialog,
     resolve_bcasl_timeout,
     run_pre_compile,
     run_pre_compile_async,
@@ -50,7 +50,7 @@ __all__ = [
     "run_pre_compile_async",
     "run_pre_compile",
     "ensure_bcasl_thread_stopped",
-    "open_api_loader_dialog",
+    "open_bc_loader_dialog",
     "resolve_bcasl_timeout",
 ]
 

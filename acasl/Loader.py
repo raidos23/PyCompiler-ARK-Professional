@@ -456,7 +456,7 @@ def resolve_acasl_timeout(self) -> float:
         return 0.0
 
 
-def open_acasl_loader_dialog(self) -> None:
+def open_ac_loader_dialog(self) -> None:
     """UI minimale pour activer/désactiver et réordonner les plugins ACASL (JSON-only)."""
     try:
         from PySide6.QtWidgets import (
