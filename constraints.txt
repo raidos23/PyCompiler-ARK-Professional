@@ -1,4 +1,4 @@
-# PyCompiler Pro++ (ARK++) — Version constraints for reproducible builds
+# PyCompiler ARK++ (ARK++) — Version constraints for reproducible builds
 # This file pins exact versions for all dependencies to ensure reproducible builds
 # Update these versions regularly and test compatibility
 

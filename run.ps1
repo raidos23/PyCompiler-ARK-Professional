@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# PyCompiler Pro++ — High-grade launcher (Windows PowerShell)
+# PyCompiler ARK++ — High-grade launcher (Windows PowerShell)
 # Author: Samuel Amen Ague
 # Copyright (c) 2025 Samuel Amen Ague. All rights reserved.
 

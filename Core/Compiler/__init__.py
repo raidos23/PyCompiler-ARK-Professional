@@ -1,5 +1,5 @@
 """
-Logique de compilation pour PyCompiler Pro++.
+Logique de compilation pour PyCompiler ARK++.
 Inclut la construction des commandes PyInstaller/Nuitka et la gestion des processus de compilation.
 """
 

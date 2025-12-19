@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Samuel Amen Ague
 
 """
-Gestion des préférences utilisateur pour PyCompiler Pro++.
+Gestion des préférences utilisateur pour PyCompiler ARK++.
 Inclut la sauvegarde et le chargement des préférences.
 La langue sélectionnée par l'utilisateur (clé "language") est enregistrée et restaurée automatiquement.
 """

@@ -950,7 +950,7 @@ class PyCompilerArkGui(QWidget):
         # Minimal, aligned with v3.2.0 behavior (classic engines only)
         if getattr(self, "current_language", "Français") == "English":
             help_text = (
-                "<b>PyCompiler Pro++ — Quick Help</b><br>"
+                "<b>PyCompiler ARK++ — Quick Help</b><br>"
                 "<ul>"
                 "<li>1) Select the Workspace and add your .py files.</li>"
                 "<li>2) Configure pre‑compile plugins via <b>API Loader</b> (BCASL) and post‑compile plugins via <b>ACASL Loader</b> (optional).</li>"
@@ -971,7 +971,7 @@ class PyCompilerArkGui(QWidget):
             )
         else:
             help_text = (
-                "<b>PyCompiler Pro++ — Aide rapide</b><br>"
+                "<b>PyCompiler ARK++ — Aide rapide</b><br>"
                 "<ul>"
                 "<li>1) Sélectionnez le Workspace et ajoutez vos fichiers .py.</li>"
                 "<li>2) Configurez les plugins de pré‑compilation via <b>API Loader</b> (BCASL) et de post‑compilation via <b>ACASL Loader</b> (optionnel).</li>"

@@ -1,4 +1,4 @@
-# PyCompiler Pro++ (ARK++) — Runtime requirements
+# PyCompiler ARK++ (ARK++) — Runtime requirements
 # Note: PyInstaller/Nuitka are installed per-project (not global requirements)
 # Use with constraints.txt for reproducible builds: pip install -r requirements.txt -c constraints.txt
 
