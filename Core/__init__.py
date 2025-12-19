@@ -15,6 +15,7 @@ from threading import RLock
 from types import ModuleType
 from typing import Any
 from MainWindow import PyCompilerArkGui
+
 __version__ = "1.0.0"
 
 # Cache of resolved attributes to avoid repeated imports
