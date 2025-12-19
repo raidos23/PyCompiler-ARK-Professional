@@ -14,7 +14,7 @@ from os.path import dirname as _dirname
 from threading import RLock
 from types import ModuleType
 from typing import Any
-from MainWindow import PyCompilerArkGui
+from .MainWindow import PyCompilerArkGui
 
 __version__ = "1.0.0"
 
@@ -246,7 +246,7 @@ def __getattr__(name: str) -> Any:
                     "export_system_preferences_json"
                 ),
             },
-            "compiler": {
+            ".compiler": {
                 "compile_all": _load_export("compile_all"),
                 "try_start_processes": _load_export("try_start_processes"),
                 "start_compilation_process": _load_export("start_compilation_process"),
