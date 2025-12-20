@@ -209,3 +209,6 @@ tests/
 
 #PREFERENCE
 .pref
+.pycompiler/
+bcasl.json
+acasl.json
