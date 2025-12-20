@@ -407,7 +407,7 @@ def resolve_bcasl_timeout(self) -> float:
         return 0.0
 
 
-def open_api_loader_dialog(self) -> None:  # UI minimale
+def open_bc_loader_dialog(self) -> None:  # UI minimale
     """Fenêtre simple pour activer/désactiver et réordonner les plugins(BCASL).
     Persiste dans <workspace>/bcasl.json uniquement (JSON).
     """

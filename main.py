@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Samuel Amen Ague
 
 """
-PyCompiler Pro++ — Cross-platform hardened bootstrap
+PyCompiler ARK++ — Cross-platform hardened bootstrap
 - OS-specific environment safety (UTF-8, DPI, Wayland/macOS)
 - Crash logging to platform-appropriate directories
 - Qt message handler and high-DPI attributes configured before QApplication
@@ -208,7 +208,7 @@ if IS_WINDOWS and hasattr(signal, "SIGBREAK"):
     except Exception:
         pass
 
-from Core.MainWindow import PyCompilerArkGui
+from Core import PyCompilerArkGui
 
 
 def main(argv: list[str]) -> int:

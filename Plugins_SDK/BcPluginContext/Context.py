@@ -4,11 +4,8 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
-import re
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 
 # -----------------------------
@@ -44,18 +41,14 @@ except Exception:  # pragma: no cover — dev fallback when BCASL is not importa
     class PluginMeta:  # type: ignore
         pass
 
+    class PreCompileContext:
+        pass
+
     def register_plugin(cls: Any) -> Any:  # type: ignore
         setattr(cls, "__bcasl_plugin__", True)
         return cls
 
     BCASL_PLUGIN_REGISTER_FUNC = "bcasl_register"
-
-
-# -----------------------------
-# Scaffolding utilities
-# -----------------------------
-
-BCPLUGIN_TEMPLATE = "\n".join([])
 
 
 # -----------------------------
@@ -97,5 +90,8 @@ def set_selected_workspace(path: Pathish) -> bool:
 
 
 def Generate_Bc_Plugin_Template():
+
+    "\n".join([])
+
     # Cette methode doit pouvoir créer une base de plugin de type Bc avec le contenu de la variable BCPLUGIN_TEMPLATE
     pass

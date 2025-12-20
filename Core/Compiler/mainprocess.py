@@ -23,7 +23,7 @@ from .process_killer import _kill_process_tree, _kill_all_descendants
 from .. import engines_loader as engines_loader
 from engine_sdk.utils import clamp_text, redact_secrets
 
-from ..auto_plugins import compute_for_all
+from ..Auto_Command_Builder import compute_for_all
 from ..preferences import MAX_PARALLEL
 
 

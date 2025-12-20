@@ -533,7 +533,7 @@ def run_process(
         except Exception:
             cwd = None
 
-    t0 = time.perf_counter()
+    time.perf_counter()
 
     if QProcess is not None:
         try:

@@ -190,7 +190,6 @@ class BCASL:
             key=lambda x: (active_items[x].priority, active_items[x].insert_idx, x),
         )
         order: list[str] = []
-        import heapq
 
         heap: list[tuple[int, int, str]] = []
         for pid in roots:
@@ -278,7 +277,6 @@ class BCASL:
                 children[dep].append(pid)
 
         # File d'attente initiale (indeg=0) triée par (priority, insert_idx, pid)
-        import heapq
 
         ready: list[tuple[int, int, str]] = []
         for pid, rec in active_items.items():

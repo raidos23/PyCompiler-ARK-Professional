@@ -1,4 +1,4 @@
-# PyCompiler Pro++ (ARK++) — Runtime requirements
+# PyCompiler ARK++ (ARK++) — Runtime requirements
 # Note: PyInstaller/Nuitka are installed per-project (not global requirements)
 # Use with constraints.txt for reproducible builds: pip install -r requirements.txt -c constraints.txt
 
@@ -43,11 +43,3 @@ mypy
 bandit
 pip-audit
 safety
-
-# SBOM generation (dev)
-# Use cyclonedx-bom (CLI) instead of deprecated/obsolete cyclonedx-py
-cyclonedx-bom
-
-# Build tools (dev)
-build
-wheel

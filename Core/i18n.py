@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Language/i18n utilities for PyCompiler Pro++ (async-only public API)
+# Language/i18n utilities for PyCompiler ARK++ (async-only public API)
 # Optimisé pour temps réel avec gestion d'erreurs robuste et caching
 
 from __future__ import annotations

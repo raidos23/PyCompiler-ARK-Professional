@@ -1,10 +1,8 @@
-import asyncio
 import functools
 import os
 import platform
 import re
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 from importlib.metadata import distribution, PackageNotFoundError
 
 from PySide6.QtCore import QProcess

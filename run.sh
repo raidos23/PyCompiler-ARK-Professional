@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# PyCompiler Pro++ — High-grade launcher (Unix)
+# PyCompiler ARK++ — High-grade launcher (Unix)
 # Author: Samuel Amen Ague
 # Copyright (c) 2025 Samuel Amen Ague. All rights reserved.
 
@@ -66,7 +66,7 @@ NO_COLOR_OPT=0
 LOG_FILE=""
 
 usage(){ cat <<EOF
-${BOLD}PyCompiler Pro++ launcher${RESET}
+${BOLD}PyCompiler ARK++ launcher${RESET}
 Usage: ./run.sh [options] [--] [app-args]
 
 Options:

@@ -192,7 +192,6 @@ class ACASL:
             key=lambda x: (active_items[x].priority, active_items[x].insert_idx, x),
         )
         order: list[str] = []
-        import heapq
 
         heap: list[tuple[int, int, str]] = []
         for pid in roots:

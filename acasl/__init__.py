@@ -9,7 +9,7 @@ __all__ = (
     "run_post_compile_async",
     "ensure_acasl_thread_stopped",
     "ACASLContext",
-    "open_acasl_loader_dialog",
+    "open_ac_loader_dialog",
     # Plugin system
     "AcPluginBase",
     "PluginMeta",
@@ -25,7 +25,7 @@ try:  # pragma: no cover
     from .Loader import (  # type: ignore
         ACASLContext,
         ensure_acasl_thread_stopped,
-        open_acasl_loader_dialog,
+        open_ac_loader_dialog,
         run_post_compile_async,
     )
 
@@ -42,7 +42,7 @@ except Exception:  # pragma: no cover
         from Core.acasl_loader import (  # type: ignore
             ACASLContext,
             ensure_acasl_thread_stopped,
-            open_acasl_loader_dialog,
+            open_ac_loader_dialog,
             run_post_compile_async,
         )
     except Exception:
@@ -64,7 +64,7 @@ except Exception:  # pragma: no cover
         class ACASLContext:  # type: ignore
             pass
 
-        def open_acasl_loader_dialog(self):  # type: ignore
+        def open_ac_loader_dialog(self):  # type: ignore
             try:
                 if hasattr(self, "log") and self.log:
                     self.log.append("ℹ️ ACASL Loader indisponible.")

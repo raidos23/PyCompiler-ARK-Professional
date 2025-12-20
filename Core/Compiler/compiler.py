@@ -1,9 +1,8 @@
 from PySide6.QtWidgets import QMessageBox
 import os
 
+
 # Nouvelle version de try_start_processes pour gérer les fichiers ignorés dynamiquement
-
-
 def _continue_compile_all(self):
     # Déplacé depuis compile_all pour poursuivre après BCASL sans bloquer l'UI
     def is_executable_script(path):
@@ -46,13 +45,13 @@ def _continue_compile_all(self):
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
         self.queue = [(f, True) for f in files_ok]
-        total_files = len(files_ok)
+        len(files_ok)
     else:
         # PyInstaller : applique la logique main.py/app.py uniquement si l'option est cochée
         if self.selected_files:
             files_ok = [f for f in self.selected_files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            total_files = len(files_ok)
+            len(files_ok)
         elif self.opt_main_only.isChecked():
             files = [
                 f
@@ -61,7 +60,7 @@ def _continue_compile_all(self):
             ]
             files_ok = [f for f in files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            total_files = len(files_ok)
+            len(files_ok)
             if not files_ok:
                 self.log.append(
                     "⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n"
@@ -70,7 +69,7 @@ def _continue_compile_all(self):
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            total_files = len(files_ok)
+            len(files_ok)
 
     self.current_compiling.clear()
     self.processes.clear()
@@ -214,13 +213,13 @@ def compile_all(self):
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
         self.queue = [(f, True) for f in files_ok]
-        total_files = len(files_ok)
+        len(files_ok)
     else:
         # PyInstaller : applique la logique main.py/app.py uniquement si l'option est cochée
         if self.selected_files:
             files_ok = [f for f in self.selected_files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            total_files = len(files_ok)
+            len(files_ok)
         elif self.opt_main_only.isChecked():
             files = [
                 f
@@ -229,7 +228,7 @@ def compile_all(self):
             ]
             files_ok = [f for f in files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            total_files = len(files_ok)
+            len(files_ok)
             if not files_ok:
                 self.log.append(
                     "⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n"
@@ -238,7 +237,7 @@ def compile_all(self):
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            total_files = len(files_ok)
+            len(files_ok)
 
     self.current_compiling.clear()
     self.processes.clear()

@@ -1,4 +1,4 @@
-# PyCompiler Pro++ (ARK++) — Version constraints for reproducible builds
+# PyCompiler ARK++ (ARK++) — Version constraints for reproducible builds
 # This file pins exact versions for all dependencies to ensure reproducible builds
 # Update these versions regularly and test compatibility
 
@@ -32,12 +32,3 @@ mypy==1.8.0
 bandit==1.7.5
 pip-audit==2.6.1
 safety==2.3.5
-
-# SBOM generation
-cyclonedx-py==4.0.4
-
-# Build tools
-build==1.0.3
-wheel==0.42.0
-setuptools==69.0.3
-
