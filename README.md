@@ -7,13 +7,6 @@
 
 ## 🎯 Key Features
 
-### 🔒 **Security & Quality**
-- **Automated vulnerability scanning** with bandit, pip-audit, and safety
-- **Plugin sandboxing** with resource limits and timeouts
-- **Type checking** with mypy for code reliability
-- **Automated code formatting** with black and ruff
-- **Comprehensive testing** with pytest and coverage reporting
-
 ### 🔧 **Modular Plugin System**
 - **BCASL**: Pre-compilation plugins for validation, preparation, and code transformation
 - **ACASL**: Post-compilation automation (packaging, signing, publishing)
@@ -29,7 +22,6 @@
 
 ### 🛠️ **Developer-Friendly SDKs**
 - **Plugins_SDK**: Complete plugin development framework
-- **Configuration management**: Multi-format support (JSON/YAML/TOML/INI)
 - **Progress tracking**: Non-blocking UI updates with detailed metrics
 - **Context management**: Secure workspace and resource handling
 - **Internationalization**: Async i18n with plugin overlay support
@@ -63,7 +55,6 @@ PyCompiler ARK++ provides a modular, extensible platform for Python compilation 
 ### **SDKs & Utilities**
 
 #### 🛠️ **Plugins_SDK**
-- **Configuration management**: Multi-format support (JSON/YAML/TOML/INI)
 - **Progress tracking**: Non-blocking UI updates with detailed metrics
 - **Context management**: Secure workspace and resource handling
 - **Internationalization**: Async i18n with plugin overlay support
@@ -128,10 +119,7 @@ mypy .                         # Type checking
 bandit -r .                    # Security scanning
 
 # Run tests with coverage
-pytest --cov=utils --cov=Plugins_SDK --cov=engine_sdk --cov=bcasl --cov=acasl
-
-# Generate SBOM
-cyclonedx-py -r requirements.txt -o sbom.json
+pytest --cov=Core --cov=Plugins_SDK --cov=engine_sdk --cov=bcasl --cov=acasl --cov=cesl
 ```
 
 ## 🌍 **Platform Support**
@@ -153,41 +141,19 @@ cyclonedx-py -r requirements.txt -o sbom.json
 
 See [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md) for detailed compatibility information.
 
-## 🔐 **Security Features**
-
-### **Supply Chain Security**
-- **SBOM Generation**: Complete software bill of materials
-- **Dependency Scanning**: Automated vulnerability detection
-- **Reproducible Builds**: Deterministic compilation process
-- **Code Signing**: Multi-platform artifact authentication
-
-### **Runtime Security**
-- **Plugin Sandboxing**: Isolated execution environments
-- **Resource Limits**: CPU, memory, and I/O restrictions
-- **Audit Logging**: Comprehensive activity tracking
-- **Secure Defaults**: Security-first configuration
-
-### **Vulnerability Management**
-- **Automated Scanning**: CI/CD integrated security checks
-- **Responsible Disclosure**: Structured vulnerability reporting
-- **Security Updates**: Fast-track patches for critical issues
-- **CVE Tracking**: Public vulnerability database integration
-
 ## 📚 **Documentation**
 
 ### **User Guides**
-- [Upgrade Guide](docs/UPGRADE_GUIDE.md) - Migration from previous versions
 - [About SDKs](docs/about_sdks.md) - Overview of available SDKs
 - [Create a Building Engine](docs/how_to_create_a_building_engine.md) - Engine development guide
 - [Create an ACASL Plugin](docs/how_to_create_an_acasl_plugin.md) - Post-compile plugin guide
 - [Create a BCASL Plugin](docs/how_to_create_a_bcasl_plugin.md) - Pre-compile plugin guide
-- [Create a Theme](docs/how_to_create_theme.md) - UI themes guide
+
 
 ### **Developer Documentation**
 - [Contributing](CONTRIBUTING.md) - How to contribute to the project
 
 ### **Operations**
-- [Security Policy](SECURITY.md) - Security practices and reporting
 - [Support Matrix](SUPPORTED_MATRIX.md) - Platform and version support
 
 ## 🤝 **Contributing**
@@ -224,8 +190,6 @@ This project is licensed under the **GNU General Public License v3.0 only (GPL-3
 ### **Security Issues**
 For security vulnerabilities, please follow our [Security Policy](SECURITY.md):
 - **Email**: ague.samuel27@gmail.com
-- **GitHub Security**: Private vulnerability reporting
-- **Response Time**: 48 hours for initial response
 
 ## 🎉 **What's New**
 
@@ -242,22 +206,6 @@ PyCompiler ARK++ represents a comprehensive upgrade with:
 - **Python 3.10+**: Dropped support for Python 3.9 and below
 - **New plugin system**: BCASL/ACASL replaces legacy plugin architecture
 - **Enhanced APIs**: Backward compatibility with deprecation warnings
-
-### **Migration Path**
-1. **Review** [UPGRADE_GUIDE.md](docs/UPGRADE_GUIDE.md) for detailed instructions
-2. **Update** Python version to 3.10+ if needed
-3. **Install** new dependencies and development tools
-4. **Configure** new quality and security tools
-5. **Test** existing plugins and configurations
-
-## 🎯 **Project Goals**
-
-- **Reliability**: Comprehensive testing and type checking
-- **Security**: Automated scanning and secure defaults
-- **Extensibility**: Plugin architecture for custom functionality
-- **Usability**: Clear documentation and intuitive interfaces
-- **Performance**: Optimized compilation and parallel execution
-- **Maintainability**: Clean code with comprehensive documentation
 
 ---
 
