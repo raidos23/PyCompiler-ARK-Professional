@@ -216,40 +216,6 @@ def compile_project(source_path: str, output_path: str, options: dict[str, Any])
 
 ### Writing Tests
 
-```python
-import pytest
-from unittest.mock import Mock, patch
-
-def test_compile_project_success():
-    """Compilation succeeds with valid parameters."""
-    source_path = "/valid/source"
-    output_path = "/valid/output"
-    options = {"optimize": True}
-    result = compile_project(source_path, output_path, options)
-    assert result is True
-
-def test_compile_project_invalid_source():
-    """Compilation fails with invalid source path."""
-    with pytest.raises(CompilationError):
-        compile_project("/invalid/source", "/output", {})
-```
-
-### Running Tests
-
-```bash
-# All tests
-pytest
-
-# With coverage
-pytest --cov=utils --cov=API_SDK --cov=engine_sdk --cov=bcasl --cov=acasl
-
-# Specific tests
-pytest tests/test_bcasl.py::test_plugin_loading
-
-# Verbose
-pytest -v
-```
-
 ### Coverage
 
 - Target: ≥ 80%
