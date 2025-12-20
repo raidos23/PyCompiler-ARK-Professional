@@ -5,10 +5,11 @@ Apply plugin-local i18n from Plugins/<plugin_name>/languages/*.json independent 
 
 from bcasl import BcPluginBase
 from acasl import AcPluginBase
+from cesl import CePluginBase
 
 
 # Keep live PLugins Ac/Bc instances to support dynamic interactions (e.g., i18n refresh)
-INSTANCES: dict[str, BcPluginBase, AcPluginBase] = {}
+INSTANCES: dict[str, BcPluginBase, AcPluginBase, CePluginBase] = {}
 
 
 # methode pour traduire les dialogues des PLugins Ac/Bc

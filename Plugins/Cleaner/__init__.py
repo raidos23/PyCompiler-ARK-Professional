@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2025 Samuel Amen Ague
 
-#ceci est un exemple pourles plugin du type BC 
+# ceci est un exemple pourles plugin du type BC
 
 from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta, PreCompileContext
 from Plugins_SDK.GeneralContext import Dialog
@@ -21,6 +21,8 @@ META = PluginMeta(
 
 # classe principale du plugin
 class Cleaner(BcPluginBase):
+    def install_deps(deps):
+        return super().install_deps()
 
     def on_pre_compile(
         self, ctx: PreCompileContext
