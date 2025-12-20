@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2025 Samuel Amen Ague
 
+#ceci est un exemple pourles plugin du type BC 
+
 from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta, PreCompileContext
 from Plugins_SDK.GeneralContext import Dialog
 from Plugins_SDK.GeneralContext.Logging import Logging

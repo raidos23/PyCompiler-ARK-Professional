@@ -145,9 +145,10 @@ See [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md) for detailed compatibility inform
 
 ### **User Guides**
 - [About SDKs](docs/about_sdks.md) - Overview of available SDKs
-- [Create a Building Engine](docs/how_to_create_a_building_engine.md) - Engine development guide
-- [Create an ACASL Plugin](docs/how_to_create_an_acasl_plugin.md) - Post-compile plugin guide
-- [Create a BCASL Plugin](docs/how_to_create_a_bcasl_plugin.md) - Pre-compile plugin guide
+- [Create a Building Engine](docs/how_to_create_an_engine.md) - Engine development guide
+- [Create an AC Plugin](docs/how_to_create_an_AC_plugin.md) - Post-compile plugin guide
+- [Create a BC Plugin](docs/how_to_create_a_BC_plugin.md) - Pre-compile plugin guide
+- [Create a CE Plugin](docs/how_to_create_a_CE_plugin.md) - Core Extension plugin guide
 
 
 ### **Developer Documentation**
@@ -196,7 +197,7 @@ For security vulnerabilities, please follow our [Security Policy](SECURITY.md):
 PyCompiler ARK++ represents a comprehensive upgrade with:
 
 ### **Key Improvements**
-- **Modular architecture**: Extensible plugin system with BCASL and ACASL
+- **Modular architecture**: Extensible plugin system with BCASL, ACASL and CESL
 - **Enhanced security**: Comprehensive scanning and code signing
 - **Complete documentation**: Guides for all major features
 - **Modern tooling**: Latest Python practices and tools
@@ -204,7 +205,7 @@ PyCompiler ARK++ represents a comprehensive upgrade with:
 
 ### **Breaking Changes**
 - **Python 3.10+**: Dropped support for Python 3.9 and below
-- **New plugin system**: BCASL/ACASL replaces legacy plugin architecture
+- **New plugin system**: BCASL/ACASL/CESL replaces legacy plugin architecture
 - **Enhanced APIs**: Backward compatibility with deprecation warnings
 
 ---
