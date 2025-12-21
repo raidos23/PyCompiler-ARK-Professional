@@ -36,6 +36,7 @@ class BCASL:
         self._insert_counter = 0
         # Sandbox settings
         self.sandbox = bool(sandbox)
+        # Timeout settings
         self.plugin_timeout_s = float(plugin_timeout_s)
 
     # API publique
@@ -262,7 +263,7 @@ class BCASL:
         # Construire graphe des dépendances des plugins actifs
         active_items = {pid: rec for pid, rec in self._registry.items() if rec.active}
         if not active_items:
-            _logger.info("Aucun plugin actif")
+            _logger.info("Aucun plugin Bcasl actif")
             return report
         indeg: dict[str, int] = {pid: 0 for pid in active_items}
         children: dict[str, list[str]] = {pid: [] for pid in active_items}
@@ -601,7 +602,7 @@ def _plugin_worker(
                     pass
     except Exception:
         pass
-    # Enforce API_SDK.progress usage: block direct Qt QProgressDialog in plugins
+    # Enforce Plugins_SDK.progress usage: block direct Qt QProgressDialog in plugins
     try:
         _os.environ["PYCOMPILER_ENFORCE_SDK_PROGRESS"] = "1"
     except Exception:
@@ -612,7 +613,7 @@ def _plugin_worker(
         class _NoDirectProgressDialog:  # type: ignore
             def __init__(self, *args, **kwargs) -> None:
                 raise RuntimeError(
-                    "Plugins must use API_SDK.progress(...) instead of PySide6.QProgressDialog"
+                    "Plugins must use Plugins_SDK.progress(...) instead of PySide6.QProgressDialog"
                 )
 
         try:
@@ -626,7 +627,7 @@ def _plugin_worker(
             class _NoDirectProgressDialog:  # type: ignore
                 def __init__(self, *args, **kwargs) -> None:
                     raise RuntimeError(
-                        "Plugins must use API_SDK.progress(...) instead of PyQt.QProgressDialog"
+                        "Plugins must use Plugins_SDK.progress(...) instead of PyQt.QProgressDialog"
                     )
 
             try:

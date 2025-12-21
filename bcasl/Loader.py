@@ -417,6 +417,7 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
             QDialog,
             QHBoxLayout,
             QLabel,
+            QCheckBox,
             QListWidget,
             QListWidgetItem,
             QMessageBox,
@@ -475,6 +476,18 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
             )
         )
         layout.addWidget(info)
+
+        # Global BCASL enable/disable
+        chk_enable = QCheckBox("Activer BCASL / Enable BCASL", dlg)
+        try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
+            bcasl_enabled_flag = (
+                bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
+            )
+        except Exception:
+            bcasl_enabled_flag = True
+        chk_enable.setChecked(bcasl_enabled_flag)
+        layout.addWidget(chk_enable)
 
         # Liste réordonnable avec cases à cocher
         lst = QListWidget(dlg)
@@ -566,6 +579,22 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
         btns.addWidget(btn_save)
         layout.addLayout(btns)
 
+        # Enable/disable list and move buttons based on global toggle
+        def _apply_enabled_state():
+            en = chk_enable.isChecked()
+            try:
+                lst.setEnabled(en)
+                btn_up.setEnabled(en)
+                btn_down.setEnabled(en)
+            except Exception:
+                pass
+
+        try:
+            chk_enable.toggled.connect(lambda _=None: _apply_enabled_state())
+            _apply_enabled_state()
+        except Exception:
+            pass
+
         def do_save():
             # Extraire ordre et états
             new_plugins: dict[str, Any] = {}
@@ -579,6 +608,19 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
             cfg_out: dict[str, Any] = dict(cfg) if isinstance(cfg, dict) else {}
             cfg_out["plugins"] = new_plugins
             cfg_out["plugin_order"] = order_ids
+
+            # Global enabled flag in options
+            try:
+                opts = (
+                    cfg_out.get("options", {})
+                    if isinstance(cfg_out.get("options"), dict)
+                    else {}
+                )
+                opts["enabled"] = bool(chk_enable.isChecked())
+                cfg_out["options"] = opts
+            except Exception:
+                pass
+
             # Ecrire JSON uniquement
             target = workspace_root / "bcasl.json"
             try:
@@ -666,13 +708,32 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
         plugin_timeout = (
             plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
         )
-        # Respect du flag global enabled
+
+        # Respect global enabled flag: skip BCASL when disabled
         try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
             bcasl_enabled = (
                 bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
             )
         except Exception:
             bcasl_enabled = True
+        if not bcasl_enabled:
+            try:
+                if hasattr(self, "log") and self.log is not None:
+                    self.log.append(
+                        self.tr(
+                            "⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n",
+                            "⏹️ BCASL disabled in configuration. Skipping execution\n",
+                        )
+                    )
+            except Exception:
+                pass
+            if callable(on_done):
+                try:
+                    on_done({"status": "disabled"})
+                except Exception:
+                    pass
+            return
         if not bcasl_enabled:
             try:
                 if hasattr(self, "log") and self.log is not None:
@@ -816,12 +877,24 @@ def run_pre_compile(self) -> Optional[object]:
             plugin_timeout if plugin_timeout and plugin_timeout > 0 else 0.0
         )
 
+        # Respect global enabled flag: skip BCASL when disabled
         try:
+            opt = cfg.get("options", {}) if isinstance(cfg, dict) else {}
             bcasl_enabled = (
                 bool(opt.get("enabled", True)) if isinstance(opt, dict) else True
             )
         except Exception:
             bcasl_enabled = True
+        if not bcasl_enabled:
+            try:
+                if hasattr(self, "log") and self.log is not None:
+                    self.log.append(
+                        "⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n"
+                    )
+            except Exception:
+                pass
+            return None
+
         if not bcasl_enabled:
             try:
                 if hasattr(self, "log") and self.log is not None:
