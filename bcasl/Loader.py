@@ -77,21 +77,15 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
                 for pid, rec in getattr(mgr, "_registry", {}).items():
                     try:
                         plg = rec.plugin
-                        # Collect optional tags from plugin attribute or module-level BCASL_TAGS
+                        # Récupérer les tags depuis PluginMeta (normalisés)
                         tags: list[str] = []
                         try:
-                            t = getattr(plg, "tags", None)
-                            if isinstance(t, (list, tuple)):
-                                tags = [str(x) for x in t]
+                            meta_tags = getattr(plg.meta, "tags", ())
+                            if isinstance(meta_tags, (list, tuple)):
+                                tags = [str(x).strip().lower() for x in meta_tags if str(x).strip()]
                         except Exception:
                             tags = []
-                        if not tags:
-                            try:
-                                mt = getattr(module, "BCASL_TAGS", [])
-                                if isinstance(mt, (list, tuple)):
-                                    tags = [str(x) for x in mt]
-                            except Exception:
-                                tags = []
+                        
                         m = {
                             "id": plg.meta.id,
                             "name": plg.meta.name,

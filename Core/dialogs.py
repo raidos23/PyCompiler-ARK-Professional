@@ -59,3 +59,50 @@ class ProgressDialog(QDialog):
 
     def is_canceled(self):
         return self._canceled
+
+
+class CompilationProcessDialog(QDialog):
+    """Dialog simple pour afficher le chargement du workspace."""
+    
+    def __init__(self, title="Chargement", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setModal(False)
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(150)
+        
+        layout = QVBoxLayout(self)
+        
+        # Statut
+        self.status_label = QLabel("Initialisation...", self)
+        layout.addWidget(self.status_label)
+        
+        # Barre de progression
+        self.progress = QProgressBar(self)
+        self.progress.setRange(0, 0)
+        layout.addWidget(self.progress)
+        
+        # Boutons
+        btn_row = QHBoxLayout()
+        self.btn_cancel = QPushButton("Annuler", self)
+        self.btn_close = QPushButton("Fermer", self)
+        self.btn_close.setEnabled(False)
+        
+        btn_row.addStretch(1)
+        btn_row.addWidget(self.btn_cancel)
+        btn_row.addWidget(self.btn_close)
+        layout.addLayout(btn_row)
+        
+        self.setLayout(layout)
+    
+    def set_status(self, status_text):
+        """Mettre à jour le statut."""
+        self.status_label.setText(status_text)
+        QApplication.processEvents()
+    
+    def set_progress(self, value, maximum=None):
+        """Mettre à jour la barre de progression."""
+        if maximum is not None:
+            self.progress.setMaximum(maximum)
+        self.progress.setValue(value)
+        QApplication.processEvents()

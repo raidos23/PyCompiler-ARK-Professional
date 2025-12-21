@@ -13,7 +13,7 @@ from typing import Optional
 from PySide6.QtCore import QObject, QProcess, Qt, QTimer, Signal
 from PySide6.QtGui import QDropEvent, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
-from .dialogs import ProgressDialog
+from .dialogs import ProgressDialog, CompilationProcessDialog
 from .Venv_Manager import VenvManager
 
 # Référence globale vers l'instance GUI pour récupération du workspace par l'API_SDK
@@ -403,6 +403,18 @@ class PyCompilerArkGui(QWidget):
 
     def apply_workspace_selection(self, folder: str, source: str = "ui") -> bool:
         try:
+            # Afficher le dialog de chargement du workspace
+            try:
+                loading_dialog = CompilationProcessDialog(
+                    "Chargement de l'espace de travail", self
+                )
+                loading_dialog.set_status("📁 Chargement de l'espace de travail...")
+                loading_dialog.btn_cancel.setEnabled(False)
+                loading_dialog.show()
+                QApplication.processEvents()
+            except Exception:
+                loading_dialog = None
+            
             # Ensure target folder exists; auto-create if missing; never refuse
             if not folder:
                 try:
@@ -412,13 +424,18 @@ class PyCompilerArkGui(QWidget):
                     )
                 except Exception:
                     pass
+                try:
+                    if loading_dialog:
+                        loading_dialog.close()
+                except Exception:
+                    pass
                 return True
             if not os.path.isdir(folder):
                 try:
                     os.makedirs(folder, exist_ok=True)
                     try:
                         self.log_i18n(
-                            f"📁 Dossier créé automatiquement: {folder}",
+                            f"📁 Dossier cré�� automatiquement: {folder}",
                             f"📁 Folder created automatically: {folder}",
                         )
                     except Exception:
@@ -498,6 +515,14 @@ class PyCompilerArkGui(QWidget):
                     self.log_i18n("Dossier venv détecté.", "Venv folder detected.")
             except Exception:
                 pass
+            
+            # Fermer le dialog de chargement
+            try:
+                if loading_dialog:
+                    loading_dialog.close()
+            except Exception:
+                pass
+            
             return True
         except Exception as _e:
             try:
@@ -505,6 +530,11 @@ class PyCompilerArkGui(QWidget):
                     f"❌ Échec application workspace: {_e}",
                     f"❌ Failed to apply workspace: {_e}",
                 )
+            except Exception:
+                pass
+            try:
+                if loading_dialog:
+                    loading_dialog.close()
             except Exception:
                 pass
             return False

@@ -276,6 +276,7 @@ def init_ui(self):
         self.btn_remove_file.setToolTip(
             "Supprimer le ou les fichiers sélectionnés de la liste."
         )
+        self.btn_remove_file.clicked.connect(self.remove_selected_file)
     if self.btn_select_icon:
         self.btn_select_icon.setToolTip(
             "Choisir une icône (.ico) pour l'exécutable généré (Windows uniquement)."
@@ -1047,7 +1048,7 @@ def _apply_translations(self, tr: dict[str, object]) -> None:
 
         if getattr(self, "btn_remove_file", None):
             self.btn_remove_file.setText(
-                str(tr.get("remove_file", self.btn_remove_file.text()))
+                str(tr.get("btn_remove_file", self.btn_remove_file.text()))
             )
 
         if getattr(self, "btn_help", None):

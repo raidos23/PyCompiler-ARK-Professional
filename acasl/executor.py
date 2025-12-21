@@ -165,6 +165,120 @@ class ACASL:
         return count, errors
 
     # Ordonnancement et exécution
+    def _resolve_order_with_tags(self) -> list[str]:
+        """Résout l'ordre d'exécution en respectant dépendances, priorités et tags.
+        
+        Utilise le système de tagging pour déterminer la priorité d'exécution:
+        - Phase 0: Nettoyage (clean, cleanup, sanitize)
+        - Phase 1: Validation (check, verify, integrity)
+        - Phase 2: Optimisation (optimize, compress, strip)
+        - Phase 3: Signature (sign, security, encrypt)
+        - Phase 4: Packaging (package, bundle, archive)
+        - Phase 5: Reporting (report, stats, document)
+        - Phase 100: Défaut (aucun tag reconnu)
+        """
+        from .tagging import TAG_PRIORITY_MAP, DEFAULT_TAG_PRIORITY, describe_plugin_priority
+        
+        active_items = {pid: rec for pid, rec in self._registry.items() if rec.active}
+        if not active_items:
+            return []
+        
+        # Calculer la priorité basée sur les tags pour chaque plugin
+        def _compute_tag_priority(pid: str) -> int:
+            """Calcule la priorité basée sur les tags du plugin."""
+            try:
+                rec = active_items.get(pid)
+                if not rec:
+                    return DEFAULT_TAG_PRIORITY
+                
+                tags = rec.plugin.meta.tags
+                if not tags:
+                    return DEFAULT_TAG_PRIORITY
+                
+                # Trouver le score minimum parmi les tags
+                scores = []
+                for tag in tags:
+                    tag_lower = str(tag).strip().lower()
+                    if tag_lower:
+                        score = TAG_PRIORITY_MAP.get(tag_lower, DEFAULT_TAG_PRIORITY)
+                        scores.append(score)
+                
+                return min(scores) if scores else DEFAULT_TAG_PRIORITY
+            except Exception:
+                return DEFAULT_TAG_PRIORITY
+        
+        # Construire graphe des dépendances
+        indeg: dict[str, int] = {pid: 0 for pid in active_items}
+        children: dict[str, list[str]] = {pid: [] for pid in active_items}
+        
+        for pid, rec in active_items.items():
+            for dep in rec.requires:
+                if dep not in active_items:
+                    _logger.warning(
+                        "Dépendance manquante pour %s: '%s' (ignorée)", pid, dep
+                    )
+                    continue
+                indeg[pid] += 1
+                children[dep].append(pid)
+        
+        # File de départ triée par (tag_priority, priority, insert_idx, id)
+        roots = sorted(
+            [pid for pid, d in indeg.items() if d == 0],
+            key=lambda x: (
+                _compute_tag_priority(x),
+                active_items[x].priority,
+                active_items[x].insert_idx,
+                x
+            ),
+        )
+        order: list[str] = []
+        
+        heap: list[tuple[int, int, int, str]] = []
+        for pid in roots:
+            rec = active_items[pid]
+            tag_prio = _compute_tag_priority(pid)
+            heapq.heappush(heap, (tag_prio, rec.priority, rec.insert_idx, pid))
+        
+        while heap:
+            _, _, _, pid = heapq.heappop(heap)
+            order.append(pid)
+            for ch in children[pid]:
+                indeg[ch] -= 1
+                if indeg[ch] == 0:
+                    rch = active_items[ch]
+                    tag_prio = _compute_tag_priority(ch)
+                    heapq.heappush(heap, (tag_prio, rch.priority, rch.insert_idx, ch))
+        
+        if len(order) != len(active_items):
+            # Cycle détecté; insérer les restants par priorité
+            remaining = [pid for pid in active_items if pid not in order]
+            _logger.error("Cycle de dépendances détecté: %s", ", ".join(remaining))
+            remaining.sort(
+                key=lambda x: (
+                    _compute_tag_priority(x),
+                    active_items[x].priority,
+                    active_items[x].insert_idx,
+                    x
+                )
+            )
+            order.extend(remaining)
+        
+        # Logging lisible des phases d'exécution
+        try:
+            _logger.info("=== Ordre d'exécution des plugins ACASL ===")
+            for i, pid in enumerate(order, 1):
+                rec = active_items[pid]
+                tags = rec.plugin.meta.tags or ()
+                tag_prio = _compute_tag_priority(pid)
+                _logger.info(
+                    "%d. %s (priorité=%d, tag_phase=%d)",
+                    i, pid, rec.priority, tag_prio
+                )
+        except Exception:
+            pass
+        
+        return order
+
     def _resolve_order(self) -> list[str]:
         """Résout l'ordre d'exécution en respectant dépendances et priorités.
 
@@ -521,16 +635,36 @@ class ACASL:
 def _plugin_worker(
     module_path: str, plugin_id: str, project_root: str, config: dict[str, Any], q
 ) -> None:
-    """Charge un module de plugin depuis son chemin et exécute on_pre_compile dans un processus isolé.
+    """Charge un module de plugin depuis son chemin et exécute on_post_compile dans un processus isolé.
 
     Renvoie un dict via la queue: {ok: bool, error: str, duration_ms: float}
+    
+    Sandbox robuste avec:
+    - Isolation complète du processus
+    - Gestion des signaux pour éviter les segfaults
+    - Nettoyage des ressources Qt
+    - Limites de ressources (POSIX)
+    - Gestion des exceptions complète
     """
     import importlib.util as _ilu
     import os as _os
+    import signal as _sig
     import sys as _sys
     import time as _time
     import traceback as _tb
     from pathlib import Path as _Path
+
+    # Signal handlers pour éviter les segfaults
+    def _safe_signal_handler(signum, frame):
+        """Gestionnaire de signal sûr pour éviter les segfaults."""
+        raise RuntimeError(f"Signal {signum} reçu dans le plugin sandbox")
+
+    try:
+        _sig.signal(_sig.SIGSEGV, _safe_signal_handler)
+        _sig.signal(_sig.SIGABRT, _safe_signal_handler)
+        _sig.signal(_sig.SIGBUS, _safe_signal_handler)
+    except Exception:
+        pass  # Certains signaux ne sont pas disponibles sur tous les OS
 
     # Configure interactivity and Qt platform for sandbox worker based on config/env
     try:
@@ -567,7 +701,9 @@ def _plugin_worker(
             _os.environ["QT_QPA_PLATFORM"] = "offscreen"
     except Exception:
         pass
+
     # Optionally initialize a minimal Qt application so plugins can show message boxes in sandbox
+    _sandbox_qapp = None
     try:
         _opts2 = (
             dict(config or {}).get("options", {}) if isinstance(config, dict) else {}
@@ -598,13 +734,12 @@ def _plugin_worker(
             if _QApp is not None:
                 try:
                     if _QApp.instance() is None:
-                        _sandbox_qapp = _QApp(
-                            []
-                        )  # noqa: F841 - keep reference alive during worker
+                        _sandbox_qapp = _QApp([])
                 except Exception:
                     pass
     except Exception:
         pass
+
     # Enforce Plugins_SDK.progress usage: block direct Qt QProgressDialog in plugins
     try:
         _os.environ["PYCOMPILER_ENFORCE_SDK_PROGRESS"] = "1"
@@ -639,16 +774,17 @@ def _plugin_worker(
                 pass
         except Exception:
             pass
+
     # Apply resource limits (POSIX) if configured
     try:
         _opts3 = (
             dict(config or {}).get("options", {}) if isinstance(config, dict) else {}
         )
         _limits = _opts3.get("plugin_limits", {}) if isinstance(_opts3, dict) else {}
-        _mem_mb = int(_limits.get("mem_mb", 0))
-        _cpu_s = int(_limits.get("cpu_time_s", 0))
-        _nofile = int(_limits.get("nofile", 0))
-        _fsize_mb = int(_limits.get("fsize_mb", 0))
+        _mem_mb = int(_limits.get("mem_mb", 512))  # Default 512MB
+        _cpu_s = int(_limits.get("cpu_time_s", 300))  # Default 5 minutes
+        _nofile = int(_limits.get("nofile", 1024))  # Default 1024 files
+        _fsize_mb = int(_limits.get("fsize_mb", 1024))  # Default 1GB
         try:
             import resource as _res  # POSIX only
 
@@ -674,9 +810,10 @@ def _plugin_worker(
             pass
     except Exception:
         pass
+
     try:
         spec = _ilu.spec_from_file_location(
-            "bcasl_sandbox_module",
+            "acasl_sandbox_module",
             module_path,
             submodule_search_locations=[str(_Path(module_path).parent)],
         )
@@ -685,20 +822,21 @@ def _plugin_worker(
         module = _ilu.module_from_spec(spec)
         _sys.modules[spec.name] = module
         spec.loader.exec_module(module)  # type: ignore[attr-defined]
-        # Récupérer PLUGIN ou fallback via bcasl_register
+        
+        # Récupérer PLUGIN ou fallback via acasl_register
         plg = getattr(module, "PLUGIN", None)
         if plg is None or getattr(getattr(plg, "meta", None), "id", None) != plugin_id:
             try:
                 # Fallback: ré-enregistrer dans un gestionnaire temporaire
-                from bcasl import PreCompileContext as _PCC
+                from .Base import PostCompileContext as _PCC
 
                 mgr = ACASL(
                     _Path(project_root), config=config, sandbox=False
                 )  # pas de sandbox récursif
-                if hasattr(module, "bcasl_register") and callable(
-                    getattr(module, "bcasl_register")
+                if hasattr(module, "acasl_register") and callable(
+                    getattr(module, "acasl_register")
                 ):
-                    module.bcasl_register(mgr)
+                    module.acasl_register(mgr)
                 rec = getattr(mgr, "_registry", {}).get(plugin_id)
                 if rec is None:
                     raise RuntimeError(
@@ -707,13 +845,27 @@ def _plugin_worker(
                 plg = rec.plugin
             except Exception as ex:
                 raise RuntimeError(f"Impossible d'instancier le plugin: {ex}")
-        # Exécution
-        from bcasl import PreCompileContext as _PCC
+        
+        # Exécution du hook post-compilation
+        from .Base import PostCompileContext as _PCC
 
         ctx = _PCC(_Path(project_root), config=dict(config or {}))
         t0 = _time.perf_counter()
-        plg.on_pre_compile(ctx)
+        plg.on_post_compile(ctx)
         dur = (_time.perf_counter() - t0) * 1000.0
         q.put({"ok": True, "error": "", "duration_ms": dur})
     except Exception:
         q.put({"ok": False, "error": _tb.format_exc(), "duration_ms": 0.0})
+    finally:
+        # Nettoyage des ressources Qt pour éviter les segfaults
+        try:
+            if _sandbox_qapp is not None:
+                _sandbox_qapp.quit()
+                _sandbox_qapp = None
+        except Exception:
+            pass
+        # Forcer la sortie du processus pour éviter les segfaults
+        try:
+            _sys.exit(0)
+        except Exception:
+            pass

@@ -159,6 +159,126 @@ class BCASL:
         return count, errors
 
     # Ordonnancement et exécution
+    def _resolve_order_with_tags(self) -> list[str]:
+        """Résout l'ordre d'exécution en respectant dépendances, priorités et tags.
+        
+        Utilise le système de tagging pour déterminer la priorité d'exécution:
+        - Phase 0: Nettoyage (clean, cleanup, sanitize)
+        - Phase 1: Validation (check, requirements, verify)
+        - Phase 2: Préparation (prepare, generate, install, configure)
+        - Phase 3: Conformité (license, header, normalize, inject)
+        - Phase 4: Linting (lint, format, typecheck, style)
+        - Phase 5: Obfuscation (obfuscate, transpile, protect, encrypt)
+        - Phase 100: Défaut (aucun tag reconnu)
+        """
+        from .tagging import TAG_PRIORITY_MAP, DEFAULT_TAG_PRIORITY, describe_plugin_priority
+        
+        active_items = {pid: rec for pid, rec in self._registry.items() if rec.active}
+        if not active_items:
+            return []
+        
+        # Calculer la priorité basée sur les tags pour chaque plugin
+        def _compute_tag_priority(pid: str) -> int:
+            """Calcule la priorité basée sur les tags du plugin."""
+            try:
+                rec = active_items.get(pid)
+                if not rec:
+                    return DEFAULT_TAG_PRIORITY
+                
+                tags = rec.plugin.meta.tag
+                if not tags:
+                    return DEFAULT_TAG_PRIORITY
+                
+                # Normaliser et traiter les tags
+                if isinstance(tags, str):
+                    tags = [t.strip() for t in tags.split(",") if t.strip()]
+                elif not isinstance(tags, (list, tuple)):
+                    tags = []
+                
+                # Trouver le score minimum parmi les tags
+                scores = []
+                for tag in tags:
+                    tag_lower = str(tag).strip().lower()
+                    if tag_lower:
+                        score = TAG_PRIORITY_MAP.get(tag_lower, DEFAULT_TAG_PRIORITY)
+                        scores.append(score)
+                
+                return min(scores) if scores else DEFAULT_TAG_PRIORITY
+            except Exception:
+                return DEFAULT_TAG_PRIORITY
+        
+        # Construire graphe des dépendances
+        indeg: dict[str, int] = {pid: 0 for pid in active_items}
+        children: dict[str, list[str]] = {pid: [] for pid in active_items}
+        
+        for pid, rec in active_items.items():
+            for dep in rec.requires:
+                if dep not in active_items:
+                    _logger.warning(
+                        "Dépendance manquante pour %s: '%s' (ignorée)", pid, dep
+                    )
+                    continue
+                indeg[pid] += 1
+                children[dep].append(pid)
+        
+        # File de départ triée par (tag_priority, priority, insert_idx, id)
+        roots = sorted(
+            [pid for pid, d in indeg.items() if d == 0],
+            key=lambda x: (
+                _compute_tag_priority(x),
+                active_items[x].priority,
+                active_items[x].insert_idx,
+                x
+            ),
+        )
+        order: list[str] = []
+        
+        heap: list[tuple[int, int, int, str]] = []
+        for pid in roots:
+            rec = active_items[pid]
+            tag_prio = _compute_tag_priority(pid)
+            heapq.heappush(heap, (tag_prio, rec.priority, rec.insert_idx, pid))
+        
+        while heap:
+            _, _, _, pid = heapq.heappop(heap)
+            order.append(pid)
+            for ch in children[pid]:
+                indeg[ch] -= 1
+                if indeg[ch] == 0:
+                    rch = active_items[ch]
+                    tag_prio = _compute_tag_priority(ch)
+                    heapq.heappush(heap, (tag_prio, rch.priority, rch.insert_idx, ch))
+        
+        if len(order) != len(active_items):
+            # Cycle détecté; insérer les restants par priorité
+            remaining = [pid for pid in active_items if pid not in order]
+            _logger.error("Cycle de dépendances détecté: %s", ", ".join(remaining))
+            remaining.sort(
+                key=lambda x: (
+                    _compute_tag_priority(x),
+                    active_items[x].priority,
+                    active_items[x].insert_idx,
+                    x
+                )
+            )
+            order.extend(remaining)
+        
+        # Logging lisible des phases d'exécution
+        try:
+            _logger.info("=== Ordre d'exécution des plugins BCASL ===")
+            for i, pid in enumerate(order, 1):
+                rec = active_items[pid]
+                tags = rec.plugin.meta.tag or ""
+                tag_prio = _compute_tag_priority(pid)
+                _logger.info(
+                    "%d. %s (priorité=%d, tag_phase=%d)",
+                    i, pid, rec.priority, tag_prio
+                )
+        except Exception:
+            pass
+        
+        return order
+
     def _resolve_order(self) -> list[str]:
         """Résout l'ordre d'exécution en respectant dépendances et priorités.
 

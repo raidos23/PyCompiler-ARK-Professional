@@ -8,8 +8,8 @@
 from Plugins_SDK.AcPluginContext import AcPluginBase, PluginMeta, PostCompileContext
 from Plugins_SDK.GeneralContext import Dialog
 
-
-log = dialog = Dialog
+log = Dialog
+dialog = Dialog
 
 META = PluginMeta(
     id="Packaging",
@@ -17,6 +17,7 @@ META = PluginMeta(
     version="1.0.0",
     description="clean the workspace (.pyc and __pycache__)",
     author="Samuel Amen Ague",
+    tags=["packaging"]
 )
 
 

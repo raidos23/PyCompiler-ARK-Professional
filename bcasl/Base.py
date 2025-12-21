@@ -36,6 +36,7 @@ class PluginMeta:
     version: chaîne de version
     description: courte description
     author: optionnel
+    tags: liste de tags pour la priorité d'exécution (ex: ["lint", "format"])
     """
 
     id: str
@@ -43,13 +44,35 @@ class PluginMeta:
     version: str
     description: str = ""
     author: str = ""
-    tag: str = ""
+    tags: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         nid = (self.id or "").strip()
         if not nid:
             raise ValueError("PluginMeta invalide: 'id' requis")
         object.__setattr__(self, "id", nid)
+        
+        # Normaliser les tags: convertir en tuple de strings minuscules
+        try:
+            if isinstance(self.tags, str):
+                # Si c'est une string, la splitter par virgule
+                normalized = tuple(
+                    t.strip().lower() 
+                    for t in str(self.tags).split(",") 
+                    if t.strip()
+                )
+            elif isinstance(self.tags, (list, tuple)):
+                # Si c'est une liste/tuple, normaliser chaque élément
+                normalized = tuple(
+                    str(t).strip().lower() 
+                    for t in self.tags 
+                    if str(t).strip()
+                )
+            else:
+                normalized = ()
+            object.__setattr__(self, "tags", normalized)
+        except Exception:
+            object.__setattr__(self, "tags", ())
 
 
 class BcPluginBase:

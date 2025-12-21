@@ -7,7 +7,8 @@ from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta, PreCompileCont
 from Plugins_SDK.GeneralContext import Dialog
 
 
-dialog = log = Dialog
+log = Dialog
+dialog = Dialog
 
 META = PluginMeta(
     id="cleaner",
@@ -15,6 +16,7 @@ META = PluginMeta(
     version="1.0.0",
     description="clean the workspace (.pyc and __pycache__)",
     author="Samuel Amen Ague",
+    tags=["clean"]
 )
 
 

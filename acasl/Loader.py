@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from .executor import ACASL
+from .tagging import compute_tag_order
 
 # Qt (facultatif). Ne pas importer QtWidgets au niveau module pour compatibilité headless.
 try:  # pragma: no cover
@@ -228,7 +229,13 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         repo_root = Path(__file__).resolve().parents[1]
         plugins_dir = repo_root / "Plugins"
         meta_map = _discover_acasl_meta(plugins_dir) if plugins_dir.exists() else {}
-        order = sorted(meta_map.keys())
+        
+        # Utiliser compute_tag_order pour l'ordonnancement basé sur les tags
+        if meta_map:
+            order = compute_tag_order(meta_map)
+        else:
+            order = sorted(meta_map.keys())
+        
         plugins = {pid: {"enabled": True, "priority": i} for i, pid in enumerate(order)}
         default_cfg = {
             "plugins": plugins,
@@ -303,7 +310,9 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                 except Exception:
                     order = []
                 if not order:
-                    order = sorted(available)
+                    # Utiliser compute_tag_order pour l'ordonnancement basé sur les tags
+                    order = compute_tag_order(meta_map)
+                
                 final_ids: list[str] = []
                 for pid in order:
                     enabled = True
@@ -318,6 +327,16 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                         enabled = True
                     if enabled:
                         final_ids.append(pid)
+                
+                # Logging lisible des phases d'exécution
+                try:
+                    self.log.emit("=== Ordre d'exécution des plugins ACASL ===\n")
+                    for i, pid in enumerate(final_ids, 1):
+                        meta = meta_map.get(pid, {})
+                        name = meta.get("name", pid)
+                        self.log.emit(f"{i}. {name} ({pid})\n")
+                except Exception:
+                    pass
                 # Timeout
                 plugin_timeout = (
                     float(self.plugin_timeout)
