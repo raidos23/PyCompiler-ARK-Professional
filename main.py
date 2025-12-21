@@ -87,7 +87,7 @@ def _platform_log_dir() -> Path:
             )
             return Path(base) / "PyCompiler_ProPP" / "logs"
         if IS_DARWIN:
-            return Path.home() / "Library" / "Logs" / "PyCompiler_ProPP"
+            return Path.home() / "Library" / "Logs" / "PyCompiler_ARK"
         # Linux and others
         return Path.home() / ".cache" / "PyCompiler_ProPP"
     except Exception:
