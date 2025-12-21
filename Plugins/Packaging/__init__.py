@@ -7,7 +7,7 @@
 
 from Plugins_SDK.AcPluginContext import AcPluginBase, PluginMeta, PostCompileContext
 from Plugins_SDK.GeneralContext import Dialog
-from Plugins_SDK.GeneralContext.g import Logging
+
 
 log = dialog = Dialog 
 
