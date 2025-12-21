@@ -346,6 +346,7 @@ def sys_msgbox_for_installing(
 
 class Dialog:
 
+    # methode de boîtes de Dialog pour permettre une interaction Ui avec les Plugins
     def show_msgbox(
         self, kind: str, title: str, text: str, *, default: Optional[str] = None
     ) -> Optional[bool]:

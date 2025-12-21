@@ -235,7 +235,10 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             "plugin_order": order,
             "options": {
                 "enabled": True,
-                "plugin_timeout_s": 0.0,
+                "plugin_timeout_s": 0.0,  # 0 => illimité
+                "sandbox": True,
+                "plugin_parallelism": 0,
+                "iter_files_cache": True,
             },
         }
         try:
