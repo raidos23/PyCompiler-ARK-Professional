@@ -5,10 +5,10 @@
 
 from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta, PreCompileContext
 from Plugins_SDK.GeneralContext import Dialog
-from Plugins_SDK.GeneralContext.Logging import Logging
+from Plugins_SDK.GeneralContext.g import Logging
 
-log = Logging
-dialog = Dialog
+
+log = dialog = Dialog 
 
 META = PluginMeta(
     id="cleaner",

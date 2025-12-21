@@ -1,7 +1,7 @@
 # Système de Dialog pour Plugins
 
 from typing import Optional
-
+from colorama import Fore, Style
 # Qt toolkits
 try:
     from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
@@ -107,6 +107,7 @@ def show_msgbox(
 
 class Dialog:
 
+    # methode de boîtes de Dialog pour permettre une interaction Ui avec les Plugins
     def show_msgbox(
         self, kind: str, title: str, text: str, *, default: Optional[str] = None
     ) -> Optional[bool]:
@@ -125,3 +126,13 @@ class Dialog:
         return bool(
             show_msgbox("question", title, text, default="Yes" if default_yes else "No")
         )
+    
+    #Methode pour le Logging
+    def log_info(message: str) -> None:
+        print(f'{Fore.LIGHTCYAN_EX}[INFO] {message}{Style.BRIGHT}')
+
+    def log_warn(message: str) -> None:
+        print(f'{Fore.LIGHTYELLOW_EX}[WARN] {message}{Style.BRIGHT}')
+
+    def log_error(message: str) -> None:
+        print(f'{Fore.RED}[ERROR] {message}{Style.BRIGHT}')
