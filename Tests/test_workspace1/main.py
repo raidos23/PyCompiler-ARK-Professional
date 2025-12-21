@@ -1,9 +1,11 @@
-
-
 import sys
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QLabel, QLineEdit,
-    QPushButton, QVBoxLayout
+    QApplication,
+    QWidget,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
 )
 
 
@@ -44,4 +46,3 @@ if __name__ == "__main__":
     fenetre = MaFenetre()
     fenetre.show()
     sys.exit(app.exec())
-

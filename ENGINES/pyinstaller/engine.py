@@ -293,33 +293,45 @@ class PyInstallerEngine(CompilerEngine):
         except Exception:
             pass
         return None
-    
+
     def on_success(self, gui, file: str) -> None:
         # Ouvre le dossier de sortie PyInstaller (dist ou --distpath)
         try:
             out_dir = None
             try:
-                out_dir = gui.output_dir_input.text().strip() if getattr(gui, 'output_dir_input', None) else None
+                out_dir = (
+                    gui.output_dir_input.text().strip()
+                    if getattr(gui, "output_dir_input", None)
+                    else None
+                )
                 if not out_dir:
                     out_dir = None
             except Exception:
                 out_dir = None
             if not out_dir:
-                base = getattr(gui, 'workspace_dir', None) or os.getcwd()
-                out_dir = os.path.join(base, 'dist')
+                base = getattr(gui, "workspace_dir", None) or os.getcwd()
+                out_dir = os.path.join(base, "dist")
             if out_dir and os.path.isdir(out_dir):
                 system = platform.system()
                 if system == "Windows":
                     os.startfile(out_dir)
                 elif system == "Linux":
                     import subprocess
+
                     subprocess.run(["xdg-open", out_dir])
                 else:
                     import subprocess
+
                     subprocess.run(["open", out_dir])
         except Exception as e:
             try:
-                gui.log.append((gui.tr("⚠️ Impossible d'ouvrir le dossier dist automatiquement : {err}", "⚠️ Unable to open dist folder automatically: {err}")).format(err=e))
+                gui.log.append(
+                    (
+                        gui.tr(
+                            "⚠️ Impossible d'ouvrir le dossier dist automatiquement : {err}",
+                            "⚠️ Unable to open dist folder automatically: {err}",
+                        )
+                    ).format(err=e)
+                )
             except Exception:
                 pass
-

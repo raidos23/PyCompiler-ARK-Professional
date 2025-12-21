@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 
 # Configuration logger par défaut (faible verbosité pour embarqué)
-_logger = logging.getLogger("bcasl")
+_logger = logging.getLogger("cesl")
 if not _logger.handlers:
     _handler = logging.StreamHandler()
     _formatter = logging.Formatter("[%(levelname)s] %(message)s")
@@ -55,12 +55,11 @@ class CePluginBase:
 
     Remarques:
     - Les opérations doivent être idempotentes et robustes (embarqués)
-    
+
     """
 
     def apply_i18n(self, gui, tr: dict[str, str]) -> None:
         raise NotImplementedError
-
 
 
 def register_plugin(cls: Any) -> Any:
