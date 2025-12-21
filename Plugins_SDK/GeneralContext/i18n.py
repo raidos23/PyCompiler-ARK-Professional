@@ -15,10 +15,6 @@ try:
 except ImportError:
     AcPluginBase = type(None)  # type: ignore
 
-try:
-    from cesl import CePluginBase
-except ImportError:
-    CePluginBase = type(None)  # type: ignore
 
 
 # Keep live Plugins Ac/Bc/Ce instances to support dynamic interactions (e.g., i18n refresh)

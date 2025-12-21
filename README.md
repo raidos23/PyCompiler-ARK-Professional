@@ -119,7 +119,7 @@ mypy .                         # Type checking
 bandit -r .                    # Security scanning
 
 # Run tests with coverage
-pytest --cov=Core --cov=Plugins_SDK --cov=engine_sdk --cov=bcasl --cov=acasl --cov=cesl
+pytest --cov=Core --cov=Plugins_SDK --cov=engine_sdk --cov=bcasl --cov=acasl
 ```
 
 ## 🌍 **Platform Support**
@@ -196,7 +196,7 @@ For security vulnerabilities, please follow our [Security Policy](SECURITY.md):
 PyCompiler ARK++ represents a comprehensive upgrade with:
 
 ### **Key Improvements**
-- **Modular architecture**: Extensible plugin system with BCASL, ACASL and CESL
+- **Modular architecture**: Extensible plugin system with BCASL and ACASL
 - **Enhanced security**: Comprehensive scanning and code signing
 - **Complete documentation**: Guides for all major features
 - **Modern tooling**: Latest Python practices and tools
@@ -204,7 +204,7 @@ PyCompiler ARK++ represents a comprehensive upgrade with:
 
 ### **Breaking Changes**
 - **Python 3.10+**: Dropped support for Python 3.9 and below
-- **New plugin system**: BCASL/ACASL/CESL replaces legacy plugin architecture
+- **New plugin system**: BCASL/ACASL/ replaces legacy plugin architecture
 - **Enhanced APIs**: Backward compatibility with deprecation warnings
 
 ---
