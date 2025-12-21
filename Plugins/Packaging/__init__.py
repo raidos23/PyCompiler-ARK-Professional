@@ -9,7 +9,7 @@ from Plugins_SDK.AcPluginContext import AcPluginBase, PluginMeta, PostCompileCon
 from Plugins_SDK.GeneralContext import Dialog
 
 
-log = dialog = Dialog 
+log = dialog = Dialog
 
 META = PluginMeta(
     id="Packaging",
