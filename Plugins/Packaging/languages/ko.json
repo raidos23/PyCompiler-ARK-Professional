@@ -1,0 +1,8 @@
+{
+  "_meta": {"code": "ko", "name": "한국어"},
+  "packaging_title": "패키징",
+  "packaging_question": "컴파일된 아티팩트를 패키징하시겠습니까?",
+  "packaging_cancelled": "사용자가 패키징을 취소했습니다",
+  "packaging_completed": "패키징이 성공적으로 완료되었습니다",
+  "packaging_error": "패키징 실패: {error}"
+}

@@ -156,9 +156,32 @@ def suggest_missing_dependencies(self):
             part.startswith(".") or part == "__pycache__" for part in f.split(os.sep)
         )
     ]
+    
+    # Créer une barre de progression pour l'analyse
+    analysis_progress = None
+    try:
+        analysis_progress = ProgressDialog(
+            self.tr("Analyse des dépendances", "Analyzing dependencies"), self
+        )
+        analysis_progress.set_message(
+            self.tr("Analyse des fichiers Python...", "Analyzing Python files...")
+        )
+        analysis_progress.set_progress(0, len(filtered_files))
+        analysis_progress.show()
+    except Exception:
+        pass
+    
     # Analyse chaque fichier Python pour détecter les imports
-    for file in filtered_files:
+    for idx, file in enumerate(filtered_files):
         try:
+            # Mettre à jour la progression
+            if analysis_progress:
+                file_name = os.path.basename(file)
+                analysis_progress.set_message(
+                    self.tr("Analyse de {file}...", "Analyzing {file}...").format(file=file_name)
+                )
+                analysis_progress.set_progress(idx, len(filtered_files))
+            
             with open(file, encoding="utf-8") as f:
                 source = f.read()
                 tree = ast.parse(source, filename=file)
@@ -179,6 +202,13 @@ def suggest_missing_dependencies(self):
             modules.update([mod.split(".")[0] for mod in importlib_imports])
         except Exception as e:
             self.log.append(f"⚠️ Erreur analyse dépendances dans {file} : {e}")
+    
+    # Fermer la barre de progression d'analyse
+    if analysis_progress:
+        analysis_progress.set_message(
+            self.tr("Analyse terminée", "Analysis completed")
+        )
+        analysis_progress.set_progress(len(filtered_files), len(filtered_files))
     # Exclure les modules standards Python (stdlib)
     import sys
     import sysconfig
@@ -198,6 +228,12 @@ def suggest_missing_dependencies(self):
     for f in filtered_files:
         base = os.path.splitext(os.path.basename(f))[0]
         internal_modules.add(base)
+    # Mise à jour du message de progression
+    if analysis_progress:
+        analysis_progress.set_message(
+            self.tr("Vérification des modules...", "Checking modules...")
+        )
+    
     # Liste des modules à vérifier (hors standard et hors modules internes)
     suggestions = [
         m for m in modules if not _is_stdlib_module(m) and m not in internal_modules
@@ -229,6 +265,8 @@ def suggest_missing_dependencies(self):
         pass
     if not suggestions:
         self.log.append("✅ Aucun module externe à installer détecté.")
+        if analysis_progress:
+            analysis_progress.close()
         return
     # Vérifie la présence des modules dans le venv (via pip show)
     pip_name = "pip.exe" if platform.system() == "Windows" else "pip"
@@ -262,9 +300,16 @@ def suggest_missing_dependencies(self):
     except Exception:
         pip_program = sys.executable
         pip_prefix = ["-m", "pip"]
+    # Vérification des modules avec progression
     not_installed = []
-    for module in suggestions:
+    for idx, module in enumerate(suggestions):
         try:
+            if analysis_progress:
+                analysis_progress.set_message(
+                    self.tr("Vérification de {module}...", "Checking {module}...").format(module=module)
+                )
+                analysis_progress.set_progress(idx, len(suggestions))
+            
             cmd = [pip_program, *pip_prefix, "show", module]
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0:
@@ -273,6 +318,10 @@ def suggest_missing_dependencies(self):
             self.log.append(
                 f"⚠️ Erreur lors de la vérification du module {module} : {e}"
             )
+    
+    # Fermer la barre de progression d'analyse
+    if analysis_progress:
+        analysis_progress.close()
     # Si des modules sont manquants, propose l'installation automatique
     if not_installed:
         self.log.append(

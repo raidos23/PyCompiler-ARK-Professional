@@ -108,7 +108,10 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
-    """Charge bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit."""
+    """Charge bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit.
+    
+    Fusionne aussi avec ARK_Main_Config.yml si disponible pour les patterns et options plugins.
+    """
 
     def _read_json(p: Path) -> dict[str, Any]:
         try:
@@ -122,9 +125,36 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         if p.exists() and p.is_file():
             data = _read_json(p)
             if isinstance(data, dict) and data:
+                # Fusionner avec ARK_Main_Config.yml si disponible
+                try:
+                    from Core.Compiler.ark_config_loader import load_ark_config
+                    ark_config = load_ark_config(str(workspace_root))
+                    
+                    # Fusionner les patterns d'exclusion
+                    if "exclusion_patterns" in ark_config:
+                        data["exclude_patterns"] = list(set(
+                            data.get("exclude_patterns", []) + ark_config["exclusion_patterns"]
+                        ))
+                    
+                    # Fusionner les patterns d'inclusion
+                    if "inclusion_patterns" in ark_config:
+                        data["file_patterns"] = ark_config["inclusion_patterns"]
+                    
+                    # Utiliser les options de plugins depuis ARK
+                    plugin_opts = ark_config.get("plugins", {})
+                    if plugin_opts:
+                        opts = data.get("options", {})
+                        if "bcasl_enabled" in plugin_opts:
+                            opts["enabled"] = plugin_opts["bcasl_enabled"]
+                        if "plugin_timeout" in plugin_opts:
+                            opts["plugin_timeout_s"] = float(plugin_opts["plugin_timeout"])
+                        data["options"] = opts
+                except Exception:
+                    pass
+                
                 return data
 
-    # 2) Génération défaut
+    # 2) Génération défaut avec fusion ARK
     default_cfg: dict[str, Any] = {}
     try:
         repo_root = Path(__file__).resolve().parents[1]
@@ -158,19 +188,43 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             except Exception:
                 pass
 
+        # Charger ARK config pour les patterns par défaut
+        file_patterns = ["**/*.py"]
+        exclude_patterns = [
+            "**/__pycache__/**",
+            "**/*.pyc",
+            ".git/**",
+            "venv/**",
+            ".venv/**",
+        ]
+        bcasl_enabled = True
+        plugin_timeout = 0.0
+        
+        try:
+            from Core.Compiler.ark_config_loader import load_ark_config
+            ark_config = load_ark_config(str(workspace_root))
+            
+            if "inclusion_patterns" in ark_config:
+                file_patterns = ark_config["inclusion_patterns"]
+            
+            if "exclusion_patterns" in ark_config:
+                exclude_patterns = ark_config["exclusion_patterns"]
+            
+            plugin_opts = ark_config.get("plugins", {})
+            if "bcasl_enabled" in plugin_opts:
+                bcasl_enabled = plugin_opts["bcasl_enabled"]
+            if "plugin_timeout" in plugin_opts:
+                plugin_timeout = float(plugin_opts["plugin_timeout"])
+        except Exception:
+            pass
+
         default_cfg = {
             "required_files": required_files,
-            "file_patterns": ["**/*.py"],
-            "exclude_patterns": [
-                "**/__pycache__/**",
-                "**/*.pyc",
-                ".git/**",
-                "venv/**",
-                ".venv/**",
-            ],
+            "file_patterns": file_patterns,
+            "exclude_patterns": exclude_patterns,
             "options": {
-                "enabled": True,
-                "plugin_timeout_s": 0.0,  # 0 => illimité
+                "enabled": bcasl_enabled,
+                "plugin_timeout_s": plugin_timeout,
                 "sandbox": True,
                 "plugin_parallelism": 0,
                 "iter_files_cache": True,
@@ -333,6 +387,23 @@ if QObject is not None and Signal is not None:  # pragma: no cover
 
 
 # --- API publique attendue par le reste de l'app ---
+
+
+def apply_translations(gui, tr: dict) -> None:
+    """Propagate i18n translations to all BCASL plugins that expose 'apply_i18n(gui, tr)'."""
+    try:
+        # Import the plugin instances registry from GeneralContext
+        from Plugins_SDK.GeneralContext.i18n import INSTANCES
+        
+        for plugin_id, inst in list(INSTANCES.items()):
+            try:
+                fn = getattr(inst, "apply_i18n", None)
+                if callable(fn):
+                    fn(gui, tr)
+            except Exception:
+                continue
+    except Exception:
+        pass
 
 
 def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:

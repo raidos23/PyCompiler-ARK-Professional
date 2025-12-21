@@ -1,0 +1,8 @@
+{
+  "_meta": {"code": "af", "name": "Afrikaans"},
+  "packaging_title": "Verpakking",
+  "packaging_question": "Wil jy jou saamgestelde artefakte verpak?",
+  "packaging_cancelled": "Verpakking gekanselleer deur gebruiker",
+  "packaging_completed": "Verpakking suksesvol voltooi",
+  "packaging_error": "Verpakking het misluk: {error}"
+}

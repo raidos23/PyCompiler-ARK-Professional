@@ -208,7 +208,10 @@ def _discover_acasl_meta(plugins_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
-    """Charge acasl.json si présent; sinon génère un défaut minimal et l'écrit."""
+    """Charge acasl.json si présent; sinon génère un défaut minimal et l'écrit.
+    
+    Fusionne aussi avec ARK_Main_Config.yml si disponible pour les options plugins.
+    """
 
     def _read_json(p: Path) -> dict[str, Any]:
         try:
@@ -221,9 +224,26 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         if p.exists() and p.is_file():
             data = _read_json(p)
             if isinstance(data, dict) and data:
+                # Fusionner avec ARK_Main_Config.yml si disponible
+                try:
+                    from Core.Compiler.ark_config_loader import load_ark_config
+                    ark_config = load_ark_config(str(workspace_root))
+                    
+                    # Utiliser les options de plugins depuis ARK
+                    plugin_opts = ark_config.get("plugins", {})
+                    if plugin_opts:
+                        opts = data.get("options", {})
+                        if "acasl_enabled" in plugin_opts:
+                            opts["enabled"] = plugin_opts["acasl_enabled"]
+                        if "plugin_timeout" in plugin_opts:
+                            opts["plugin_timeout_s"] = float(plugin_opts["plugin_timeout"])
+                        data["options"] = opts
+                except Exception:
+                    pass
+                
                 return data
 
-    # Génération défaut
+    # Génération défaut avec fusion ARK
     default_cfg: dict[str, Any] = {}
     try:
         repo_root = Path(__file__).resolve().parents[1]
@@ -237,12 +257,29 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             order = sorted(meta_map.keys())
         
         plugins = {pid: {"enabled": True, "priority": i} for i, pid in enumerate(order)}
+        
+        # Charger ARK config pour les options par défaut
+        acasl_enabled = True
+        plugin_timeout = 0.0
+        
+        try:
+            from Core.Compiler.ark_config_loader import load_ark_config
+            ark_config = load_ark_config(str(workspace_root))
+            
+            plugin_opts = ark_config.get("plugins", {})
+            if "acasl_enabled" in plugin_opts:
+                acasl_enabled = plugin_opts["acasl_enabled"]
+            if "plugin_timeout" in plugin_opts:
+                plugin_timeout = float(plugin_opts["plugin_timeout"])
+        except Exception:
+            pass
+        
         default_cfg = {
             "plugins": plugins,
             "plugin_order": order,
             "options": {
-                "enabled": True,
-                "plugin_timeout_s": 0.0,  # 0 => illimité
+                "enabled": acasl_enabled,
+                "plugin_timeout_s": plugin_timeout,
                 "sandbox": True,
                 "plugin_parallelism": 0,
                 "iter_files_cache": True,

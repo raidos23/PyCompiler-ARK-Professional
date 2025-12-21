@@ -1,0 +1,8 @@
+{
+  "_meta": {"code": "it", "name": "Italiano"},
+  "packaging_title": "Impacchettamento",
+  "packaging_question": "Vuoi impacchettare i tuoi artefatti compilati?",
+  "packaging_cancelled": "Impacchettamento annullato dall'utente",
+  "packaging_completed": "Impacchettamento completato con successo",
+  "packaging_error": "Impacchettamento fallito: {error}"
+}

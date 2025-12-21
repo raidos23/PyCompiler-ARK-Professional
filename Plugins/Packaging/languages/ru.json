@@ -1,0 +1,8 @@
+{
+  "_meta": {"code": "ru", "name": "Русский"},
+  "packaging_title": "Упаковка",
+  "packaging_question": "Хотите упаковать скомпилированные артефакты?",
+  "packaging_cancelled": "Упаковка отменена пользователем",
+  "packaging_completed": "Упаковка успешно завершена",
+  "packaging_error": "Ошибка упаковки: {error}"
+}

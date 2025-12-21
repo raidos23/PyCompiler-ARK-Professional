@@ -1,0 +1,8 @@
+{
+  "_meta": {"code": "es", "name": "Español"},
+  "packaging_title": "Empaquetado",
+  "packaging_question": "¿Desea empaquetar sus artefactos compilados?",
+  "packaging_cancelled": "Empaquetado cancelado por el usuario",
+  "packaging_completed": "Empaquetado completado con éxito",
+  "packaging_error": "Error en el empaquetado: {error}"
+}

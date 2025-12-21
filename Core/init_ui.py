@@ -886,6 +886,13 @@ def show_language_dialog(self):
                 engines_loader.registry.apply_translations(self, tr)
             except Exception:
                 pass
+            # Propagate translations to all BCASL plugins
+            try:
+                import bcasl.Loader as bcasl_loader
+
+                bcasl_loader.apply_translations(self, tr)
+            except Exception:
+                pass
             # Update language preference markers
             try:
                 self.language_pref = lang_pref

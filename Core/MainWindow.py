@@ -516,6 +516,20 @@ class PyCompilerArkGui(QWidget):
             except Exception:
                 pass
             
+            # Créer le fichier ARK_Main_Config.yml s'il n'existe pas
+            try:
+                from Core.Compiler.ark_config_loader import create_default_ark_config
+                if create_default_ark_config(folder):
+                    self.log_i18n(
+                        "📋 Fichier ARK_Main_Config.yml créé dans le workspace.",
+                        "📋 ARK_Main_Config.yml file created in workspace.",
+                    )
+            except Exception as e:
+                self.log_i18n(
+                    f"⚠️ Impossible de créer ARK_Main_Config.yml: {e}",
+                    f"⚠️ Failed to create ARK_Main_Config.yml: {e}",
+                )
+            
             # Fermer le dialog de chargement
             try:
                 if loading_dialog:
@@ -878,6 +892,68 @@ class PyCompilerArkGui(QWidget):
                     f"✅ {len(valid_files)} file(s) selected manually.\n",
                 )
                 self.update_command_preview()
+
+    def open_ark_config(self):
+        """Ouvre le fichier ARK_Main_Config.yml dans l'éditeur par défaut"""
+        if not self.workspace_dir:
+            QMessageBox.warning(
+                self,
+                self.tr("Attention", "Warning"),
+                self.tr(
+                    "Veuillez d'abord sélectionner un dossier workspace.",
+                    "Please select a workspace folder first.",
+                ),
+            )
+            return
+        
+        config_path = os.path.join(self.workspace_dir, "ARK_Main_Config.yml")
+        
+        # Créer le fichier s'il n'existe pas
+        if not os.path.exists(config_path):
+            try:
+                from Core.Compiler.ark_config_loader import create_default_ark_config
+                if create_default_ark_config(self.workspace_dir):
+                    self.log_i18n(
+                        "📋 Fichier ARK_Main_Config.yml créé.",
+                        "📋 ARK_Main_Config.yml file created.",
+                    )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    self.tr("Erreur", "Error"),
+                    self.tr(
+                        f"Impossible de créer ARK_Main_Config.yml: {e}",
+                        f"Failed to create ARK_Main_Config.yml: {e}",
+                    ),
+                )
+                return
+        
+        # Ouvrir le fichier dans l'éditeur par défaut
+        try:
+            import subprocess
+            import platform
+            
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(config_path)
+            elif system == "Darwin":  # macOS
+                subprocess.run(["open", config_path])
+            else:  # Linux
+                subprocess.run(["xdg-open", config_path])
+            
+            self.log_i18n(
+                f"📝 Ouverture de {config_path}",
+                f"📝 Opening {config_path}",
+            )
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                self.tr("Attention", "Warning"),
+                self.tr(
+                    f"Impossible d'ouvrir le fichier: {e}\nChemin: {config_path}",
+                    f"Failed to open file: {e}\nPath: {config_path}",
+                ),
+            )
 
     def on_main_only_changed(self):
         if self.opt_main_only.isChecked():
@@ -1463,6 +1539,13 @@ class PyCompilerArkGui(QWidget):
                     import Core.engines_loader as engines_loader
 
                     engines_loader.registry.apply_translations(self, tr)
+                except Exception:
+                    pass
+                # Propagate translations to all BCASL plugins
+                try:
+                    import bcasl.Loader as bcasl_loader
+
+                    bcasl_loader.apply_translations(self, tr)
                 except Exception:
                     pass
             except Exception:

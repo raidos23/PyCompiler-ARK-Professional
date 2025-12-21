@@ -106,9 +106,6 @@ class BcPluginBase:
         self.requires = tuple(str(r).strip() for r in requires if str(r).strip())
         self.priority = int(priority)
 
-    def install_deps(deps) -> list:
-        pass
-
     #  principal Hook
     def on_pre_compile(
         self, ctx: PreCompileContext
