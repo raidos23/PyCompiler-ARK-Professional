@@ -125,3 +125,13 @@ class Dialog:
         return bool(
             show_msgbox("question", title, text, default="Yes" if default_yes else "No")
         )
+        
+    def log_info(message: str) -> None:
+        print(f"[INFO] {message}")
+
+    def log_warn(message: str) -> None:
+        print(f"[WARN] {message}")
+
+    def log_error(message: str) -> None:
+        print(f"[ERROR] {message}")
+
