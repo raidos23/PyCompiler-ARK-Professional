@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 # Re-export auto_plugins helpers for convenience
-from .auto_build import (
+from .auto_build_command import (
     compute_auto_for_engine,
     compute_for_all,
     register_auto_builder,

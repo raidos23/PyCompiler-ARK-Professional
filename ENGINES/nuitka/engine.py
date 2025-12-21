@@ -15,7 +15,7 @@ from engine_sdk import (
     pip_show,
     resolve_project_venv,
 )
-from engine_sdk.auto_build import _tr
+from engine_sdk.auto_build_command import _tr
 
 
 class NuitkaEngine(CompilerEngine):
