@@ -148,7 +148,6 @@ See [SUPPORTED_MATRIX.md](SUPPORTED_MATRIX.md) for detailed compatibility inform
 - [Create a Building Engine](docs/how_to_create_an_engine.md) - Engine development guide
 - [Create an AC Plugin](docs/how_to_create_an_AC_plugin.md) - Post-compile plugin guide
 - [Create a BC Plugin](docs/how_to_create_a_BC_plugin.md) - Pre-compile plugin guide
-- [Create a CE Plugin](docs/how_to_create_a_CE_plugin.md) - Core Extension plugin guide
 
 
 ### **Developer Documentation**
