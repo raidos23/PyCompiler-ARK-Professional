@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "fr", "name": "Français"},
+  "cleaner_title": "Nettoyeur",
+  "cleaner_question": "Voulez-vous nettoyer l'espace de travail (.pyc et __pycache__)?",
+  "cleaner_cancelled": "Nettoyeur annulé par l'utilisateur",
+  "cleaner_completed": "Nettoyeur terminé: {files} fichiers .pyc et {dirs} répertoires __pycache__ supprimés",
+  "cleaner_error_file": "Impossible de supprimer {path}: {error}",
+  "cleaner_error_dir": "Impossible de supprimer {path}: {error}"
+}

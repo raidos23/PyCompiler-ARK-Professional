@@ -1,4 +1,4 @@
-# extension de capacité pour les plugins AC pour une meilleur affinité avec le logiciel et ainsi avoir plus de possibilité
+# extension de capacité pour les plugins BC pour une meilleure affinité avec le logiciel et plus de possibilités
 
 # SPDX-License-Identifier: GPL-3.0-only
 
@@ -89,9 +89,78 @@ def set_selected_workspace(path: Pathish) -> bool:
     return True
 
 
-def Generate_Bc_Plugin_Template():
+def Generate_Bc_Plugin_Template() -> str:
+    """Retourne un modèle de plugin BC prêt à l'emploi.
 
-    "\n".join([])
+    Le modèle est compatible avec le chargeur BCASL:
+    - expose une classe de plugin décorée avec register_plugin
+    - fournit la variable globale PLUGIN pour l'exécution sandbox
+    - fournit la fonction bcasl_register(manager) pour l'enregistrement direct
+    """
+    return r'''# SPDX-License-Identifier: GPL-3.0-only
 
-    # Cette methode doit pouvoir créer une base de plugin de type Bc avec le contenu de la variable BCPLUGIN_TEMPLATE
-    pass
+from __future__ import annotations
+
+# Importer les types depuis le SDK pour rester compatible avec l'hôte
+from Plugins_SDK.BcPluginContext import (
+    BcPluginBase, PluginMeta, PreCompileContext,
+    register_plugin, BCASL_PLUGIN_REGISTER_FUNC,
+)
+
+
+@register_plugin
+class MyBcPlugin(BcPluginBase):
+    """Exemple minimal de plugin BC.
+
+    - Utilisez le champ 'tags' pour aider l'ordonnancement (voir bcasl.tagging):
+      ex: ('clean',), ('check',), ('prepare',), ('license',), ('lint',), ('obfuscate',)
+    - Déclarez les dépendances dans 'requires' via les identifiants de plugins.
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            meta=PluginMeta(
+                id="my.bc.plugin",
+                name="My BC Plugin",
+                version="0.1.0",
+                description="Describe what this plugin does before compilation.",
+                author="Your Name",
+                tags=("lint",),  # ajustez selon la phase ciblée
+            ),
+            requires=(),  # ex: ("other.plugin.id",)
+            priority=100,  # priorité numérique (plus petit = plus tôt)
+        )
+
+    def on_pre_compile(self, ctx: PreCompileContext) -> None:
+        """Point d'entrée du plugin (pré-compilation).
+
+        Utilisez ctx.iter_files(include, exclude) pour parcourir les fichiers du workspace.
+        Les patterns par défaut peuvent être récupérés de la config si nécessaire.
+        Le code doit être idempotent et robuste.
+        """
+        # Exemple: itérer sur les fichiers Python
+        for path in ctx.iter_files(["**/*.py"], ["**/__pycache__/**", "**/*.pyc"]):
+            # TODO: effectuer une action (lecture/analyse/écriture)
+            _ = path
+        # Aucun retour attendu; lever une exception pour signaler un échec
+
+    def apply_i18n(self, gui, tr: dict[str, str]) -> None:
+        """Appliquer les traductions à l'interface si le plugin expose une UI.
+
+        - gui: objet graphique hôte (peut être None en mode headless)
+        - tr: dictionnaire de chaînes localisées
+        """
+        # Optionnel: implémenter si nécessaire
+        return None
+
+
+# Instance globale (facilitée pour l'exécution en sandbox)
+PLUGIN = MyBcPlugin()
+
+
+def bcasl_register(manager) -> None:
+    """Point d'extension appelé par le chargeur pour enregistrer le plugin.
+
+    L'hôte invoquera manager.add_plugin(PLUGIN).
+    """
+    manager.add_plugin(PLUGIN)
+'''

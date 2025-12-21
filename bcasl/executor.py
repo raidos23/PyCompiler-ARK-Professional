@@ -185,7 +185,7 @@ class BCASL:
                 if not rec:
                     return DEFAULT_TAG_PRIORITY
                 
-                tags = rec.plugin.meta.tag
+                tags = getattr(rec.plugin.meta, "tags", ())
                 if not tags:
                     return DEFAULT_TAG_PRIORITY
                 
@@ -268,7 +268,7 @@ class BCASL:
             _logger.info("=== Ordre d'exécution des plugins BCASL ===")
             for i, pid in enumerate(order, 1):
                 rec = active_items[pid]
-                tags = rec.plugin.meta.tag or ""
+                tags = getattr(rec.plugin.meta, "tags", ()) or ()
                 tag_prio = _compute_tag_priority(pid)
                 _logger.info(
                     "%d. %s (priorité=%d, tag_phase=%d)",

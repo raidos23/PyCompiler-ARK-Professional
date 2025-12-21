@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "af", "name": "Afrikaans"},
+  "cleaner_title": "Skoonmaker",
+  "cleaner_question": "Wil jy die werkruimte (.pyc en __pycache__) skoonmaak?",
+  "cleaner_cancelled": "Skoonmaker deur gebruiker gekanselleer",
+  "cleaner_completed": "Skoonmaker voltooid: {files} .pyc-lêers en {dirs} __pycache__-gidse verwyder",
+  "cleaner_error_file": "Fout by verwydering van {path}: {error}",
+  "cleaner_error_dir": "Fout by verwydering van {path}: {error}"
+}

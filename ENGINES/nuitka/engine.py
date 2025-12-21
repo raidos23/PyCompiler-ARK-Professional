@@ -414,3 +414,53 @@ class NuitkaEngine(CompilerEngine):
         except Exception:
             pass
         return None
+
+    def on_success(self, gui, file: str) -> None:
+        """Action post-succès: ouvrir le dossier de sortie Nuitka si identifiable.
+        Le hook est exécuté après ACASL (déclenché par mainprocess.py).
+        """
+        try:
+            # Priorité: champ UI dédié si présent (nuitka_output_dir)
+            out_dir = None
+            try:
+                if hasattr(gui, "nuitka_output_dir") and gui.nuitka_output_dir:
+                    v = gui.nuitka_output_dir.text().strip()
+                    if v:
+                        out_dir = v
+            except Exception:
+                out_dir = None
+            # Fallback: dossier global de sortie de l'app
+            if not out_dir:
+                try:
+                    if hasattr(gui, "output_dir_input") and gui.output_dir_input:
+                        v = gui.output_dir_input.text().strip()
+                        if v:
+                            out_dir = v
+                except Exception:
+                    out_dir = None
+            # Dernier recours: workspace/dist
+            if not out_dir:
+                base = getattr(gui, "workspace_dir", None) or os.getcwd()
+                out_dir = os.path.join(base, "dist")
+            if out_dir and os.path.isdir(out_dir):
+                system = platform.system()
+                if system == "Windows":
+                    os.startfile(out_dir)
+                elif system == "Linux":
+                    import subprocess as _sp
+
+                    _sp.run(["xdg-open", out_dir])
+                else:
+                    import subprocess as _sp
+
+                    _sp.run(["open", out_dir])
+        except Exception as e:
+            try:
+                gui.log.append(
+                    _tr(
+                        "⚠️ Impossible d'ouvrir le dossier de sortie Nuitka automatiquement : {err}",
+                        "⚠️ Unable to open Nuitka output folder automatically: {err}",
+                    ).format(err=e)
+                )
+            except Exception:
+                pass

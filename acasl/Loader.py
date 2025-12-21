@@ -558,6 +558,9 @@ def open_ac_loader_dialog(self) -> None:
             order = []
 
         remaining = [pid for pid in plugin_ids_only if pid not in order]
+        
+        # Importer les fonctions de tagging pour afficher les phases
+        from .tagging import get_tag_phase_name
 
         for pid in order + remaining:
             # Récupérer les métadonnées du plugin
@@ -569,9 +572,29 @@ def open_ac_loader_dialog(self) -> None:
             label = f"{meta.name} ({pid})"
             if meta.version:
                 label += f" v{meta.version}"
+            
+            # Déterminer la phase d'exécution basée sur les tags
+            tags = meta.tags if hasattr(meta, 'tags') else ()
+            phase_name = ""
+            if tags:
+                phase_name = get_tag_phase_name(tags[0])
+            
+            # Ajouter la phase au label
+            if phase_name:
+                label += f" [Phase: {phase_name}]"
 
             item = QListWidgetItem(label)
             item.setData(0x0100, pid)
+            
+            # Tooltip avec description et tags
+            try:
+                tooltip = meta.description if meta.description else ""
+                if tags:
+                    tooltip += f"\n\nTags: {', '.join(str(t) for t in tags)}"
+                if tooltip:
+                    item.setToolTip(tooltip)
+            except Exception:
+                pass
 
             en = True
             try:

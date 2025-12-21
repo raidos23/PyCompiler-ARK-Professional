@@ -78,18 +78,9 @@ if IS_LINUX:
 
 # Determine a platform-appropriate crash log directory
 def _platform_log_dir() -> Path:
+    # Toujours journaliser dans le dossier local du projet: ROOT_DIR/logs
     try:
-        if IS_WINDOWS:
-            base = (
-                os.environ.get("LOCALAPPDATA")
-                or os.environ.get("APPDATA")
-                or str(Path.home() / "AppData" / "Local")
-            )
-            return Path(base) / "PyCompiler_ProPP" / "logs"
-        if IS_DARWIN:
-            return Path.home() / "Library" / "Logs" / "PyCompiler_ARK"
-        # Linux and others
-        return Path.home() / ".cache" / "PyCompiler_ProPP"
+        return Path(ROOT_DIR) / "logs"
     except Exception:
         return Path.cwd() / "logs"
 
@@ -136,15 +127,24 @@ except Exception:
 
 
 def _qt_message_handler(mode, context, message):
-    # Silence warnings/debug/info unless verbose requested
-    if not os.environ.get("PYCOMPILER_VERBOSE") and mode in (
+    # Écrit tous les messages Qt dans logs/crash.log. À l'écran, supprime warnings/info/debug si non-verbose.
+    suppressed = (not os.environ.get("PYCOMPILER_VERBOSE")) and mode in (
         QtMsgType.QtWarningMsg,
         QtMsgType.QtInfoMsg,
         QtMsgType.QtDebugMsg,
-    ):
+    )
+    # Toujours écrire en fichier
+    try:
+        _txt = (message or "") + "\n"
+        if "crash_log" in globals():
+            with open(crash_log, "a", encoding="utf-8", errors="ignore") as _f:
+                _f.write(_txt)
+    except Exception:
+        pass
+    if suppressed:
         return
     try:
-        sys.__stderr__.write((message or "") + "\n")
+        sys.__stderr__.write(_txt)
     except Exception:
         pass
 

@@ -297,32 +297,42 @@ class PyInstallerEngine(CompilerEngine):
     def on_success(self, gui, file: str) -> None:
         # Ouvre le dossier de sortie PyInstaller (dist ou --distpath)
         try:
+            # 1) Essayer le champ global de l'UI s'il est présent et non vide
             out_dir = None
             try:
-                out_dir = (
-                    gui.output_dir_input.text().strip()
-                    if getattr(gui, "output_dir_input", None)
-                    else None
-                )
-                if not out_dir:
-                    out_dir = None
+                if hasattr(gui, "output_dir_input") and gui.output_dir_input:
+                    v = gui.output_dir_input.text().strip()
+                    if v:
+                        out_dir = v
             except Exception:
                 out_dir = None
+            # 2) Fallback: workspace/dist
             if not out_dir:
                 base = getattr(gui, "workspace_dir", None) or os.getcwd()
                 out_dir = os.path.join(base, "dist")
+            # 3) Vérifier existence et ouvrir selon la plateforme
             if out_dir and os.path.isdir(out_dir):
                 system = platform.system()
                 if system == "Windows":
                     os.startfile(out_dir)
                 elif system == "Linux":
-                    import subprocess
+                    import subprocess as _sp
 
-                    subprocess.run(["xdg-open", out_dir])
+                    _sp.run(["xdg-open", out_dir])
                 else:
-                    import subprocess
+                    import subprocess as _sp
 
-                    subprocess.run(["open", out_dir])
+                    _sp.run(["open", out_dir])
+            else:
+                try:
+                    gui.log.append(
+                        gui.tr(
+                            f"⚠️ Dossier de sortie introuvable: {out_dir}",
+                            f"⚠️ Output directory not found: {out_dir}",
+                        )
+                    )
+                except Exception:
+                    pass
         except Exception as e:
             try:
                 gui.log.append(

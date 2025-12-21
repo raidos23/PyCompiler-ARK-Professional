@@ -22,9 +22,6 @@ import re
 import platform
 import io
 
-
-from experimental_file import _qt_active_parent
-
 # Simple redaction of obvious secrets in logs
 _REDACT_PATTERNS = [
     re.compile(r"(password\s*[:=]\s*)([^\s]+)", re.IGNORECASE),
@@ -82,17 +79,6 @@ def _qt_active_parent():
         return None
     except Exception:
         return None
-
-
-def log(self, message: str) -> None:
-    msg = _redact_secrets(message) if self.redact_logs else message
-    if self.log_fn:
-        try:
-            self.log_fn(msg)
-            return
-        except Exception:
-            pass
-    print(msg)
 
 
 def show_msgbox(
@@ -365,6 +351,17 @@ class Dialog:
         return bool(
             show_msgbox("question", title, text, default="Yes" if default_yes else "No")
         )
+
+    def log(self, message: str) -> None:
+        """Log a message with optional redaction of secrets."""
+        msg = _redact_secrets(message) if getattr(self, "redact_logs", True) else message
+        if hasattr(self, "log_fn") and self.log_fn:
+            try:
+                self.log_fn(msg)
+                return
+            except Exception:
+                pass
+        print(msg)
 
     def log_info(self, message: str) -> None:
         self.log(f"[INFO] {message}")

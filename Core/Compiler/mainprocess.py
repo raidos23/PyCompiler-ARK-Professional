@@ -26,6 +26,55 @@ from engine_sdk.utils import clamp_text, redact_secrets
 from ..Auto_Command_Builder import compute_for_all
 from ..preferences import MAX_PARALLEL
 
+# Wrapper ACASL inspiré du modèle BCASL: garantit arrêt propre et callback sur thread GUI
+from PySide6.QtCore import QTimer as _QTimer
+
+def safe_run_acasl_async(self, artifacts: list[str], finished_cb=None) -> None:
+    try:
+        from acasl import run_post_compile_async as _acasl_run, ensure_acasl_thread_stopped as _acasl_stop
+    except Exception:
+        # Si ACASL indisponible, renvoyer un rapport 'disabled'
+        try:
+            if callable(finished_cb):
+                _QTimer.singleShot(0, lambda: finished_cb({"status": "disabled", "plugins": []}))
+        except Exception:
+            pass
+        return
+    # Arrêt propre d'un éventuel ACASL en cours
+    try:
+        _acasl_stop(self)
+    except Exception:
+        pass
+    # Ne pas lancer si l'UI est en fermeture
+    try:
+        if hasattr(self, "_closing") and bool(getattr(self, "_closing")):
+            if callable(finished_cb):
+                _QTimer.singleShot(0, lambda: finished_cb({"status": "cancelled"}))
+            return
+    except Exception:
+        pass
+    # Wrapper qui garantit l'exécution du callback dans le thread GUI
+    def _finish_on_gui(rep):
+        try:
+            if callable(finished_cb):
+                _QTimer.singleShot(0, lambda r=rep: finished_cb(r))
+        except Exception:
+            pass
+    try:
+        _acasl_run(self, list(artifacts or []), finished_cb=_finish_on_gui)
+    except Exception as e:
+        # Journaliser et renvoyer une erreur non bloquante
+        try:
+            if hasattr(self, "log") and self.log:
+                self.log.append(f"❌ ACASL: échec de lancement: {e}")
+        except Exception:
+            pass
+        try:
+            if callable(finished_cb):
+                _QTimer.singleShot(0, lambda: finished_cb({"status": "error", "error": str(e)}))
+        except Exception:
+            pass
+
 
 def try_start_processes(self):
     from PySide6.QtWidgets import QApplication
@@ -76,6 +125,28 @@ def try_start_processes(self):
                 from acasl import run_post_compile_async
 
                 def _after_acasl(_rep):
+                    # Exécuter maintenant tous les hooks on_success engrangés
+                    try:
+                        hooks = getattr(self, "_pending_engine_success_hooks", [])
+                        for (eng, fpath) in hooks:
+                            try:
+                                eng.on_success(self, fpath)
+                            except Exception:
+                                try:
+                                    self.log.append(
+                                        f"⚠️ on_success du moteur '{getattr(eng, 'id', '?')}' a échoué."
+                                    )
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+                    finally:
+                        try:
+                            if hasattr(self, "_pending_engine_success_hooks"):
+                                self._pending_engine_success_hooks.clear()
+                        except Exception:
+                            pass
+                    # Restaurer l'UI
                     try:
                         if hasattr(self, "compiler_tabs") and self.compiler_tabs:
                             self.compiler_tabs.setEnabled(True)
@@ -92,7 +163,7 @@ def try_start_processes(self):
 
                 QTimer.singleShot(
                     0,
-                    lambda a=list(artifacts): run_post_compile_async(
+                    lambda a=list(artifacts): safe_run_acasl_async(
                         self, a, finished_cb=_after_acasl
                     ),
                 )
@@ -655,14 +726,20 @@ def handle_finished(self, process, exit_code, exit_status):
         self.log.append(
             "<span style='color:#7faaff;'>ℹ️ Certains messages d’erreur ou de warning peuvent apparaître dans les logs, mais si l’exécutable fonctionne, ils ne sont pas bloquants.</span>\n"
         )
-        # Delegate to engine post-success (guarded by env to disable if unstable)
+        # Enregistrer un callback différé on_success du moteur, exécuté après ACASL
         try:
-            import os as _os
-
-            if _os.environ.get("PYCOMPILER_NO_POST_HOOKS") != "1":
-                # Output folder opening is handled exclusively by ACASL.
-                # Do not call engine.on_success here to avoid engines opening directories.
-                pass
+            eng_from_proc = getattr(process, "_engine_id", None)
+            if eng_from_proc:
+                # Créer une instance moteur dédiée pour le hook (stateless)
+                try:
+                    engine_obj = engines_loader.registry.create(eng_from_proc)
+                except Exception:
+                    engine_obj = None
+                if engine_obj is not None:
+                    if not hasattr(self, "_pending_engine_success_hooks"):
+                        self._pending_engine_success_hooks = []
+                    # Stocker (engine_obj, file) pour exécution post-ACASL
+                    self._pending_engine_success_hooks.append((engine_obj, file))
         except Exception:
             pass
         # Trace du dernier fichier réussi par moteur (utilisé par ACASL)

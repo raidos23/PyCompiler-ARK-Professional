@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "ru", "name": "Русский"},
+  "cleaner_title": "Очиститель",
+  "cleaner_question": "Вы хотите очистить рабочее пространство (.pyc и __pycache__)?",
+  "cleaner_cancelled": "Очиститель отменен пользователем",
+  "cleaner_completed": "Очиститель завершен: удалено {files} файлов .pyc и {dirs} директорий __pycache__",
+  "cleaner_error_file": "Ошибка при удалении {path}: {error}",
+  "cleaner_error_dir": "Ошибка при удалении {path}: {error}"
+}

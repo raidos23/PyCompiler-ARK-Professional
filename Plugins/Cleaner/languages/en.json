@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "en", "name": "English"},
+  "cleaner_title": "Cleaner",
+  "cleaner_question": "Do you want to clean the workspace (.pyc and __pycache__)?",
+  "cleaner_cancelled": "Cleaner cancelled by user",
+  "cleaner_completed": "Cleaner completed: {files} .pyc files and {dirs} __pycache__ directories removed",
+  "cleaner_error_file": "Failed to remove {path}: {error}",
+  "cleaner_error_dir": "Failed to remove {path}: {error}"
+}

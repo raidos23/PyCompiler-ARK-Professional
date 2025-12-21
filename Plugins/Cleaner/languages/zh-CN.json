@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "zh-CN", "name": "简体中文"},
+  "cleaner_title": "清理器",
+  "cleaner_question": "您想清理工作区 (.pyc 和 __pycache__) 吗?",
+  "cleaner_cancelled": "用户取消了清理器",
+  "cleaner_completed": "清理器完成: 删除了 {files} 个 .pyc 文件和 {dirs} 个 __pycache__ 目录",
+  "cleaner_error_file": "删除 {path} 失败: {error}",
+  "cleaner_error_dir": "删除 {path} 失败: {error}"
+}

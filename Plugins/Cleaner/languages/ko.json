@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "ko", "name": "한국어"},
+  "cleaner_title": "클리너",
+  "cleaner_question": "작업 공간 (.pyc 및 __pycache__)을 정리하시겠습니까?",
+  "cleaner_cancelled": "사용자가 클리너를 취소했습니다",
+  "cleaner_completed": "클리너 완료: {files}개의 .pyc 파일 및 {dirs}개의 __pycache__ 디렉토리가 제거되었습니다",
+  "cleaner_error_file": "{path} 제거 실패: {error}",
+  "cleaner_error_dir": "{path} 제거 실패: {error}"
+}

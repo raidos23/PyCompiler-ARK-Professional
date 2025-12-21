@@ -1308,3 +1308,52 @@ class CxFreezeEngine(CompilerEngine):
                 pass
         except Exception:
             pass
+
+    def on_success(self, gui, file: str) -> None:
+        """Action post-succès: ouvrir le dossier de sortie cx_Freeze si identifiable.
+        Le hook est exécuté après ACASL (défini dans mainprocess.py).
+        """
+        try:
+            out_dir = None
+            # Priorité au champ de l'onglet cx_Freeze s'il est présent
+            try:
+                if hasattr(self, "_output_dir_input") and self._output_dir_input:
+                    v = self._output_dir_input.text().strip()
+                    if v:
+                        out_dir = v
+            except Exception:
+                out_dir = None
+            # Sinon, valeur globale de la GUI
+            if not out_dir:
+                try:
+                    if hasattr(gui, "output_dir_input") and gui.output_dir_input:
+                        v = gui.output_dir_input.text().strip()
+                        if v:
+                            out_dir = v
+                except Exception:
+                    out_dir = None
+            # Fallback workspace/dist
+            if not out_dir:
+                base = getattr(gui, "workspace_dir", None) or os.getcwd()
+                out_dir = os.path.join(base, "dist")
+            if out_dir and os.path.isdir(out_dir):
+                system = platform.system()
+                if system == "Windows":
+                    os.startfile(out_dir)
+                elif system == "Linux":
+                    import subprocess as _sp
+
+                    _sp.run(["xdg-open", out_dir])
+                else:
+                    import subprocess as _sp
+
+                    _sp.run(["open", out_dir])
+        except Exception as e:
+            try:
+                self._log(
+                    gui,
+                    f"⚠️ Impossible d'ouvrir le dossier de sortie cx_Freeze automatiquement : {e}",
+                    f"⚠️ Unable to open cx_Freeze output folder automatically: {e}",
+                )
+            except Exception:
+                pass

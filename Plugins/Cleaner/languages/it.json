@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "it", "name": "Italiano"},
+  "cleaner_title": "Pulitore",
+  "cleaner_question": "Vuoi pulire l'area di lavoro (.pyc e __pycache__)?",
+  "cleaner_cancelled": "Pulitore annullato dall'utente",
+  "cleaner_completed": "Pulitore completato: {files} file .pyc e {dirs} directory __pycache__ rimossi",
+  "cleaner_error_file": "Errore nella rimozione di {path}: {error}",
+  "cleaner_error_dir": "Errore nella rimozione di {path}: {error}"
+}

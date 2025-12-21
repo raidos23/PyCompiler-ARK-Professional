@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "ja", "name": "日本語"},
+  "cleaner_title": "クリーナー",
+  "cleaner_question": "ワークスペース (.pyc と __pycache__) をクリーンアップしますか?",
+  "cleaner_cancelled": "ユーザーによってクリーナーがキャンセルされました",
+  "cleaner_completed": "クリーナー完了: {files} 個の .pyc ファイルと {dirs} 個の __pycache__ ディレクトリが削除されました",
+  "cleaner_error_file": "{path} の削除に失敗しました: {error}",
+  "cleaner_error_dir": "{path} の削除に失敗しました: {error}"
+}

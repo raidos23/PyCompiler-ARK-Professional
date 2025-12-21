@@ -505,17 +505,36 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
 
         remaining = [pid for pid in plugin_ids if pid not in order]
         ordered_ids = order + remaining
+        
+        # Importer les fonctions de tagging pour afficher les phases
+        from .tagging import get_tag_phase_name
+        
         for pid in ordered_ids:
             meta = meta_map.get(pid, {})
             label = meta.get("name") or pid
             ver = meta.get("version") or ""
+            tags = meta.get("tags") or []
+            
+            # Déterminer la phase d'exécution
+            phase_name = ""
+            if tags:
+                # Utiliser le premier tag pour déterminer la phase
+                phase_name = get_tag_phase_name(tags[0])
+            
+            # Construire le texte avec la phase
             text = f"{label} ({pid})" + (f" v{ver}" if ver else "")
+            if phase_name:
+                text += f" [Phase: {phase_name}]"
+            
             item = QListWidgetItem(text)
-            # Tooltip simple
+            # Tooltip avec description et tags
             try:
                 desc = meta.get("description") or ""
-                if desc:
-                    item.setToolTip(desc)
+                tooltip = desc
+                if tags:
+                    tooltip += f"\n\nTags: {', '.join(tags)}"
+                if tooltip:
+                    item.setToolTip(tooltip)
             except Exception:
                 pass
             # Etat

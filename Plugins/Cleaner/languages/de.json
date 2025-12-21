@@ -1,0 +1,9 @@
+{
+  "_meta": {"code": "de", "name": "Deutsch"},
+  "cleaner_title": "Reiniger",
+  "cleaner_question": "Möchten Sie den Arbeitsbereich (.pyc und __pycache__) bereinigen?",
+  "cleaner_cancelled": "Reiniger vom Benutzer abgebrochen",
+  "cleaner_completed": "Reiniger abgeschlossen: {files} .pyc-Dateien und {dirs} __pycache__-Verzeichnisse entfernt",
+  "cleaner_error_file": "Fehler beim Entfernen von {path}: {error}",
+  "cleaner_error_dir": "Fehler beim Entfernen von {path}: {error}"
+}
