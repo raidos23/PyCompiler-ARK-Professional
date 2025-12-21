@@ -7,7 +7,6 @@ from Plugins_SDK.BcPluginContext import BcPluginBase, PluginMeta, PreCompileCont
 from Plugins_SDK.GeneralContext import Dialog
 
 
-
 dialog = log = Dialog
 
 META = PluginMeta(
