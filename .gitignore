@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 experimental_file/
+*.bak
 # C extensions
 *.so
 *.swp
