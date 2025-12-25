@@ -255,6 +255,12 @@ def init_ui(self):
     self.btn_suggest_deps = self.ui.findChild(QPushButton, "btn_suggest_deps")
     self.btn_api_loader = self.ui.findChild(QPushButton, "btn_api_loader")
     self.btn_acasl_loader = self.ui.findChild(QPushButton, "btn_acasl_loader")
+    if self.btn_acasl_loader:
+        try:
+            self.btn_acasl_loader.hide()
+            self.btn_acasl_loader.setEnabled(False)
+        except Exception:
+            pass
     self.btn_select_icon = self.ui.findChild(QPushButton, "btn_select_icon")
     self.btn_show_stats = self.ui.findChild(QPushButton, "btn_show_stats")
     self.select_lang = self.ui.findChild(QPushButton, "select_lang")
@@ -305,10 +311,14 @@ def init_ui(self):
         self.btn_api_loader.setToolTip(
             "Configurer les plugins API (BCASL) à exécuter avant la compilation."
         )
+    # ACASL removed: hide or disable ACASL loader button if present
     if self.btn_acasl_loader:
-        self.btn_acasl_loader.setToolTip(
-            "Configurer les plugins ACASL (post‑compilation) à exécuter après la compilation."
-        )
+        try:
+            self.btn_acasl_loader.setToolTip("")
+            self.btn_acasl_loader.hide()
+            self.btn_acasl_loader.setEnabled(False)
+        except Exception:
+            pass
     if self.venv_button:
         self.venv_button.setToolTip(
             "Sélectionner manuellement un dossier venv à utiliser pour la compilation."
@@ -542,11 +552,10 @@ def init_ui(self):
     self.btn_export_config.clicked.connect(self.export_config)
     self.btn_import_config.clicked.connect(self.import_config)
 
-    from acasl import open_ac_loader_dialog
     from bcasl import open_bc_loader_dialog
 
     self.btn_api_loader.clicked.connect(lambda: open_bc_loader_dialog(self))
-    self.btn_acasl_loader.clicked.connect(lambda: open_ac_loader_dialog(self))
+    # ACASL removed: do not import or connect ACASL loader
 
     if self.btn_help:
         self.btn_help.clicked.connect(self.show_help_dialog)
@@ -1269,10 +1278,7 @@ def _apply_translations(self, tr: dict[str, object]) -> None:
                 self.btn_api_loader.setToolTip(
                     _tt("tt_api_loader", self.btn_api_loader.toolTip())
                 )
-            if getattr(self, "btn_acasl_loader", None):
-                self.btn_acasl_loader.setToolTip(
-                    _tt("tt_acasl_loader", self.btn_acasl_loader.toolTip())
-                )
+            # ACASL removed: no tooltip
             if getattr(self, "venv_button", None):
                 self.venv_button.setToolTip(
                     _tt("tt_venv_button", self.venv_button.toolTip())

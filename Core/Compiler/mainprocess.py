@@ -126,15 +126,36 @@ def try_start_processes(self):
         try:
             import os as _os
 
-            no_hooks = _os.environ.get("PYCOMPILER_NO_POST_HOOKS") == "1"
+            no_hooks = True
         except Exception:
             no_hooks = False
-        if no_hooks or not artifacts:
+        # ACASL removed: execute engine success hooks immediately and restore UI
+        if True:
+            try:
+                hooks = getattr(self, "_pending_engine_success_hooks", [])
+                for (eng, fpath) in hooks:
+                    try:
+                        eng.on_success(self, fpath)
+                    except Exception:
+                        try:
+                            self.log.append(
+                                f"⚠️ on_success du moteur '{getattr(eng, 'id', '?')}' a échoué."
+                            )
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            finally:
+                try:
+                    if hasattr(self, "_pending_engine_success_hooks"):
+                        self._pending_engine_success_hooks.clear()
+                except Exception:
+                    pass
             if hasattr(self, "compiler_tabs") and self.compiler_tabs:
                 self.compiler_tabs.setEnabled(True)
             self.set_controls_enabled(True)
             self.save_preferences()
-        else:
+            return
             # Laisser l'UI désactivée jusqu'à la fin d'ACASL, puis restaurer dans le callback
             try:
                 from acasl import run_post_compile_async
@@ -970,9 +991,8 @@ def cancel_all_compilations(self):
                 pass
     # Last resort: stop ACASL thread and nuke any remaining descendants of our GUI process
     try:
-        from acasl import ensure_acasl_thread_stopped
-
-        ensure_acasl_thread_stopped(self)
+        # ACASL removed: nothing to stop here
+        pass
     except Exception:
         pass
     try:

@@ -1074,14 +1074,14 @@ class PyCompilerArkGui(QWidget):
                 "<b>PyCompiler ARK++ — Quick Help</b><br>"
                 "<ul>"
                 "<li>1) Select the Workspace and add your .py files.</li>"
-                "<li>2) Configure pre‑compile plugins via <b>API Loader</b> (BCASL) and post‑compile plugins via <b>ACASL Loader</b> (optional).</li>"
+                "<li>2) Configure pre‑compile plugins via <b>API Loader</b> (BCASL).</li>"
                 "<li>3) Configure options in the <b>PyInstaller</b> or <b>Nuitka</b> tab.</li>"
                 "<li>4) Click <b>Build</b> and follow the logs.</li>"
                 "</ul>"
                 "<b>Notes</b><br>"
                 "<ul>"
-                "<li>When a build starts, all action controls are disabled (including API Loader and ACASL Loader) until it finishes or is canceled.</li>"
-                "<li>Pre‑compilation (BCASL) completes before compilation; Post‑compilation (ACASL) runs after compilation.</li>"
+                "<li>When a build starts, all action controls are disabled (including API Loader) until it finishes or is canceled.</li>"
+                "<li>Pre‑compilation (BCASL) completes before compilation.</li>"
                 "<li>A <i>venv</i> can be created automatically; requirements.txt is installed if present; tools are installed into the venv as needed.</li>"
                 "<li>API‑initiated workspace changes are auto‑applied; running builds are canceled before switching.</li>"
                 "</ul>"
@@ -1095,14 +1095,14 @@ class PyCompilerArkGui(QWidget):
                 "<b>PyCompiler ARK++ — Aide rapide</b><br>"
                 "<ul>"
                 "<li>1) Sélectionnez le Workspace et ajoutez vos fichiers .py.</li>"
-                "<li>2) Configurez les plugins de pré‑compilation via <b>API Loader</b> (BCASL) et de post‑compilation via <b>ACASL Loader</b> (optionnel).</li>"
+                "<li>2) Configurez les plugins de pré‑compilation via <b>API Loader</b> (BCASL).</li>"
                 "<li>3) Réglez les options dans l’onglet <b>PyInstaller</b> ou <b>Nuitka</b>.</li>"
                 "<li>4) Cliquez sur <b>Build</b> et suivez les logs.</li>"
                 "</ul>"
                 "<b>Notes</b><br>"
                 "<ul>"
-                "<li>Au démarrage d’un build, tous les contrôles d’action sont désactivés (y compris API Loader et ACASL Loader) jusqu’à la fin ou l’annulation.</li>"
-                "<li>La pré‑compilation (BCASL) se termine avant la compilation ; la post‑compilation (ACASL) s’exécute après la compilation.</li>"
+                "<li>Au démarrage d’un build, tous les contrôles d’action sont désactivés (y compris API Loader) jusqu’à la fin ou l’annulation.</li>"
+                "<li>La pré‑compilation (BCASL) se termine avant la compilation.</li>"
                 "<li>Un <i>venv</i> peut être créé automatiquement ; requirements.txt est installé s’il est présent ; les outils sont installés dans le venv si nécessaire.</li>"
                 "<li>Les demandes de changement de workspace via l’API sont appliquées automatiquement ; les builds en cours sont annulés avant le changement.</li>"
                 "</ul>"
@@ -1304,15 +1304,10 @@ class PyCompilerArkGui(QWidget):
                 self.btn_suggest_deps.setEnabled(enabled)
         except Exception:
             pass
-        # API Loader buttons (BCASL and ACASL)
+        # API Loader button (BCASL)
         try:
             if hasattr(self, "btn_api_loader") and self.btn_api_loader:
                 self.btn_api_loader.setEnabled(enabled)
-        except Exception:
-            pass
-        try:
-            if hasattr(self, "btn_acasl_loader") and self.btn_acasl_loader:
-                self.btn_acasl_loader.setEnabled(enabled)
         except Exception:
             pass
         # Désactiver aussi options de langue/thème et stats (sensibles en cours de build)
@@ -1357,7 +1352,7 @@ class PyCompilerArkGui(QWidget):
                 getattr(self, "btn_export_config", None),
                 getattr(self, "btn_import_config", None),
                 getattr(self, "btn_api_loader", None),
-                getattr(self, "btn_acasl_loader", None),
+                None,
                 getattr(self, "btn_suggest_deps", None),
                 getattr(self, "select_lang", None),
                 getattr(self, "select_theme", None),
