@@ -1,6 +1,6 @@
 
 # PyCompiler ARK++ — High-grade launcher (Windows PowerShell)
-. All rights reserved.
+#All rights reserved.
 
 [CmdletBinding(PositionalBinding=$false)]
 Param(
