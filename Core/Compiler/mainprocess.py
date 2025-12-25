@@ -929,7 +929,7 @@ def cancel_all_compilations(self):
     try:
         from bcasl.Loader import ensure_bcasl_thread_stopped
 
-        ensure_bcasl_thread_stopped(self)
+        ensure_bcasl_thread_stopped(self, timeout_ms=2000)
     except Exception:
         pass
     errors = []
@@ -972,7 +972,7 @@ def cancel_all_compilations(self):
     try:
         from acasl import ensure_acasl_thread_stopped
 
-        ensure_acasl_thread_stopped(self)
+        ensure_acasl_thread_stopped(self, timeout_ms=2000)
     except Exception:
         pass
     try:

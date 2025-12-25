@@ -1774,27 +1774,29 @@ class PyCompilerArkGui(QWidget):
             )
             if reply == QMessageBox.Yes:
                 self._closing = True
-                # Annule les compilations en cours si nécessaire
-                if self.processes:
-                    self.cancel_all_compilations()
-                # Stoppe les processus/boîtes de progression en arrière-plan
-                self._terminate_background_tasks()
-                # Arrêt propre des threads BCASL si actifs
+                # Arrêt propre des threads BCASL AVANT cancel_all_compilations
                 try:
                     from bcasl.Loader import ensure_bcasl_thread_stopped
-
-                    ensure_bcasl_thread_stopped(self)
+                    ensure_bcasl_thread_stopped(self, timeout_ms=1000)
                 except Exception:
                     pass
+                # Annule les compilations en cours si nécessaire
+                if self.processes:
+                    try:
+                        self.cancel_all_compilations()
+                    except Exception:
+                        pass
+                # Stoppe les processus/boîtes de progression en arrière-plan
+                self._terminate_background_tasks()
                 event.accept()
             else:
                 event.ignore()
         else:
+            self._closing = True
             # Arrêt propre des threads BCASL si actifs
             try:
                 from bcasl.Loader import ensure_bcasl_thread_stopped
-
-                ensure_bcasl_thread_stopped(self)
+                ensure_bcasl_thread_stopped(self, timeout_ms=1000)
             except Exception:
                 pass
             event.accept()

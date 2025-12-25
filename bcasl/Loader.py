@@ -427,18 +427,23 @@ def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
         t = getattr(self, "_bcasl_thread", None)
         if t is not None:
             try:
-                if t.isRunning():
-                    try:
-                        t.quit()
-                    except Exception:
-                        pass
-                    if not t.wait(timeout_ms):
+                if hasattr(t, 'isRunning') and callable(t.isRunning):
+                    if t.isRunning():
                         try:
-                            t.terminate()
+                            t.quit()
                         except Exception:
                             pass
+                        # Wait with timeout
                         try:
-                            t.wait(1000)
+                            if not t.wait(int(timeout_ms)):
+                                try:
+                                    t.terminate()
+                                except Exception:
+                                    pass
+                                try:
+                                    t.wait(1000)
+                                except Exception:
+                                    pass
                         except Exception:
                             pass
             except Exception:

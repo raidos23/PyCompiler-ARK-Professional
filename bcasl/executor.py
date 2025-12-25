@@ -452,19 +452,38 @@ class BCASL:
                     )
                     p.start()
                     timeout = self.plugin_timeout_s
-                    if timeout and timeout > 0:
-                        p.join(timeout)
-                    else:
-                        p.join()
+                    timed_out = False
+                    # Use polling instead of blocking join to avoid deadlocks
+                    start_wait = time.perf_counter()
+                    while p.is_alive():
+                        if timeout and timeout > 0:
+                            elapsed = time.perf_counter() - start_wait
+                            if elapsed >= timeout:
+                                timed_out = True
+                                break
+                        time.sleep(0.1)  # Poll every 100ms
+                    # Ensure process is terminated if still alive
                     if p.is_alive():
                         try:
                             p.terminate()
                         except Exception:
                             pass
-                        try:
-                            p.join(1.0)
-                        except Exception:
-                            pass
+                        # Wait a bit for graceful termination
+                        for _ in range(10):  # 1 second total
+                            if not p.is_alive():
+                                break
+                            time.sleep(0.1)
+                        # Force kill if still alive
+                        if p.is_alive():
+                            try:
+                                p.kill()
+                            except Exception:
+                                pass
+                            # Final wait
+                            for _ in range(5):  # 0.5 seconds total
+                                if not p.is_alive():
+                                    break
+                                time.sleep(0.1)
                         duration_ms = (time.perf_counter() - start) * 1000.0
                         report.add(
                             ExecutionItem(
@@ -472,7 +491,7 @@ class BCASL:
                                 name=plg.meta.name,
                                 success=False,
                                 duration_ms=duration_ms,
-                                error=f"timeout après {self.plugin_timeout_s:.1f}s",
+                                error=f"timeout après {self.plugin_timeout_s:.1f}s" if timed_out else "processus non terminé",
                             )
                         )
                         _logger.error(
