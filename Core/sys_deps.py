@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2025 Samuel Amen Ague
+
+
 
 """
 Thin bridge API between engines and the operating system for system-level interactions.

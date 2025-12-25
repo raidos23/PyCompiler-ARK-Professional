@@ -1,7 +1,7 @@
 # ceci est un plugin de packaging et il est aussi un exemple pourles plugin du type AC
 
-# SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2025 Samuel Amen Ague
+
+
 
 # ceci est un exemple pourles plugin du type Ac
 

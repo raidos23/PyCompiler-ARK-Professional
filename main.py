@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2025 Samuel Amen Ague
+
+
 
 """
 PyCompiler ARK++ — Cross-platform hardened bootstrap

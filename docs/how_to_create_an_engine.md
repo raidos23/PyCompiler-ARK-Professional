@@ -30,7 +30,7 @@ This guide explains how to implement a pluggable compilation engine for PyCompil
 Create `ENGINES/my_engine/__init__.py`:
 
 ```python
-# SPDX-License-Identifier: GPL-3.0-only
+
 from __future__ import annotations
 
 import os

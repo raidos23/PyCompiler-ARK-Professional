@@ -1,7 +1,7 @@
-# SPDX-License-Identifier: GPL-3.0-only
+
 # Engine SDK: stable facade for external engine plugins
 
-# Copyright (C) 2025 Samuel Amen Ague
+
 # Author: Samuel Amen Ague
 from __future__ import annotations
 

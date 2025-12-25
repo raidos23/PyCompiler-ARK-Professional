@@ -1,6 +1,6 @@
 # extension de capacité pour les plugins AC pour une meilleure affinité avec le logiciel et plus de possibilités
 
-# SPDX-License-Identifier: GPL-3.0-only
+
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def Generate_Ac_Plugin_Template() -> str:
     - fournit la variable globale PLUGIN pour l'exécution sandbox
     - fournit la fonction acasl_register(manager) pour l'enregistrement direct
     """
-    return r'''# SPDX-License-Identifier: GPL-3.0-only
+    return r'''
 
 from __future__ import annotations
 

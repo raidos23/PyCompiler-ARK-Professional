@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2025 Samuel Amen Ague
+
+
 
 # Plugin de nettoyage du workspace (suppression des fichiers .pyc et dossiers __pycache__)
 

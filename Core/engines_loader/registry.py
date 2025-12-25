@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-only
+
 # Registry to manage pluggable compilation engines
 
 from __future__ import annotations

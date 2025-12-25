@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-only
+
 # Dynamic discovery for pluggable compilation engines
 #
 # Strict mode: discover engines ONLY from the ENGINES/ folder at the project root.

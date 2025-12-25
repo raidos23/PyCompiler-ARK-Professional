@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: GPL-3.0-only
+
 # PyCompiler ARK++ — High-grade launcher (Unix)
 # Author: Samuel Amen Ague
-# Copyright (c) 2025 Samuel Amen Ague. All rights reserved.
+. All rights reserved.
 
 set -Eeuo pipefail
 

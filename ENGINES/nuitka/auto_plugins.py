@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-only
+
 from __future__ import annotations
 
 # Engine-controlled auto builder for Nuitka
