@@ -227,6 +227,7 @@ from Core import PyCompilerArkGui
 
 
 def main(argv: list[str]) -> int:
+    w = None  # Keep reference to main window alive during app.exec()
     try:
         app = QApplication(argv)
         # Use logo/logo.png as application icon if available
@@ -320,7 +321,7 @@ def main(argv: list[str]) -> int:
                             QTimer.singleShot(
                                 2300,
                                 lambda: splash.showMessage(
-                                    "Préparation de l’interface… / Preparing UI…",
+                                    "Préparation de l'interface… / Preparing UI…",
                                     align,
                                     col,
                                 ),
@@ -338,6 +339,7 @@ def main(argv: list[str]) -> int:
                 delay_ms = 3500
 
             def _launch_main():
+                nonlocal w
                 try:
                     w = PyCompilerArkGui()
                     # ensure main window uses the same icon if available
@@ -445,18 +447,27 @@ def main(argv: list[str]) -> int:
             except Exception:
                 pass
         rc = app.exec()
+        # Explicit cleanup before exit
+        try:
+            if w is not None:
+                w.deleteLater()
+        except Exception:
+            pass
+        try:
+            app.quit()
+        except Exception:
+            pass
         return int(rc) if isinstance(rc, int) else 0
     except Exception:
         _excepthook(*sys.exc_info())
         return 1
+    finally:
+        # Final cleanup to prevent segfault on exit
+        try:
+            w = None
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
-    import multiprocessing
-    # Set start method BEFORE any Qt imports or QApplication creation
-    try:
-        multiprocessing.set_start_method("spawn", force=True)
-    except RuntimeError:
-        # Already set, ignore
-        pass
     sys.exit(main(sys.argv))

@@ -5,6 +5,7 @@ __pycache__/
 experimental_file/
 *.bak
 # C extensions
+venv_debug/
 *.so
 *.swp
 .swp
