@@ -1,5 +1,4 @@
 
-# Author: Samuel Amen Ague
 
 from __future__ import annotations
 

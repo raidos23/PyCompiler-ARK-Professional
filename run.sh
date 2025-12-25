@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # PyCompiler ARK++ — High-grade launcher (Unix)
-# Author: Samuel Amen Ague
 . All rights reserved.
 
 set -Eeuo pipefail

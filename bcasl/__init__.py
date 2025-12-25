@@ -1,6 +1,5 @@
 
 
-# Author: Samuel Amen Ague
 """
 BCASL - Before-Compilation Actions System Loader
 

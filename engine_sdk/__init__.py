@@ -2,7 +2,6 @@
 # Engine SDK: stable facade for external engine plugins
 
 
-# Author: Samuel Amen Ague
 from __future__ import annotations
 
 # Re-export auto_plugins helpers for convenience

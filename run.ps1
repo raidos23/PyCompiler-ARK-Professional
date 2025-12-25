@@ -1,6 +1,5 @@
 
 # PyCompiler ARK++ — High-grade launcher (Windows PowerShell)
-# Author: Samuel Amen Ague
 . All rights reserved.
 
 [CmdletBinding(PositionalBinding=$false)]

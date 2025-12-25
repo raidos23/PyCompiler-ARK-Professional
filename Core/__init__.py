@@ -1,7 +1,6 @@
 
 
 
-# Author: Samuel Amen Ague
 """
 PyCompiler Ark++ - Package Public Core
 """

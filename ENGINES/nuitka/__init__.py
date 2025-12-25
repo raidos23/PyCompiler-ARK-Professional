@@ -2,7 +2,6 @@
 # Nuitka engine package - auto-import all submodules
 
 
-# Author: Samuel Amen Ague
 from __future__ import annotations
 
 import importlib
