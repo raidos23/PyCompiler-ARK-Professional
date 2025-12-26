@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-WebPageLauncher: simple local server to host WebPage/main.html.
+WebPageLauncher: simple local server to host WebPage/main.html and expose a /launch endpoint.
 - Serves static files from the WebPage directory
-- Also serves parent logo assets under /logo
 - Opens the default browser on startup
+- Provides POST /launch endpoint returning JSON, to be used by the web UI
 
 Usage:
   python WebPageLauncher.py [--host 127.0.0.1] [--port 8765] [--no-browser]
@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import http.server
 import json
-import mimetypes
 import os
 import socketserver
 import sys
@@ -23,7 +22,6 @@ from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 INDEX_FILE = os.path.join(ROOT, 'main.html')
-LOGO_DIR = os.path.abspath(os.path.join(ROOT, '..', 'logo'))
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -43,29 +41,39 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()
 
-    # Serve index for root path + mount /logo from parent directory
-    def do_GET(self):
-        if self.path.startswith('/logo/'):
-            # Map /logo/* to LOGO_DIR
-            rel = self.path[len('/logo/'):]
-            fs_path = os.path.join(LOGO_DIR, rel)
-            if os.path.isfile(fs_path):
-                try:
-                    with open(fs_path, 'rb') as f:
-                        data = f.read()
-                    self.send_response(200)
-                    ctype = mimetypes.guess_type(fs_path)[0] or 'application/octet-stream'
-                    self.send_header('Content-Type', ctype)
-                    self.send_header('Content-Length', str(len(data)))
-                    self.end_headers()
-                    self.wfile.write(data)
-                except OSError:
-                    self.send_error(404, 'File not found')
-                return
-            else:
-                self.send_error(404, 'File not found')
-                return
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path == '/launch':
+            self.handle_launch()
+        else:
+            self.send_error(404, 'Not Found')
 
+    def handle_launch(self):
+        # Read optional JSON payload
+        length = int(self.headers.get('Content-Length') or 0)
+        payload = {}
+        if length:
+            try:
+                payload = json.loads(self.rfile.read(length).decode('utf-8'))
+            except Exception:
+                payload = {}
+
+        # Placeholder: simulate some action (e.g., run a local script)
+        # In a real integration, import and call your app entrypoint here
+        action = payload.get('action', 'open_app')
+        sys.stderr.write(f"[WebPage] Launch requested: {action}\n")
+
+        resp = {'ok': True, 'action': action, 'message': 'Launch accepted'}
+        data = json.dumps(resp).encode('utf-8')
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    # Serve index for root path
+    def do_GET(self):
         if self.path in ('/', '/index.html', '/main', '/index'):
             self.path = '/main.html'
         return super().do_GET()
