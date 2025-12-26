@@ -1,3 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2025 Ague Samuel Amen
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -99,8 +114,7 @@
       </div>
       <div class="nav-actions">
         <a class="btn" href="#features">Fonctionnalités</a>
-        <a class="btn" href="#download">Télécharger</a>
-        <a class="btn primary" href="#launch">Lancer</a>
+        <a class="btn primary" href="#download">Télécharger</a>
       </div>
     </div>
   </header>
@@ -113,7 +127,7 @@
         <p>
           Interface moderne, moteurs d'assemblage multiples (PyInstaller, Nuitka, CXFreeze),
           gestion des dépendances, thèmes élégants et internationalisation. Simplifiez vos
-          pipelines de build sur Windows, macOS et Linux.
+          pipelines de build sur Windows et Linux.
         </p>
         <div>
           <button class="btn primary" id="cta-launch">Ouvrir l'application</button>
@@ -167,20 +181,11 @@
       <p class="muted">Récupérez la dernière version et suivez le guide de démarrage rapide.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn" href="#">Windows</a>
-        <a class="btn" href="#">macOS</a>
         <a class="btn" href="#">Linux</a>
       </div>
     </section>
 
-    <section class="section" id="launch">
-      <h3>Lancer depuis cette page</h3>
-      <p class="muted">Utilisez le lanceur pour démarrer l'application locale si disponible.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn primary" id="launch-local">Lancer localement</button>
-        <button class="btn" id="open-repo">Ouvrir le dépôt</button>
-      </div>
-    </section>
-
+    
     <!-- Docs -->
     <section class="section" id="docs">
       <h3>Documentation</h3>
@@ -207,24 +212,13 @@
 
     // Boutons d'action
     $('#cta-launch')?.addEventListener('click', () => {
-      document.getElementById('launch').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('download').scrollIntoView({ behavior: 'smooth' });
     });
 
     $('#open-repo')?.addEventListener('click', () => {
       window.open('https://github.com/', '_blank');
     });
 
-    // Lancement local (ex: via un protocole custom ou fichier local)
-    $('#launch-local')?.addEventListener('click', async () => {
-      try {
-        // Exemple: tenter d'appeler un endpoint local si une app backend existe
-        const res = await fetch('http://localhost:8765/launch', { method: 'POST' });
-        if (!res.ok) throw new Error('Service non disponible');
-        alert('Lancement demandé.');
-      } catch (e) {
-        alert("Impossible de lancer localement. Assurez-vous que le service local est actif.");
-      }
-    });
-  </script>
+      </script>
 </body>
 </html>

@@ -4,6 +4,8 @@
 
 # Keep this .gitignore file
 !.gitignore
+# Keep license
+!LICENSE
 
 # Allow the WebPage directory and its contents
 !/WebPage/
