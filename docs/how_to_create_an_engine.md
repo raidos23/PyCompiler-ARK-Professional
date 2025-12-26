@@ -16,12 +16,12 @@ This guide explains how to implement a pluggable compilation engine for PyCompil
 
 ## Key Highlights
 
-- **Package Structure**: Engines are Python packages under `ENGINES/<engine_id>/` (directory with `__init__.py`)
-- **Self-Registration**: Engines must self‑register on import via the central registry: `registry.register(MyEngine)`
-- **Discovery**: `engines_loader` discovers engines strictly from the `ENGINES/` directory
-- **SDK Integration**: Import the SDK and registry from `engine_sdk` for all core functionality
-- **Async Tool Management**: Venv/tool management is engine‑owned and must be non‑blocking (asynchronous patterns)
-- **Output Handling**: Engines define output directory via `get_output_directory()` but never open it themselves
+- Package Structure: Engines are Python packages under `ENGINES/<engine_id>/` (directory with `__init__.py`)
+- Self-Registration: Engines must self‑register on import via the central registry: `registry.register(MyEngine)`
+- Discovery: `engines_loader` discovers engines strictly from the `ENGINES/` directory
+- SDK Integration: Import the SDK and registry from `engine_sdk` for all core functionality
+- Async Tool Management: venv/tool management is engine‑owned and must be non‑blocking (asynchronous patterns)
+- Output Handling: Engines may define an output directory via `get_output_directory()`; engines may also open the output directory themselves from `on_success()` if appropriate for UX
 
 ---
 
@@ -30,7 +30,6 @@ This guide explains how to implement a pluggable compilation engine for PyCompil
 Create `ENGINES/my_engine/__init__.py`:
 
 ```python
-
 from __future__ import annotations
 
 import os
@@ -52,7 +51,7 @@ class MyEngine(CompilerEngine):
         return ["pyinstaller", "--onefile", file]
 
     def get_output_directory(self, gui) -> Optional[str]:
-        """Return output directory for ACASL to open after build."""
+        """Return the output directory for this engine."""
         try:
             w = getattr(gui, "output_dir_input", None)
             if w and hasattr(w, "text") and callable(w.text):
@@ -63,6 +62,20 @@ class MyEngine(CompilerEngine):
             return os.path.join(ws, "dist")
         except Exception:
             return os.path.join(os.getcwd(), "dist")
+
+    def on_success(self, gui, file: str) -> None:
+        """Optional post-success action (e.g., open output directory)."""
+        out = self.get_output_directory(gui)
+        if not out:
+            return
+        import platform, subprocess, os
+        if os.path.isdir(out):
+            if platform.system() == "Windows":
+                os.startfile(out)
+            elif platform.system() == "Linux":
+                subprocess.run(["xdg-open", out])
+            else:
+                subprocess.run(["open", out])
 
 
 registry.register(MyEngine)
@@ -118,7 +131,7 @@ class MyEngine(CompilerEngine):
         return ["pyinstaller", "--onefile", file]
 
     def get_output_directory(self, gui) -> Optional[str]:
-        """Return output directory for ACASL to open after successful build."""
+        """Return engine output directory."""
         try:
             ws = getattr(gui, "workspace_dir", None) or os.getcwd()
             return os.path.join(ws, "dist")
@@ -129,7 +142,7 @@ class MyEngine(CompilerEngine):
 registry.register(MyEngine)
 ```
 
-**Key points:**
+Key points:
 - `build_command()` returns the full command as a list (program at index 0)
 - `preflight()` validates before execution; return False to abort
 - Always register the engine class at module level
@@ -162,28 +175,9 @@ class MyEngine(CompilerEngine):
         lay.addWidget(cb)
         
         return w, "MyEngine"
-
-    def build_command(self, gui, file: str) -> list[str]:
-        """Build command based on UI state."""
-        args = []
-        if self._onefile:
-            args.append("--onefile")
-        args.append(file)
-        return ["pyinstaller"] + args
-
-    def get_output_directory(self, gui) -> Optional[str]:
-        """Return output directory."""
-        try:
-            ws = getattr(gui, "workspace_dir", None) or os.getcwd()
-            return os.path.join(ws, "dist")
-        except Exception:
-            return os.path.join(os.getcwd(), "dist")
-
-
-registry.register(MyEngine)
 ```
 
-**Key points:**
+Key points:
 - `create_tab()` returns `(QWidget, label_str)` or `None`
 - Store UI state in instance variables (e.g., `self._onefile`)
 - Connect signals to update state
@@ -216,11 +210,11 @@ class CompilerEngine:
         return cmd[0], cmd[1:]
 
     def get_output_directory(self, gui) -> Optional[str]:
-        """Return output directory for ACASL to open after build."""
+        """Return output directory for the engine."""
         return None
 
     def on_success(self, gui, file: str) -> None:
-        """Hook called after successful build (metadata/logging only)."""
+        """Hook called after successful build (metadata/logging, optional opening of output directory)."""
         pass
 
     def environment(self, gui, file: str) -> Optional[dict[str, str]]:
@@ -234,12 +228,9 @@ class CompilerEngine:
 
 ### The `get_output_directory` Method
 
-
 ```python
 def get_output_directory(self, gui) -> Optional[str]:
     """Return the output directory to open after successful build.
-    
-    ACASL-only method: engines define their output directory but never open it themselves.
     """
     try:
         # Priority 1: Engine-specific output field (if your engine has one)
@@ -259,11 +250,10 @@ def get_output_directory(self, gui) -> Optional[str]:
         ws = getattr(gui, "workspace_dir", None) or os.getcwd()
         return os.path.join(ws, "dist")
     except Exception:
-        # Ultimate fallback
         return os.path.join(os.getcwd(), "dist")
 ```
 
-**Key principles:**
+Principles:
 - Return the actual output directory path where your engine produces files
 - Use a priority system: engine-specific fields → global fields → sensible defaults
 - Never return `None` unless absolutely no output directory can be determined
@@ -275,225 +265,31 @@ See `ENGINES/pyinstaller/engine.py` and `ENGINES/nuitka/engine.py` for real-worl
 
 ## 5) Engine‑owned venv/tool management (async, non‑blocking)
 
-### Principles
 - The UI never auto‑installs engine tools; engines decide when to verify and install
 - Keep the UI thread responsive; rely on asynchronous checks and installations
 - Prefer venv‑local tools; engines should resolve and use the workspace venv
-
-### Recommended pattern (preflight)
-
-```python
-from engine_sdk import resolve_project_venv, pip_executable, pip_show, pip_install
-
-def preflight(self, gui, file: str) -> bool:
-    """Ensure venv and tools are ready."""
-    try:
-        # Resolve venv
-        vroot = resolve_project_venv(gui)
-        if not vroot:
-            # Ask UI to create venv if missing
-            vm = getattr(gui, 'venv_manager', None)
-            if vm and getattr(gui, 'workspace_dir', None):
-                vm.create_venv_if_needed(gui.workspace_dir)
-            else:
-                gui.log.append("❌ No venv detected. Create a venv in the workspace.")
-            return False
-
-        # Fast heuristic: check if tool is installed
-        vm = getattr(gui, 'venv_manager', None)
-        if vm and vm.is_tool_installed(vroot, 'pyinstaller'):
-            return True
-
-        # Async confirmation via pip show
-        if vm:
-            gui.log.append("🔎 Verifying PyInstaller in venv (async)…")
-            
-            def _on_check(ok: bool):
-                if ok:
-                    gui.log.append("✅ PyInstaller already installed")
-                else:
-                    gui.log.append("📦 Installing PyInstaller in venv (async)…")
-                    vm.ensure_tools_installed(vroot, ['pyinstaller'])
-            
-            vm.is_tool_installed_async(vroot, 'pyinstaller', _on_check)
-            return False  # Retry later when async op completes
-
-        # Fallback: blocking pip (last resort)
-        pip = pip_executable(vroot)
-        if pip_show(gui, pip, 'pyinstaller') != 0:
-            return pip_install(gui, pip, 'pyinstaller') == 0
-        return True
-
-    except Exception:
-        return False
-```
-
-**Key points:**
-- Return `False` when you launch an asynchronous operation; the engine will be retried later
-- Use `VenvManager` for non-blocking operations
-- Avoid blocking subprocess calls in the UI thread
-- Always provide fallbacks for headless/CI environments
 
 ---
 
 ## 6) Environment and process execution
 
-The SDK exposes safe helpers:
-
-```python
-from engine_sdk import resolve_project_venv, pip_executable, pip_show, pip_install
-from engine_sdk.utils import build_env, run_process
-
-# Resolve venv
-vroot = resolve_project_venv(gui)
-
-# Get pip executable
-pip = pip_executable(vroot)
-
-# Check if package is installed
-code = pip_show(gui, pip, 'pyinstaller')  # 0 if installed
-
-# Install package
-code = pip_install(gui, pip, 'pyinstaller')  # 0 if success
-
-# Build environment (reduced, deterministic)
-env = build_env(extra={"LC_ALL": "C.UTF-8"})
-
-# Run process with timeout and streaming
-code, out, err = run_process(gui, "python", ["--version"], env=env, timeout_ms=60000)
-```
-
-**Best practices:**
-- Always construct args as a list of tokens. Do not pass combined strings
-- Use `build_env()` for safe, minimal environment setup
-- Use `get_timeout_seconds()` to bound long‑running tools
-- Prefer venv‑local executables when applicable
+The SDK exposes safe helpers in `engine_sdk.utils` and related modules to:
+- Build sanitized environments
+- Run processes with timeouts and streaming
 
 ---
 
 ## 7) Internationalization (i18n)
 
-Engines can provide translations for UI elements. Create a `languages/` folder with JSON files:
-
-```
-ENGINES/my_engine/
-├── __init__.py
-└── languages/
-    ├── en.json
-    ├── fr.json
-    └── es.json
-```
-
-**en.json** (English - always required as fallback):
-```json
-{
-  "_meta": {"code": "en", "name": "English"},
-  "engine_title": "MyEngine Options",
-  "onefile": "Create single file",
-  "optimize": "Optimize"
-}
-```
-
-**fr.json** (French example):
-```json
-{
-  "_meta": {"code": "fr", "name": "Français"},
-  "engine_title": "Options MyEngine",
-  "onefile": "Créer un fichier unique",
-  "optimize": "Optimiser"
-}
-```
-
-### Implementation in Engine
-
-```python
-from engine_sdk import CompilerEngine, registry
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QCheckBox
-import os
-import json
-import importlib.resources as ilr
-from typing import Optional, Dict
-
-
-class MyEngine(CompilerEngine):
-    id = "my_engine"
-    name = "My Engine"
-
-    def create_tab(self, gui):
-        w = QWidget()
-        lay = QVBoxLayout(w)
-
-        # Store references for i18n
-        self._title_label = QLabel("MyEngine Options")
-        self._onefile_cb = QCheckBox("Create single file")
-
-        lay.addWidget(self._title_label)
-        lay.addWidget(self._onefile_cb)
-
-        # Apply current translations
-        try:
-            self.apply_i18n(gui, getattr(gui, '_tr', {}) or {})
-        except Exception:
-            pass
-
-        return w, "MyEngine"
-
-    def apply_i18n(self, gui, tr: Dict[str, str]) -> None:
-        """Apply engine-local i18n from ENGINES/<id>/languages/*.json."""
-        try:
-            # Get current language code
-            code = 'en'
-            try:
-                meta = tr.get('_meta', {}) if isinstance(tr, dict) else {}
-                if isinstance(meta, dict) and 'code' in meta:
-                    code = meta['code']
-            except Exception:
-                pass
-
-            # Load engine translations
-            data = {}
-            try:
-                pkg = __package__
-                for variant in [code, code.split('-')[0] if '-' in code else None, 'en']:
-                    if not variant:
-                        continue
-                    try:
-                        with ilr.as_file(ilr.files(pkg).joinpath('languages', f'{variant}.json')) as p:
-                            if os.path.isfile(str(p)):
-                                with open(str(p), 'r', encoding='utf-8') as f:
-                                    data = json.load(f) or {}
-                                break
-                    except Exception:
-                        continue
-            except Exception:
-                pass
-
-            # Apply to UI elements
-            if hasattr(self, '_title_label') and self._title_label:
-                self._title_label.setText(data.get('engine_title', 'MyEngine Options'))
-
-            if hasattr(self, '_onefile_cb') and self._onefile_cb:
-                self._onefile_cb.setText(data.get('onefile', 'Create single file'))
-
-        except Exception:
-            pass
-
-
-registry.register(MyEngine)
-```
-
-**Key points:**
+- Engines can provide translations for UI elements via `languages/*.json`
 - Always include `en.json` as fallback
-- Store widget references in `create_tab` for later updates
-- Call `apply_i18n()` at the end of `create_tab()`
-- Handle exceptions gracefully - i18n should never break the engine
-- Use UTF-8 encoding for all JSON files
+- Apply translations in `create_tab()` and/or `apply_i18n()`
 
 ---
 
 ## 8) Developer checklist and anti‑patterns
 
-### Checklist
+Checklist
 - [ ] Package under `ENGINES/<engine_id>/` with `__init__.py`
 - [ ] `registry.register(MyEngine)` at module level
 - [ ] `build_command()` returns full command as list
@@ -504,57 +300,50 @@ registry.register(MyEngine)
 - [ ] Exception handling prevents UI crashes
 - [ ] i18n support with `apply_i18n()` method
 
-### Anti‑patterns
-- ❌ Blocking the UI thread
-- ❌ Hardcoded absolute paths
-- ❌ Interactive tools without non-interactive flags
-- ❌ Passing combined strings as single argv tokens
-- ❌ Driving venv/tool management from UI layer
-- ❌ Raising exceptions from `create_tab()` or `apply_i18n()`
+Anti‑patterns
+- Blocking the UI thread
+- Hardcoded absolute paths
+- Interactive tools without non-interactive flags
+- Passing combined strings as single argv tokens
+- Driving venv/tool management from UI layer
+- Raising exceptions from `create_tab()` or `apply_i18n()`
 
 ---
 
 ## 9) Troubleshooting (decision tree)
 
-**Engine not visible**
+Engine not visible
 - Ensure `ENGINES/<engine_id>/` exists with `__init__.py`
 - Ensure `registry.register(MyEngine)` executes at import
 - Check application logs for registry/discovery messages
 
-**Engine tab not bound**
+Engine tab not bound
 - If using `create_tab()`, ensure you return `(QWidget, "Label")`
 - Verify the widget is a valid `QWidget` instance
 
-**Command not found**
+Command not found
 - Check PATH; prefer `resolve_project_venv()` for venv tools
 - Resolve tool binary from `venv/bin` (Linux/macOS) or `venv/Scripts` (Windows)
 
-**Process hangs or times out**
+Process hangs or times out
 - Lower timeout; make tool non-interactive
 - Inspect stderr/stdout for blocking prompts
 
-**Venv/tool not installed**
+Venv/tool not installed
 - Follow the preflight pattern: heuristic → async check → async install
 - Return `False` from `preflight()` while async ops run
 
-**Output directory not opened**
+Output directory not opened
 - Ensure `get_output_directory()` returns a valid path
 
 ---
 
 ## Conclusion
 
-This guide provides a foundation for creating robust compilation engines for PyCompiler ARK++. The Engine SDK offers powerful abstractions while maintaining flexibility for custom implementations.
-
-### Key Takeaways
-- **Follow the patterns**: Use provided templates for consistency
-- **Prioritize responsiveness**: Keep operations non-blocking
-- **Embrace modularity**: Engines are self-contained and discoverable
-- **Test thoroughly**: Validate across platforms and edge cases
-
-### Getting Help
-- Check existing engines in `ENGINES/` for real-world examples
-- Review the Engine SDK source code for advanced patterns
-- Follow the troubleshooting guide for common issues
+- Follow the patterns for consistency
+- Keep operations non-blocking
+- Embrace modularity (self-contained engines)
+- Test thoroughly across platforms and edge cases
 
 Happy engine building! 🚀
+
