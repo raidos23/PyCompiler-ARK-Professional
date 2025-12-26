@@ -6,6 +6,8 @@
 !.gitignore
 # Keep license
 !LICENSE
+# Keep index.html for GitHub Pages
+!index.html
 
 # Allow the WebPage directory and its contents
 !/WebPage/

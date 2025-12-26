@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PyCompiler ARK</title>
+  <meta name="description" content="PyCompiler ARK - Page d'accueil" />
+  <link rel="icon" type="image/png" href="logo/logo.png" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121821;
+      --text: #e6eef8;
+      --muted: #a9b2bf;
+      --accent: #1f9cf0;
+      --accent-2: #4bd1a0;
+      --border: #1b2430;
+      --shadow: rgba(0,0,0,.4);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 80% -10%, #122233 0%, rgba(18,34,51,0) 60%),
+                  radial-gradient(900px 700px at -10% 110%, #1a2b2a 0%, rgba(26,43,42,0) 55%),
+                  var(--bg);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    header {
+      position: sticky; top: 0; z-index: 5;
+      background: linear-gradient(to bottom, rgba(11,15,20,.9), rgba(11,15,20,.6) 50%, rgba(11,15,20,0));
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 12px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand img { width: 36px; height: 36px; border-radius: 8px; box-shadow: 0 4px 16px var(--shadow); }
+    .brand h1 { font-size: 18px; margin: 0; letter-spacing: .3px; }
+
+    .nav-actions { display: flex; gap: 10px; align-items: center; }
+    .btn {
+      padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
+      background: linear-gradient(180deg, #17202b, #101620);
+      color: var(--text); cursor: pointer; font-weight: 600; letter-spacing: .2px;
+      box-shadow: 0 4px 16px var(--shadow);
+      transition: transform .12s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: #263347; }
+    .btn.primary { background: linear-gradient(180deg, #2095e7, #1679c2); border-color: #197ac7; }
+
+    /* Hero */
+    .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: center; padding: 28px 0 8px; }
+    .hero h2 { font-size: 38px; margin: 0 0 12px; }
+    .hero p { color: var(--muted); margin: 0 0 18px; line-height: 1.6; }
+    .hero-card {
+      background: linear-gradient(180deg, #0f1621, #0c121a);
+      border: 1px solid var(--border); border-radius: 16px; padding: 18px;
+      box-shadow: 0 12px 30px var(--shadow);
+    }
+    .hero-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+    .kpi { background: #0e1520; border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+    .kpi .num { font-size: 20px; font-weight: 800; color: var(--accent-2); }
+    .kpi .label { color: var(--muted); font-size: 12px; }
+
+    /* Features */
+    .section { padding: 24px 0; }
+    .section h3 { margin: 0 0 12px; font-size: 22px; }
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px; box-shadow: 0 8px 24px var(--shadow); }
+    .card h4 { margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+
+    /* Footer */
+    footer { margin-top: 32px; border-top: 1px solid var(--border); padding: 16px 0 40px; color: var(--muted); font-size: 14px; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <img src="logo/sidebar_logo2.png" alt="PyCompiler ARK Logo" />
+        <h1>PyCompiler ARK</h1>
+      </div>
+      <div class="nav-actions">
+        <a class="btn" href="#features">Fonctionnalités</a>
+        <a class="btn primary" href="#download">Télécharger</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <div>
+        <h2>Construisez, empaquetez et déployez vos apps Python facilement</h2>
+        <p>
+          Interface moderne, moteurs d'assemblage multiples (PyInstaller, Nuitka, CXFreeze),
+          gestion des dépendances, thèmes élégants et internationalisation. Simplifiez vos
+          pipelines de build sur Windows et Linux.
+        </p>
+        <div>
+          <button class="btn primary" id="cta-launch">Ouvrir l'application</button>
+          <a class="btn" href="#docs">Documentation</a>
+        </div>
+        <div class="hero-kpis">
+          <div class="kpi"><div class="num">3</div><div class="label">Moteurs</div></div>
+          <div class="kpi"><div class="num">10+</div><div class="label">Thèmes</div></div>
+          <div class="kpi"><div class="num">11</div><div class="label">Langues</div></div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <img src="logo/splash.png" alt="aperçu" style="width:100%; border-radius:12px; border:1px solid var(--border);" />
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <h3>Fonctionnalités clés</h3>
+      <div class="grid">
+        <div class="card">
+          <h4>Multiples moteurs</h4>
+          <p class="muted">PyInstaller, Nuitka, CXFreeze intégrés avec des presets prêts à l'emploi.</p>
+        </div>
+        <div class="card">
+          <h4>Analyse des dépendances</h4>
+          <p class="muted">Détecte automatiquement imports et ressources pour des builds fiables.</p>
+        </div>
+        <div class="card">
+          <h4>Thèmes et i18n</h4>
+          <p class="muted">Thèmes modernes et support multi-langues pour une UX soignée.</p>
+        </div>
+        <div class="card">
+          <h4>Automatisation</h4>
+          <p class="muted">Scripts de build reproductibles et faciles à partager.</p>
+        </div>
+        <div class="card">
+          <h4>UI moderne</h4>
+          <p class="muted">Composants raffinés, animations subtiles et hiérarchie claire.</p>
+        </div>
+        <div class="card">
+          <h4>Open source</h4>
+          <p class="muted">Code extensible via plugins pour couvrir vos cas d'usage.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download / Launch -->
+    <section class="section" id="download">
+      <h3>Télécharger</h3>
+      <p class="muted">Récupérez la dernière version et suivez le guide de démarrage rapide.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn" href="#">Windows</a>
+        <a class="btn" href="#">Linux</a>
+      </div>
+    </section>
+
+    
+    <!-- Docs -->
+    <section class="section" id="docs">
+      <h3>Documentation</h3>
+      <ul class="muted" style="line-height:1.9;">
+        <li>Guide: Création d'un moteur d'assemblage</li>
+        <li>Référence: Configuration des mappings</li>
+        <li>Tutoriel: Gestion des dépendances</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      © <span id="year"></span> PyCompiler ARK — Tous droits réservés
+    </div>
+  </footer>
+
+  <script>
+    // Utilitaires simples
+    const $ = s => document.querySelector(s);
+
+    // Mise à jour année
+    $('#year').textContent = new Date().getFullYear();
+
+    // Boutons d'action
+    $('#cta-launch')?.addEventListener('click', () => {
+      document.getElementById('download').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    $('#open-repo')?.addEventListener('click', () => {
+      window.open('https://github.com/', '_blank');
+    });
+
+      </script>
+</body>
+</html>
