@@ -1,5 +1,6 @@
 # Ignore everything by default
 *
+*
 
 # Keep this .gitignore file
 !.gitignore
