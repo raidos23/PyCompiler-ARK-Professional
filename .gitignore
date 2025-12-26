@@ -1,7 +1,5 @@
 # Ignore everything by default
 *
-*
-
 # Keep this .gitignore file
 !.gitignore
 # Keep license
@@ -14,5 +12,6 @@
 !/WebPage/**
 
 # Allow the logo directory and its contents
-!/logo/
-!/logo/**
+!/images/
+!/images/**
+!WebPageLauncher.py

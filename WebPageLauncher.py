@@ -1,6 +1,21 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2025 Ague Samuel Amen
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-WebPageLauncher: simple local server to host WebPage/main.html and expose a /launch endpoint.
+WebPageLauncher: simple local server to host WebPage/index.html and expose a /launch endpoint.
 - Serves static files from the WebPage directory
 - Opens the default browser on startup
 - Provides POST /launch endpoint returning JSON, to be used by the web UI
@@ -21,7 +36,7 @@ import webbrowser
 from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-INDEX_FILE = os.path.join(ROOT, 'main.html')
+INDEX_FILE = os.path.join(ROOT, 'index.html')
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -75,12 +90,12 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
     # Serve index for root path
     def do_GET(self):
         if self.path in ('/', '/index.html', '/main', '/index'):
-            self.path = '/main.html'
+            self.path = '/index.html'
         return super().do_GET()
 
 
 def open_browser(host: str, port: int):
-    url = f"http://{host}:{port}/main.html"
+    url = f"http://{host}:{port}/index.html"
     # Wait a bit for the server to start
     for _ in range(20):
         time.sleep(0.1)
