@@ -115,8 +115,7 @@
           pipelines de build sur Windows et Linux.
         </p>
         <div>
-          <button class="btn primary" id="cta-launch">Ouvrir l'application</button>
-          <a class="btn" href="#docs">Documentation</a>
+          <a class="btn primary" href="#download">Télécharger maintenant</a>
         </div>
         <div class="hero-kpis">
           <div class="kpi"><div class="num">3</div><div class="label">Moteurs</div></div>
@@ -171,16 +170,7 @@
     </section>
 
     
-    <!-- Docs -->
-    <section class="section" id="docs">
-      <h3>Documentation</h3>
-      <ul class="muted" style="line-height:1.9;">
-        <li>Guide: Création d'un moteur d'assemblage</li>
-        <li>Référence: Configuration des mappings</li>
-        <li>Tutoriel: Gestion des dépendances</li>
-      </ul>
-    </section>
-  </main>
+      </main>
 
   <footer>
     <div class="container">
@@ -195,15 +185,6 @@
     // Mise à jour année
     $('#year').textContent = new Date().getFullYear();
 
-    // Boutons d'action
-    $('#cta-launch')?.addEventListener('click', () => {
-      document.getElementById('download').scrollIntoView({ behavior: 'smooth' });
-    });
-
-    $('#open-repo')?.addEventListener('click', () => {
-      window.open('https://github.com/', '_blank');
-    });
-
-      </script>
+    </script>
 </body>
 </html>
