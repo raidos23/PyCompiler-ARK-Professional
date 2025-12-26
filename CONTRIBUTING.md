@@ -137,7 +137,6 @@ Accepted types:
 
 Examples:
 ```
-feat(acasl): add Windows code signing support
 fix(bcasl): fix plugin loading on macOS
 docs(api): update API SDK documentation
 ```
@@ -294,7 +293,6 @@ Reviewers will check:
 ### Plugins
 
 - BCASL plugins
-- ACASL plugins
 - Compilation engines
 - Core Exetensions
 - UI themes
@@ -311,7 +309,6 @@ Reviewers will check:
 ### Documentation
 - [About SDKs](docs/about_sdks.md) - Overview of available SDKs
 - [Create a Building Engine](docs/how_to_create_a_building_engine.md) - Engine development guide
-- [Create an ACASL Plugin](docs/how_to_create_an_acasl_plugin.md) - Post-compile plugin guide
 - [Create a BCASL Plugin](docs/how_to_create_a_bcasl_plugin.md) - Pre-compile plugin guide
 
 

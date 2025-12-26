@@ -1326,7 +1326,6 @@ class CxFreezeEngine(CompilerEngine):
 
     def on_success(self, gui, file: str) -> None:
         """Action post-succès: ouvrir le dossier de sortie cx_Freeze si identifiable.
-        Le hook est exécuté après ACASL (défini dans mainprocess.py).
         """
         try:
             out_dir = None

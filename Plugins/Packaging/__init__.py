@@ -170,7 +170,7 @@ class Packaging(AcPluginBase):
             self._lang_data = {}
 
 
-# enregistrement automatique du plugin dans le registre de Acasl
+# Enregistrement automatique du plugin dans le registre
 PLUGIN = Packaging(META)
 
 

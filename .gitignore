@@ -212,4 +212,4 @@ tests/
 .pref
 .pycompiler/
 bcasl.json
-acasl.json
+# acasl.json removed

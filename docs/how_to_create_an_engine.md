@@ -132,7 +132,6 @@ registry.register(MyEngine)
 **Key points:**
 - `build_command()` returns the full command as a list (program at index 0)
 - `preflight()` validates before execution; return False to abort
-- `get_output_directory()` tells ACASL where to open after build
 - Always register the engine class at module level
 
 ---
@@ -235,11 +234,10 @@ class CompilerEngine:
 
 ### The `get_output_directory` Method
 
-This method is crucial for ACASL integration. It tells ACASL where to open the output directory after a successful build.
 
 ```python
 def get_output_directory(self, gui) -> Optional[str]:
-    """Return the output directory for ACASL to open after successful build.
+    """Return the output directory to open after successful build.
     
     ACASL-only method: engines define their output directory but never open it themselves.
     """
@@ -270,7 +268,6 @@ def get_output_directory(self, gui) -> Optional[str]:
 - Use a priority system: engine-specific fields → global fields → sensible defaults
 - Never return `None` unless absolutely no output directory can be determined
 - Handle exceptions gracefully with fallbacks
-- **Never open the directory yourself** - ACASL handles all directory opening
 
 See `ENGINES/pyinstaller/engine.py` and `ENGINES/nuitka/engine.py` for real-world examples.
 
@@ -513,7 +510,6 @@ registry.register(MyEngine)
 - ❌ Interactive tools without non-interactive flags
 - ❌ Passing combined strings as single argv tokens
 - ❌ Driving venv/tool management from UI layer
-- ❌ Opening output directories from engines (ACASL owns this)
 - ❌ Raising exceptions from `create_tab()` or `apply_i18n()`
 
 ---
@@ -543,7 +539,6 @@ registry.register(MyEngine)
 
 **Output directory not opened**
 - Ensure `get_output_directory()` returns a valid path
-- ACASL handles opening; engines must not open directories themselves
 
 ---
 

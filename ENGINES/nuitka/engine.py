@@ -431,7 +431,6 @@ class NuitkaEngine(CompilerEngine):
 
     def on_success(self, gui, file: str) -> None:
         """Action post-succès: ouvrir le dossier de sortie Nuitka si identifiable.
-        Le hook est exécuté après ACASL (déclenché par mainprocess.py).
         """
         try:
             # Priorité: champ UI dédié si présent (nuitka_output_dir)
