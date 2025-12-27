@@ -22,6 +22,7 @@ from .auto_build_command import (
     register_auto_builder,
 )
 
+__version__ = "1.0.0"
 # Re-export the base interface used by the host
 from .base import CompilerEngine
 from .utils import (
@@ -197,4 +198,5 @@ __all__ = [
     "__version__",
     # Config helpers
     "save_engine_ui",
+    "__version__",
 ]
