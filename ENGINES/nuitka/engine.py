@@ -35,6 +35,9 @@ from engine_sdk.auto_build_command import _tr
 class NuitkaEngine(CompilerEngine):
     id = "nuitka"
     name = "Nuitka"
+    version: str = "1.0.0"
+    required_core_version: str = "1.0.0"
+    required_sdk_version: str = "1.0.0"
 
     def preflight(self, gui, file: str) -> bool:
         # System deps (engine-owned)

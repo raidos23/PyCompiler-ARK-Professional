@@ -171,6 +171,12 @@ class BcPluginBase:
     def is_compatible_with_bcasl(self, bcasl_version: str) -> bool:
         """Check if plugin is compatible with given BCASL version.
         
+        Supports version formats:
+        - "1.0.0" -> (1, 0, 0)
+        - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+        - "1.0.0-beta" -> (1, 0, 0)
+        - "1.0.0+build123" -> (1, 0, 0)
+        
         Args:
             bcasl_version: BCASL version string to check against
             
@@ -179,7 +185,11 @@ class BcPluginBase:
         """
         def parse_version(v: str) -> tuple:
             try:
-                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                s = v.strip()
+                if s.endswith("+"):
+                    s = s[:-1].strip()
+                s = s.split("+")[0].split("-")[0]
+                parts = s.split(".")
                 major = int(parts[0]) if len(parts) > 0 else 0
                 minor = int(parts[1]) if len(parts) > 1 else 0
                 patch = int(parts[2]) if len(parts) > 2 else 0
@@ -194,6 +204,12 @@ class BcPluginBase:
     def is_compatible_with_core(self, core_version: str) -> bool:
         """Check if plugin is compatible with given Core version.
         
+        Supports version formats:
+        - "1.0.0" -> (1, 0, 0)
+        - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+        - "1.0.0-beta" -> (1, 0, 0)
+        - "1.0.0+build123" -> (1, 0, 0)
+        
         Args:
             core_version: Core version string to check against
             
@@ -202,7 +218,11 @@ class BcPluginBase:
         """
         def parse_version(v: str) -> tuple:
             try:
-                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                s = v.strip()
+                if s.endswith("+"):
+                    s = s[:-1].strip()
+                s = s.split("+")[0].split("-")[0]
+                parts = s.split(".")
                 major = int(parts[0]) if len(parts) > 0 else 0
                 minor = int(parts[1]) if len(parts) > 1 else 0
                 patch = int(parts[2]) if len(parts) > 2 else 0
@@ -217,6 +237,12 @@ class BcPluginBase:
     def is_compatible_with_plugins_sdk(self, sdk_version: str) -> bool:
         """Check if plugin is compatible with given Plugins SDK version.
         
+        Supports version formats:
+        - "1.0.0" -> (1, 0, 0)
+        - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+        - "1.0.0-beta" -> (1, 0, 0)
+        - "1.0.0+build123" -> (1, 0, 0)
+        
         Args:
             sdk_version: Plugins SDK version string to check against
             
@@ -225,7 +251,11 @@ class BcPluginBase:
         """
         def parse_version(v: str) -> tuple:
             try:
-                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                s = v.strip()
+                if s.endswith("+"):
+                    s = s[:-1].strip()
+                s = s.split("+")[0].split("-")[0]
+                parts = s.split(".")
                 major = int(parts[0]) if len(parts) > 0 else 0
                 minor = int(parts[1]) if len(parts) > 1 else 0
                 patch = int(parts[2]) if len(parts) > 2 else 0
@@ -240,6 +270,12 @@ class BcPluginBase:
     def is_compatible_with_bc_plugin_context(self, context_version: str) -> bool:
         """Check if plugin is compatible with given BcPluginContext version.
         
+        Supports version formats:
+        - "1.0.0" -> (1, 0, 0)
+        - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+        - "1.0.0-beta" -> (1, 0, 0)
+        - "1.0.0+build123" -> (1, 0, 0)
+        
         Args:
             context_version: BcPluginContext version string to check against
             
@@ -248,7 +284,11 @@ class BcPluginBase:
         """
         def parse_version(v: str) -> tuple:
             try:
-                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                s = v.strip()
+                if s.endswith("+"):
+                    s = s[:-1].strip()
+                s = s.split("+")[0].split("-")[0]
+                parts = s.split(".")
                 major = int(parts[0]) if len(parts) > 0 else 0
                 minor = int(parts[1]) if len(parts) > 1 else 0
                 patch = int(parts[2]) if len(parts) > 2 else 0
@@ -263,6 +303,12 @@ class BcPluginBase:
     def is_compatible_with_general_context(self, context_version: str) -> bool:
         """Check if plugin is compatible with given GeneralContext version.
         
+        Supports version formats:
+        - "1.0.0" -> (1, 0, 0)
+        - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+        - "1.0.0-beta" -> (1, 0, 0)
+        - "1.0.0+build123" -> (1, 0, 0)
+        
         Args:
             context_version: GeneralContext version string to check against
             
@@ -271,7 +317,11 @@ class BcPluginBase:
         """
         def parse_version(v: str) -> tuple:
             try:
-                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                s = v.strip()
+                if s.endswith("+"):
+                    s = s[:-1].strip()
+                s = s.split("+")[0].split("-")[0]
+                parts = s.split(".")
                 major = int(parts[0]) if len(parts) > 0 else 0
                 minor = int(parts[1]) if len(parts) > 1 else 0
                 patch = int(parts[2]) if len(parts) > 2 else 0

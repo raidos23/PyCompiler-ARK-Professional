@@ -42,9 +42,29 @@ class CompatibilityCheckResult:
 
 
 def parse_version(version_string: str) -> Tuple[int, int, int]:
-    """Parse a version string into (major, minor, patch)."""
+    """
+    Parse a version string into (major, minor, patch).
+    
+    Supports formats:
+    - "1.0.0" -> (1, 0, 0)
+    - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+    - "1.0.0-beta" -> (1, 0, 0)
+    - "1.0.0+build123" -> (1, 0, 0)
+    """
     try:
-        parts = version_string.strip().split("+")[0].split("-")[0].split(".")
+        # Remove leading/trailing whitespace
+        s = version_string.strip()
+        
+        # Handle "1.0.0+" format (+ at the end means "or higher")
+        # We just strip it since our comparison logic already uses >= semantics
+        if s.endswith("+"):
+            s = s[:-1].strip()
+        
+        # Remove build metadata and pre-release identifiers
+        s = s.split("+")[0].split("-")[0]
+        
+        # Parse major.minor.patch
+        parts = s.split(".")
         major = int(parts[0]) if len(parts) > 0 else 0
         minor = int(parts[1]) if len(parts) > 1 else 0
         patch = int(parts[2]) if len(parts) > 2 else 0

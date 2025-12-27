@@ -34,6 +34,9 @@ from engine_sdk import (
 class PyInstallerEngine(CompilerEngine):
     id = "pyinstaller"
     name = "PyInstaller"
+    version: str = "1.0.0"
+    required_core_version: str = "1.0.0"
+    required_sdk_version: str = "1.0.0"
 
     def _resolve_venv_root(self, gui) -> Optional[str]:
         try:

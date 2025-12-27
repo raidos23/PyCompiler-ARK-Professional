@@ -36,6 +36,9 @@ from engine_sdk import (
 class CxFreezeEngine(CompilerEngine):
     id = "cx_freeze"
     name = "cx_Freeze"
+    version: str = "1.0.0"
+    required_core_version: str = "1.0.0"
+    required_sdk_version: str = "1.0.0"
 
     def _resolve_venv_root(self, gui) -> Optional[str]:
         try:

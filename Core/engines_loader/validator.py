@@ -39,9 +39,29 @@ class EngineCompatibilityCheckResult:
 
 
 def parse_version(version_string: str) -> Tuple[int, int, int]:
-    """Parse a version string into (major, minor, patch)."""
+    """
+    Parse a version string into (major, minor, patch).
+    
+    Supports formats:
+    - "1.0.0" -> (1, 0, 0)
+    - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
+    - "1.0.0-beta" -> (1, 0, 0)
+    - "1.0.0+build123" -> (1, 0, 0)
+    """
     try:
-        parts = version_string.strip().split("+")[0].split("-")[0].split(".")
+        # Remove leading/trailing whitespace
+        s = version_string.strip()
+        
+        # Handle "1.0.0+" format (+ at the end means "or higher")
+        # We just strip it since our comparison logic already uses >= semantics
+        if s.endswith("+"):
+            s = s[:-1].strip()
+        
+        # Remove build metadata and pre-release identifiers
+        s = s.split("+")[0].split("-")[0]
+        
+        # Parse major.minor.patch
+        parts = s.split(".")
         major = int(parts[0]) if len(parts) > 0 else 0
         minor = int(parts[1]) if len(parts) > 1 else 0
         patch = int(parts[2]) if len(parts) > 2 else 0
@@ -57,6 +77,10 @@ def check_engine_compatibility(
 ) -> EngineCompatibilityCheckResult:
     """
     Check if an engine is compatible with the current system versions.
+    
+    Compatibility check uses >= (greater than or equal) semantics:
+    - If engine requires Core 1.0.0, it accepts Core 1.0.0, 1.0.1, 1.1.0, 2.0.0, etc.
+    - If engine requires SDK 1.0.0, it accepts SDK 1.0.0, 1.0.1, 1.1.0, 2.0.0, etc.
 
     Args:
         engine_class: CompilerEngine class
@@ -74,7 +98,7 @@ def check_engine_compatibility(
     required_core_version = getattr(engine_class, "required_core_version", "1.0.0")
     required_sdk_version = getattr(engine_class, "required_sdk_version", "1.0.0")
 
-    # Check Core compatibility
+    # Check Core compatibility: current >= required (accept equal or higher versions)
     current_core = parse_version(core_version)
     required_core = parse_version(required_core_version)
     if current_core < required_core:
@@ -82,7 +106,7 @@ def check_engine_compatibility(
             f"Core >= {required_core_version} (current: {core_version})"
         )
 
-    # Check Engine SDK compatibility
+    # Check Engine SDK compatibility: current >= required (accept equal or higher versions)
     current_sdk = parse_version(engine_sdk_version)
     required_sdk = parse_version(required_sdk_version)
     if current_sdk < required_sdk:
