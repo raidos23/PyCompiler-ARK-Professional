@@ -15,14 +15,12 @@
 
 from PySide6.QtWidgets import QMessageBox
 import os
-from ..ark_config_loader import (
+from Core.ark_config_loader import (
     load_ark_config,
     should_exclude_file,
     get_compiler_options,
     get_output_options,
     get_dependency_options,
-    get_plugin_options,
-    get_advanced_options,
 )
 
 
