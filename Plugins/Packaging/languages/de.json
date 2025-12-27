@@ -1,8 +1,0 @@
-{
-  "_meta": {"code": "de", "name": "Deutsch"},
-  "packaging_title": "Verpackung",
-  "packaging_question": "Möchten Sie Ihre kompilierten Artefakte verpacken?",
-  "packaging_cancelled": "Verpackung vom Benutzer abgebrochen",
-  "packaging_completed": "Verpackung erfolgreich abgeschlossen",
-  "packaging_error": "Verpackung fehlgeschlagen: {error}"
-}

@@ -1,8 +1,0 @@
-{
-  "_meta": {"code": "en", "name": "English"},
-  "packaging_title": "Packaging",
-  "packaging_question": "Do you want to package your compiled artifacts?",
-  "packaging_cancelled": "Packaging cancelled by user",
-  "packaging_completed": "Packaging completed successfully",
-  "packaging_error": "Packaging failed: {error}"
-}

@@ -1,8 +1,0 @@
-{
-  "_meta": {"code": "ja", "name": "日本語"},
-  "packaging_title": "パッケージング",
-  "packaging_question": "コンパイルされた成果物をパッケージ化しますか？",
-  "packaging_cancelled": "ユーザーによってパッケージングがキャンセルされました",
-  "packaging_completed": "パッケージングが正常に完了しました",
-  "packaging_error": "パッケージングに失敗しました: {error}"
-}

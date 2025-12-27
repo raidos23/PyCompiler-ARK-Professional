@@ -1,8 +1,0 @@
-{
-  "_meta": {"code": "zh-CN", "name": "中文（简体）"},
-  "packaging_title": "打包",
-  "packaging_question": "是否要打包编译后的工件？",
-  "packaging_cancelled": "用户取消了打包",
-  "packaging_completed": "打包成功完成",
-  "packaging_error": "打包失败：{error}"
-}

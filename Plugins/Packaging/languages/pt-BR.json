@@ -1,8 +1,0 @@
-{
-  "_meta": {"code": "pt-BR", "name": "Português (Brasil)"},
-  "packaging_title": "Empacotamento",
-  "packaging_question": "Deseja empacotar seus artefatos compilados?",
-  "packaging_cancelled": "Empacotamento cancelado pelo usuário",
-  "packaging_completed": "Empacotamento concluído com sucesso",
-  "packaging_error": "Falha no empacotamento: {error}"
-}
