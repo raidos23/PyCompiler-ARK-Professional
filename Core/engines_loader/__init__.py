@@ -23,6 +23,8 @@ import sys
 from . import registry as registry  # re-export registry module
 from .base import CompilerEngine  # re-export base type
 
+__version__ = "1.0.0"
+
 
 def _discover_external_plugins(base_path: str) -> None:
     """Import all top-level modules and packages under base_path (ENGINES/),

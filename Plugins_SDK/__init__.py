@@ -34,8 +34,11 @@ from . import BcPluginContext as BcPluginContext  # noqa: F401
 from . import GeneralContext as GeneralContext  # noqa: F401
 
 
+__version__ = "1.0.0"
+
 __all__ = [
     # "AcPluginContext",  # ACASL removed
     "BcPluginContext",
     "GeneralContext",
+    "__version__",
 ]
