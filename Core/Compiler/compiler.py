@@ -15,7 +15,7 @@
 
 from PySide6.QtWidgets import QMessageBox
 import os
-from .ark_config_loader import (
+from ..ark_config_loader import (
     load_ark_config,
     should_exclude_file,
     get_compiler_options,

@@ -533,7 +533,7 @@ class PyCompilerArkGui(QWidget):
             
             # Créer le fichier ARK_Main_Config.yml s'il n'existe pas
             try:
-                from Core.Compiler.ark_config_loader import create_default_ark_config
+                from Core.ark_config_loader import create_default_ark_config
                 if create_default_ark_config(folder):
                     self.log_i18n(
                         "📋 Fichier ARK_Main_Config.yml créé dans le workspace.",
@@ -926,7 +926,7 @@ class PyCompilerArkGui(QWidget):
         # Créer le fichier s'il n'existe pas
         if not os.path.exists(config_path):
             try:
-                from Core.Compiler.ark_config_loader import create_default_ark_config
+                from Core.ark_config_loader import create_default_ark_config
                 if create_default_ark_config(self.workspace_dir):
                     self.log_i18n(
                         "📋 Fichier ARK_Main_Config.yml créé.",

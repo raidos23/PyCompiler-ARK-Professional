@@ -142,6 +142,81 @@ def _check_module_installed(module: str) -> bool:
         return False
 
 
+def _find_pip_executable(venv_path: str = None, workspace_dir: str = None) -> tuple:
+    """
+    Localise l'exécutable pip avec plusieurs stratégies de fallback.
+    Retourne un tuple (program, prefix_args) où:
+    - program: chemin vers l'exécutable ou 'python'
+    - prefix_args: arguments à préfixer ([] pour pip direct, ['-m', 'pip'] pour module)
+    
+    Stratégies (dans l'ordre):
+    1. pip du venv (Scripts/pip.exe ou bin/pip)
+    2. python -m pip du venv
+    3. python -m pip du système
+    """
+    import sys
+    
+    # Déterminer le chemin du venv
+    if venv_path:
+        venv_dir = os.path.abspath(venv_path)
+    elif workspace_dir:
+        venv_dir = os.path.abspath(os.path.join(workspace_dir, "venv"))
+    else:
+        # Fallback: utiliser python -m pip du système
+        return (sys.executable, ["-m", "pip"])
+    
+    is_windows = platform.system() == "Windows"
+    bin_dir = os.path.join(venv_dir, "Scripts" if is_windows else "bin")
+    pip_name = "pip.exe" if is_windows else "pip"
+    pip_exe = os.path.join(bin_dir, pip_name)
+    
+    # Stratégie 1: pip exécutable du venv
+    if os.path.isfile(pip_exe):
+        try:
+            # Vérifier que pip est exécutable
+            result = subprocess.run(
+                [pip_exe, "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=5
+            )
+            if result.returncode == 0:
+                return (pip_exe, [])
+        except Exception:
+            pass
+    
+    # Stratégie 2: python -m pip du venv
+    python_exe = os.path.join(bin_dir, "python.exe" if is_windows else "python")
+    if os.path.isfile(python_exe):
+        try:
+            result = subprocess.run(
+                [python_exe, "-m", "pip", "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=5
+            )
+            if result.returncode == 0:
+                return (python_exe, ["-m", "pip"])
+        except Exception:
+            pass
+    
+    # Stratégie 3: python -m pip du système
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return (sys.executable, ["-m", "pip"])
+    except Exception:
+        pass
+    
+    # Fallback ultime
+    return (sys.executable, ["-m", "pip"])
+
+
 def suggest_missing_dependencies(self):
     """
     Analyse les fichiers principaux à compiler, détecte les modules importés,
@@ -284,37 +359,17 @@ def suggest_missing_dependencies(self):
             analysis_progress.close()
         return
     # Vérifie la présence des modules dans le venv (via pip show)
-    pip_name = "pip.exe" if platform.system() == "Windows" else "pip"
-    if self.venv_path_manuel:
-        pip_exe = os.path.join(
-            self.venv_path_manuel,
-            "Scripts" if platform.system() == "Windows" else "bin",
-            pip_name,
-        )
-    else:
-        pip_exe = os.path.join(
-            self.workspace_dir,
-            "venv",
-            "Scripts" if platform.system() == "Windows" else "bin",
-            pip_name,
-        )
-    # Détermine la stratégie pip: binaire du venv si présent, sinon 'python -m pip'
-    pip_program = pip_exe
-    pip_prefix = []
+    # Utilise la fonction robuste de détection du pip
+    pip_program, pip_prefix = _find_pip_executable(
+        venv_path=self.venv_path_manuel,
+        workspace_dir=self.workspace_dir
+    )
     try:
-        if not os.path.isfile(pip_exe):
-            # Fallback vers 'python -m pip'
-            pip_program = sys.executable
-            pip_prefix = ["-m", "pip"]
-            try:
-                self.log.append(
-                    "ℹ️ pip du venv introuvable; utilisation de 'python -m pip' pour la vérification des modules."
-                )
-            except Exception:
-                pass
+        self.log.append(
+            f"ℹ️ Utilisation de pip: {pip_program} {' '.join(pip_prefix)}"
+        )
     except Exception:
-        pip_program = sys.executable
-        pip_prefix = ["-m", "pip"]
+        pass
     # Vérification des modules avec progression
     not_installed = []
     for idx, module in enumerate(suggestions):

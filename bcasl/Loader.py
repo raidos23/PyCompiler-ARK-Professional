@@ -142,7 +142,7 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             if isinstance(data, dict) and data:
                 # Fusionner avec ARK_Main_Config.yml si disponible
                 try:
-                    from Core.Compiler.ark_config_loader import load_ark_config
+                    from Core.ark_config_loader import load_ark_config
                     ark_config = load_ark_config(str(workspace_root))
                     
                     # Fusionner les patterns d'exclusion
@@ -216,7 +216,7 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         plugin_timeout = 0.0
         
         try:
-            from Core.Compiler.ark_config_loader import load_ark_config
+            from Core.ark_config_loader import load_ark_config
             ark_config = load_ark_config(str(workspace_root))
             
             if "inclusion_patterns" in ark_config:
@@ -406,41 +406,71 @@ if QObject is not None and Signal is not None:  # pragma: no cover
 
 def apply_translations(gui, tr: dict) -> None:
     """Propagate i18n translations to all BCASL plugins that expose 'apply_i18n(gui, tr)'.
+    
     Cette fonction est synchronisée avec le système i18n global de l'application:
     - Utilise le dictionnaire "tr" fourni par l'app (déjà résolu selon la préférence de langue)
     - Itère sur le registre des plugins BCASL vivants et appelle apply_i18n(gui, tr) s'il existe
     - Tolère les erreurs plugin par plugin pour ne pas interrompre l'app
     """
     try:
-        # Registre maintenu par le SDK Général
-        from Plugins_SDK.GeneralContext.i18n import INSTANCES
-
-        # Optionnel: si le GUI fournit un getter de traduction synchronisé, le privilégier
-        # pour garantir la cohérence avec le reste de l'application
+        # Valider les paramètres
+        if not isinstance(tr, dict):
+            tr = {}
+        
+        if not gui:
+            return
+        
+        # Charger le registre des plugins BCASL depuis le manager
         try:
-            if hasattr(gui, "get_app_translations") and callable(gui.get_app_translations):
-                lang_pref = None
-                try:
-                    # Si le GUI expose la langue courante
-                    lang_pref = getattr(gui, "current_language", None)
-                except Exception:
-                    lang_pref = None
-                try:
-                    tr_from_gui = gui.get_app_translations(lang_pref)
-                    if isinstance(tr_from_gui, dict) and tr_from_gui:
-                        tr = tr_from_gui
-                except Exception:
-                    pass
+            # Essayer de récupérer les instances de plugins depuis le manager BCASL
+            # Les plugins sont enregistrés lors du chargement via bcasl_register()
+            from .executor import BCASL
+            
+            # Chercher les instances de plugins dans le registre global
+            # Note: Les plugins s'auto-enregistrent via bcasl_register(manager)
+            # et stockent leurs instances dans un registre accessible
+            
+            # Parcourir tous les plugins chargés et appliquer les traductions
+            try:
+                # Accéder au registre interne du manager si disponible
+                # Sinon, utiliser un registre global des plugins BCASL
+                import sys
+                
+                # Chercher les modules de plugins chargés
+                for mod_name, module in list(sys.modules.items()):
+                    if not mod_name.startswith("Plugins."):
+                        continue
+                    
+                    # Chercher les instances de plugins dans le module
+                    try:
+                        # Chercher l'attribut PLUGIN (convention standard)
+                        plugin_inst = getattr(module, "PLUGIN", None)
+                        if plugin_inst is None:
+                            continue
+                        
+                        # Vérifier que le plugin a la méthode apply_i18n
+                        apply_i18n_fn = getattr(plugin_inst, "apply_i18n", None)
+                        if not callable(apply_i18n_fn):
+                            continue
+                        
+                        # Appliquer les traductions au plugin
+                        try:
+                            apply_i18n_fn(gui, tr)
+                        except Exception as plugin_err:
+                            # Tolère les erreurs par plugin pour ne pas interrompre l'app
+                            try:
+                                if hasattr(gui, "log") and gui.log:
+                                    gui.log.append(
+                                        f"⚠️ Erreur i18n pour plugin {mod_name}: {plugin_err}\n"
+                                    )
+                            except Exception:
+                                pass
+                    except Exception:
+                        continue
+            except Exception:
+                pass
         except Exception:
             pass
-
-        for plugin_id, inst in list(INSTANCES.items()):
-            try:
-                fn = getattr(inst, "apply_i18n", None)
-                if callable(fn):
-                    fn(gui, tr)
-            except Exception:
-                continue
     except Exception:
         pass
 
@@ -857,23 +887,6 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                 except Exception:
                     pass
             return
-        if not bcasl_enabled:
-            try:
-                if hasattr(self, "log") and self.log is not None:
-                    self.log.append(
-                        self.tr(
-                            "⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n",
-                            "⏹️ BCASL disabled in configuration. Skipping execution\n",
-                        )
-                    )
-            except Exception:
-                pass
-            if callable(on_done):
-                try:
-                    on_done({"status": "disabled"})
-                except Exception:
-                    pass
-            return
 
         if QThread is not None and QObject is not None and Signal is not None:
             thread = QThread()
@@ -1008,16 +1021,6 @@ def run_pre_compile(self) -> Optional[object]:
             )
         except Exception:
             bcasl_enabled = True
-        if not bcasl_enabled:
-            try:
-                if hasattr(self, "log") and self.log is not None:
-                    self.log.append(
-                        "⏹️ BCASL désactivé dans la configuration. Exécution ignorée\n"
-                    )
-            except Exception:
-                pass
-            return None
-
         if not bcasl_enabled:
             try:
                 if hasattr(self, "log") and self.log is not None:
