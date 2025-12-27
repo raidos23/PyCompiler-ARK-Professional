@@ -109,6 +109,12 @@ DEFAULT_CONFIG = {
         "auto_detect": True,
         "fallback_to_pip": True,
     },
+    
+    # Plugins Configuration
+    "plugins": {
+        "bcasl_enabled": True,
+        "plugin_timeout": 0.0,
+    },
 }
 
 

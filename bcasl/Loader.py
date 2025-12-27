@@ -18,12 +18,13 @@
 BCASL loader (simplifié)
 
 Objectifs de simplification:
-- Config JSON uniquement (bcasl.json ou .bcasl.json)
+- Config YAML (bcasl.yaml/yml) ou JSON (bcasl.json/.bcasl.json) - YAML prioritaire
 - Détection de plugins minimale: packages dans Plugins/ ayant __init__.py
 - Ordre: plugin_order depuis config sinon basé sur tags simples, sinon alphabétique
 - UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
 - Async via QThread si QtCore dispo, sinon repli synchrone
 - Journalisation concise dans self.log si disponible
+- Activation/désactivation gérée par ARK_Main_Config.yml (plugins.bcasl_enabled)
 """
 from __future__ import annotations
 
@@ -31,6 +32,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any, Optional
+import yaml
 
 from .executor import BCASL
 
@@ -123,9 +125,10 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
-    """Charge bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit.
+    """Charge bcasl.yaml/yml ou bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit.
     
     Fusionne aussi avec ARK_Main_Config.yml si disponible pour les patterns et options plugins.
+    Priorité: YAML > JSON
     """
 
     def _read_json(p: Path) -> dict[str, Any]:
@@ -134,11 +137,21 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         except Exception:
             return {}
 
-    # 1) Fichiers candidats (JSON uniquement)
-    for name in ("bcasl.json", ".bcasl.json"):
+    def _read_yaml(p: Path) -> dict[str, Any]:
+        try:
+            return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return {}
+
+    # 1) Fichiers candidats (YAML prioritaire, puis JSON)
+    for name in ("bcasl.yaml", "bcasl.yml", "bcasl.json", ".bcasl.json"):
         p = workspace_root / name
         if p.exists() and p.is_file():
-            data = _read_json(p)
+            if name.endswith((".yaml", ".yml")):
+                data = _read_yaml(p)
+            else:
+                data = _read_json(p)
+            
             if isinstance(data, dict) and data:
                 # Fusionner avec ARK_Main_Config.yml si disponible
                 try:

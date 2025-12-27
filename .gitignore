@@ -211,5 +211,8 @@ tests/
 #PREFERENCE
 .pref
 .pycompiler/
+
+# BCASL Configuration
+# Note: bcasl.json is ignored (auto-generated), but bcasl.yaml should be committed
 bcasl.json
 # acasl.json removed
