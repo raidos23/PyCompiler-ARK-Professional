@@ -614,12 +614,41 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
                 text += f" [Phase: {phase_name}]"
             
             item = QListWidgetItem(text)
-            # Tooltip avec description et tags
+            # Tooltip avec description, tags et requirements
             try:
                 desc = meta.get("description") or ""
                 tooltip = desc
                 if tags:
                     tooltip += f"\n\nTags: {', '.join(tags)}"
+                
+                # Ajouter les requirements du plugin
+                reqs = []
+                # Récupérer les requirements depuis la métadonnée du plugin
+                # On doit chercher dans la métadonnée complète du plugin
+                try:
+                    # Chercher le plugin dans le registry pour obtenir les requirements
+                    from .executor import BCASL
+                    temp_mgr = BCASL(workspace_root, config={}, sandbox=False, plugin_timeout_s=0.0)
+                    reg = getattr(temp_mgr, "_registry", {})
+                    if pid in reg:
+                        plg = reg[pid].plugin
+                        if hasattr(plg, 'meta'):
+                            if plg.meta.required_bcasl_version != "1.0.0":
+                                reqs.append(f"BCASL >= {plg.meta.required_bcasl_version}")
+                            if plg.meta.required_core_version != "1.0.0":
+                                reqs.append(f"Core >= {plg.meta.required_core_version}")
+                            if plg.meta.required_plugins_sdk_version != "1.0.0":
+                                reqs.append(f"Plugins SDK >= {plg.meta.required_plugins_sdk_version}")
+                            if plg.meta.required_bc_plugin_context_version != "1.0.0":
+                                reqs.append(f"BcPluginContext >= {plg.meta.required_bc_plugin_context_version}")
+                            if plg.meta.required_general_context_version != "1.0.0":
+                                reqs.append(f"GeneralContext >= {plg.meta.required_general_context_version}")
+                except Exception:
+                    pass
+                
+                if reqs:
+                    tooltip += f"\n\nRequirements:\n" + "\n".join(f"  • {req}" for req in reqs)
+                
                 if tooltip:
                     item.setToolTip(tooltip)
             except Exception:
