@@ -81,15 +81,7 @@ output:
     pkg_dir.mkdir(parents=True, exist_ok=True)
     (pkg_dir / "__init__.py").write_text("__all__ = ['module']\n", encoding="utf-8")
     (pkg_dir / "module.py").write_text(
-        (
-            """
-"""Sample module for workspace tests."""
-
-VALUE = 42
-
-"""
-        ).strip()
-        + "\n",
+        '"""Sample module for workspace tests."""\n\nVALUE = 42\n',
         encoding="utf-8",
     )
 
