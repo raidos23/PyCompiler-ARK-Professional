@@ -41,54 +41,8 @@ from engine_sdk.utils import clamp_text, redact_secrets
 from ..Auto_Command_Builder import compute_for_all
 from ..preferences import MAX_PARALLEL
 
-# Wrapper ACASL inspiré du modèle BCASL: garantit arrêt propre et callback sur thread GUI
-from PySide6.QtCore import QTimer as _QTimer
+# ACASL support removed (obsolete)
 
-def safe_run_acasl_async(self, artifacts: list[str], finished_cb=None) -> None:
-    try:
-        from acasl import run_post_compile_async as _acasl_run, ensure_acasl_thread_stopped as _acasl_stop
-    except Exception:
-        # Si ACASL indisponible, renvoyer un rapport 'disabled'
-        try:
-            if callable(finished_cb):
-                _QTimer.singleShot(0, lambda: finished_cb({"status": "disabled", "plugins": []}))
-        except Exception:
-            pass
-        return
-    # Arrêt propre d'un éventuel ACASL en cours
-    try:
-        _acasl_stop(self)
-    except Exception:
-        pass
-    # Ne pas lancer si l'UI est en fermeture
-    try:
-        if hasattr(self, "_closing") and bool(getattr(self, "_closing")):
-            if callable(finished_cb):
-                _QTimer.singleShot(0, lambda: finished_cb({"status": "cancelled"}))
-            return
-    except Exception:
-        pass
-    # Wrapper qui garantit l'exécution du callback dans le thread GUI
-    def _finish_on_gui(rep):
-        try:
-            if callable(finished_cb):
-                _QTimer.singleShot(0, lambda r=rep: finished_cb(r))
-        except Exception:
-            pass
-    try:
-        _acasl_run(self, list(artifacts or []), finished_cb=_finish_on_gui)
-    except Exception as e:
-        # Journaliser et renvoyer une erreur non bloquante
-        try:
-            if hasattr(self, "log") and self.log:
-                self.log.append(f"❌ ACASL: échec de lancement: {e}")
-        except Exception:
-            pass
-        try:
-            if callable(finished_cb):
-                _QTimer.singleShot(0, lambda: finished_cb({"status": "error", "error": str(e)}))
-        except Exception:
-            pass
 
 
 def try_start_processes(self):
@@ -105,110 +59,34 @@ def try_start_processes(self):
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         from PySide6.QtWidgets import QApplication
-
         QApplication.processEvents()
         self.log.append("✔️ Toutes les compilations sont terminées.\n")
-        # Collecter les artefacts dès maintenant
-        artifacts = []
+        # Exécuter immédiatement les hooks de succès des moteurs et restaurer l'UI
         try:
-            import os as _os
-
-            ws = self.workspace_dir or os.getcwd()
-            for d in ("dist", "build"):
-                dp = os.path.join(ws, d)
-                if os.path.isdir(dp):
-                    for root, _dirs, files in os.walk(dp):
-                        for f in files:
-                            artifacts.append(os.path.join(root, f))
+            hooks = getattr(self, "_pending_engine_success_hooks", [])
+            for (eng, fpath) in hooks:
+                try:
+                    eng.on_success(self, fpath)
+                except Exception:
+                    try:
+                        self.log.append(
+                            f"⚠️ on_success du moteur '{getattr(eng, 'id', '?')}' a échoué."
+                        )
+                    except Exception:
+                        pass
         except Exception:
             pass
-        # Décider si ACASL doit s'exécuter; sinon restaurer l'UI immédiatement
-        try:
-            import os as _os
-
-            no_hooks = True
-        except Exception:
-            no_hooks = False
-        # ACASL removed: execute engine success hooks immediately and restore UI
-        if True:
+        finally:
             try:
-                hooks = getattr(self, "_pending_engine_success_hooks", [])
-                for (eng, fpath) in hooks:
-                    try:
-                        eng.on_success(self, fpath)
-                    except Exception:
-                        try:
-                            self.log.append(
-                                f"⚠️ on_success du moteur '{getattr(eng, 'id', '?')}' a échoué."
-                            )
-                        except Exception:
-                            pass
+                if hasattr(self, "_pending_engine_success_hooks"):
+                    self._pending_engine_success_hooks.clear()
             except Exception:
                 pass
-            finally:
-                try:
-                    if hasattr(self, "_pending_engine_success_hooks"):
-                        self._pending_engine_success_hooks.clear()
-                except Exception:
-                    pass
-            if hasattr(self, "compiler_tabs") and self.compiler_tabs:
-                self.compiler_tabs.setEnabled(True)
-            self.set_controls_enabled(True)
-            self.save_preferences()
-            return
-            # Laisser l'UI désactivée jusqu'à la fin d'ACASL, puis restaurer dans le callback
-            try:
-                from acasl import run_post_compile_async
-
-                def _after_acasl(_rep):
-                    # Exécuter maintenant tous les hooks on_success engrangés
-                    try:
-                        hooks = getattr(self, "_pending_engine_success_hooks", [])
-                        for (eng, fpath) in hooks:
-                            try:
-                                eng.on_success(self, fpath)
-                            except Exception:
-                                try:
-                                    self.log.append(
-                                        f"⚠️ on_success du moteur '{getattr(eng, 'id', '?')}' a échoué."
-                                    )
-                                except Exception:
-                                    pass
-                    except Exception:
-                        pass
-                    finally:
-                        try:
-                            if hasattr(self, "_pending_engine_success_hooks"):
-                                self._pending_engine_success_hooks.clear()
-                        except Exception:
-                            pass
-                    # Restaurer l'UI
-                    try:
-                        if hasattr(self, "compiler_tabs") and self.compiler_tabs:
-                            self.compiler_tabs.setEnabled(True)
-                    except Exception:
-                        pass
-                    try:
-                        self.set_controls_enabled(True)
-                    except Exception:
-                        pass
-                    try:
-                        self.save_preferences()
-                    except Exception:
-                        pass
-
-                QTimer.singleShot(
-                    0,
-                    lambda a=list(artifacts): safe_run_acasl_async(
-                        self, a, finished_cb=_after_acasl
-                    ),
-                )
-            except Exception:
-                # En cas d'échec de démarrage d'ACASL, restaurer l'UI immédiatement
-                if hasattr(self, "compiler_tabs") and self.compiler_tabs:
-                    self.compiler_tabs.setEnabled(True)
-                self.set_controls_enabled(True)
-                self.save_preferences()
+        if hasattr(self, "compiler_tabs") and self.compiler_tabs:
+            self.compiler_tabs.setEnabled(True)
+        self.set_controls_enabled(True)
+        self.save_preferences()
+        return
 
 
 def start_compilation_process(self, file):
@@ -302,7 +180,26 @@ def start_compilation_process(self, file):
     process._cancel_file = cancel_file
     process.readyReadStandardOutput.connect(lambda p=process: self.handle_stdout(p))
     process.readyReadStandardError.connect(lambda p=process: self.handle_stderr(p))
-    process.finished.connect(lambda ec, es, p=process: self.handle_finished(p, ec, es))
+    
+    # Capture stderr data before process deletion to avoid accessing deleted C++ object
+    def _on_finished(ec, es, p=process):
+        try:
+            # Save stderr data before process is deleted
+            p._final_stderr = p.readAllStandardError().data().decode()
+        except Exception:
+            p._final_stderr = ""
+        try:
+            self.handle_finished(p, ec, es)
+        except Exception:
+            pass
+        finally:
+            # Schedule deletion after handle_finished completes
+            try:
+                p.deleteLater()
+            except Exception:
+                pass
+    
+    process.finished.connect(_on_finished)
     self.processes.append(process)
     self.current_compiling.add(file)
     # Optional: update dependent UI states
@@ -384,8 +281,6 @@ def start_compilation_process(self, file):
                     pass
 
             process.finished.connect(_cancel_timer)
-            # Ensure QProcess object is deleted later to avoid dangling C++ objects
-            process.finished.connect(lambda _ec, _es, p=process: p.deleteLater())
     except Exception:
         pass
     process.start()
@@ -790,7 +685,8 @@ def handle_finished(self, process, exit_code, exit_status):
             pass
     else:
         # Ajout d'un affichage détaillé pour les erreurs inattendues
-        error_details = process.readAllStandardError().data().decode()
+        # Use saved stderr data to avoid accessing deleted C++ object
+        error_details = getattr(process, "_final_stderr", "")
         self.log.append(
             f"<span style='color:red;'>❌ La compilation de {file_basename} ({file}) a échoué (code {exit_code}).</span>\n"
         )
@@ -989,12 +885,7 @@ def cancel_all_compilations(self):
                 self.processes.remove(process)
             except ValueError:
                 pass
-    # Last resort: stop ACASL thread and nuke any remaining descendants of our GUI process
-    try:
-        # ACASL removed: nothing to stop here
-        pass
-    except Exception:
-        pass
+    # ACASL removed: no post-compile thread to stop
     try:
         _kill_all_descendants(timeout=1.0, log=self.log.append)
     except Exception:

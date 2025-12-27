@@ -422,77 +422,6 @@ if QObject is not None and Signal is not None:  # pragma: no cover
 # --- API publique attendue par le reste de l'app ---
 
 
-def apply_translations(gui, tr: dict) -> None:
-    """Propagate i18n translations to all BCASL plugins that expose 'apply_i18n(gui, tr)'.
-    
-    Cette fonction est synchronisée avec le système i18n global de l'application:
-    - Utilise le dictionnaire "tr" fourni par l'app (déjà résolu selon la préférence de langue)
-    - Itère sur le registre des plugins BCASL vivants et appelle apply_i18n(gui, tr) s'il existe
-    - Tolère les erreurs plugin par plugin pour ne pas interrompre l'app
-    """
-    try:
-        # Valider les paramètres
-        if not isinstance(tr, dict):
-            tr = {}
-        
-        if not gui:
-            return
-        
-        # Charger le registre des plugins BCASL depuis le manager
-        try:
-            # Essayer de récupérer les instances de plugins depuis le manager BCASL
-            # Les plugins sont enregistrés lors du chargement via bcasl_register()
-            from .executor import BCASL
-            
-            # Chercher les instances de plugins dans le registre global
-            # Note: Les plugins s'auto-enregistrent via bcasl_register(manager)
-            # et stockent leurs instances dans un registre accessible
-            
-            # Parcourir tous les plugins chargés et appliquer les traductions
-            try:
-                # Accéder au registre interne du manager si disponible
-                # Sinon, utiliser un registre global des plugins BCASL
-                import sys
-                
-                # Chercher les modules de plugins chargés
-                for mod_name, module in list(sys.modules.items()):
-                    if not mod_name.startswith("Plugins."):
-                        continue
-                    
-                    # Chercher les instances de plugins dans le module
-                    try:
-                        # Chercher l'attribut PLUGIN (convention standard)
-                        plugin_inst = getattr(module, "PLUGIN", None)
-                        if plugin_inst is None:
-                            continue
-                        
-                        # Vérifier que le plugin a la méthode apply_i18n
-                        apply_i18n_fn = getattr(plugin_inst, "apply_i18n", None)
-                        if not callable(apply_i18n_fn):
-                            continue
-                        
-                        # Appliquer les traductions au plugin
-                        try:
-                            apply_i18n_fn(gui, tr)
-                        except Exception as plugin_err:
-                            # Tolère les erreurs par plugin pour ne pas interrompre l'app
-                            try:
-                                if hasattr(gui, "log") and gui.log:
-                                    gui.log.append(
-                                        f"⚠️ Erreur i18n pour plugin {mod_name}: {plugin_err}\n"
-                                    )
-                            except Exception:
-                                pass
-                    except Exception:
-                        continue
-            except Exception:
-                pass
-        except Exception:
-            pass
-    except Exception:
-        pass
-
-
 def ensure_bcasl_thread_stopped(self, timeout_ms: int = 5000) -> None:
     """Arrête proprement un thread BCASL en cours (si présent)."""
     try:
@@ -924,6 +853,8 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             worker.finished.connect(bridge.on_finished)
             worker.finished.connect(worker.deleteLater)
             thread.finished.connect(thread.deleteLater)
+            
+                        
             worker.moveToThread(thread)
             thread.started.connect(worker.run)
             thread.start()

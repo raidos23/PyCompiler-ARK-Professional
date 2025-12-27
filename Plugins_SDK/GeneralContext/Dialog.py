@@ -15,210 +15,18 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import (
-    Optional,
-    NamedTuple,
+from typing import Optional
+
+# Import des classes et fonctions de Core.dialogs
+from Core.dialogs import (
+    show_msgbox,
+    sys_msgbox_for_installing,
+    ProgressDialog,
+    CompilationProcessDialog,
+    InstallAuth,
+    _redact_secrets,
+    _invoke_in_main_thread,
 )
-import getpass
-import re
-import platform
-
-# Simple redaction of obvious secrets in logs
-_REDACT_PATTERNS = [
-    re.compile(r"(password\s*[:=]\s*)([^\s]+)", re.IGNORECASE),
-    re.compile(r"(authorization\s*[:]\s*bearer\s+)([A-Za-z0-9\-_.]+)", re.IGNORECASE),
-    re.compile(r"(token\s*[:=]\s*)([A-Za-z0-9\-_.]{12,})", re.IGNORECASE),
-]
-
-# Qt toolkits
-try:
-    from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
-except Exception:  # pragma: no cover
-    _QtW = None  # type: ignore
-    _QtC = None  # type: ignore
-
-# Import des classes de Core.dialogs
-from Core.dialogs import ProgressDialog, CompilationProcessDialog, _invoke_in_main_thread
-
-
-def _redact_secrets(text: str) -> str:
-    if not text:
-        return text
-    redacted = str(text)
-    try:
-        for pat in _REDACT_PATTERNS:
-            redacted = pat.sub(lambda m: m.group(1) + "<redacted>", redacted)
-    except Exception:
-        pass
-    return redacted
-
-
-def _is_noninteractive() -> bool:
-    try:
-        import os as _os
-
-        v = _os.environ.get("PYCOMPILER_NONINTERACTIVE")
-        if v is None:
-            return False
-        return str(v).strip().lower() not in ("", "0", "false", "no")
-    except Exception:
-        return False
-
-
-def _qt_active_parent():
-    if _QtW is None:
-        return None
-    try:
-        app = _QtW.QApplication.instance()
-        if app is None:
-            return None
-        w = app.activeWindow()
-        if w:
-            return w
-        try:
-            tls = app.topLevelWidgets()
-            if tls:
-                return tls[0]
-        except Exception:
-            pass
-        return None
-    except Exception:
-        return None
-
-
-def show_msgbox(
-    kind: str, title: str, text: str, *, parent=None, buttons=None, default=None
-):
-    """
-    Show a message box if a Qt toolkit is available; fallback to console output otherwise.
-    Executes in the main Qt thread to ensure theme inheritance and proper UI integration.
-
-    kind: 'info' | 'warning' | 'error' | 'question'
-    Returns:
-      - question: True if Yes (or default), False otherwise
-      - others: None
-    """
-    if _QtW is None or _QtW.QApplication.instance() is None or _is_noninteractive():
-        # Console fallback
-        print(f"[MSGBOX:{kind}] {title}: {text}")
-        if kind == "question":
-            return (
-                True
-                if (default and str(default).lower() in ("yes", "ok", "true", "1"))
-                else False
-            )
-        return None
-    
-    def _show_in_main_thread():
-        try:
-            parent_widget = parent or _qt_active_parent()
-            mb = _QtW.QMessageBox(parent_widget)
-            mb.setWindowTitle(str(title))
-            mb.setText(str(text))
-            if kind == "warning":
-                mb.setIcon(_QtW.QMessageBox.Warning)
-            elif kind == "error":
-                mb.setIcon(_QtW.QMessageBox.Critical)
-            elif kind == "question":
-                mb.setIcon(_QtW.QMessageBox.Question)
-            else:
-                mb.setIcon(_QtW.QMessageBox.Information)
-
-            if kind == "question":
-                yes = _QtW.QMessageBox.Yes
-                no = _QtW.QMessageBox.No
-                mb.setStandardButtons(yes | no)
-                if default and str(default).lower() == "no":
-                    mb.setDefaultButton(no)
-                else:
-                    mb.setDefaultButton(yes)
-                res = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
-                return res == yes
-            else:
-                ok = _QtW.QMessageBox.Ok
-                mb.setStandardButtons(ok)
-                mb.setDefaultButton(ok)
-                _ = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
-                return None
-        except Exception:
-            print(f"[MSGBOX:{kind}] {title}: {text}")
-            if kind == "question":
-                return (
-                    True
-                    if (default and str(default).lower() in ("yes", "ok", "true", "1"))
-                    else False
-                )
-            return None
-    
-    return _invoke_in_main_thread(_show_in_main_thread)
-
-
-class InstallAuth(NamedTuple):
-    method: str  # 'sudo' (POSIX) | 'uac' (Windows)
-    secret: Optional[str] = None  # password for 'sudo', None for 'uac'
-
-
-def sys_msgbox_for_installing(
-    subject: str, explanation: Optional[str] = None, title: str = "Installation requise"
-) -> Optional[InstallAuth]:
-    """Demande interactive d'autorisation d'installation multi-OS.
-
-    - Windows: pas de mot de passe (UAC natif). Retourne InstallAuth(method='uac', secret=None) si confirmé.
-    - Linux/macOS: demande de mot de passe sudo. Retourne InstallAuth(method='sudo', secret='<pwd>') si confirmé.
-
-    Aucun secret n'est loggé. Fournit uniquement les informations nécessaires au plugin pour exécuter
-    l'installation avec élévation adaptée à l'OS.
-    """
-    is_windows = platform.system().lower().startswith("win")
-    msg = (
-        f"L'installation de '{subject}' nécessite des privilèges administrateur.\n"
-        + (f"\n{explanation}\n" if explanation else "")
-        + (
-            "\nSur Windows, une élévation UAC sera demandée."
-            if is_windows
-            else "\nSur Linux/macOS, votre mot de passe sudo est requis."
-        )
-    )
-    # UI Qt
-    if _QtW is not None:
-        try:
-            parent = _qt_active_parent()
-            proceed = show_msgbox("question", title, msg, default="Yes")
-            if not proceed:
-                return None
-            if is_windows:
-                return InstallAuth("uac", None)
-            # POSIX: demande de mot de passe
-            pwd, ok = _QtW.QInputDialog.getText(
-                parent,
-                title,
-                "Entrez votre mot de passe (sudo):",
-                _QtW.QLineEdit.Password,
-            )
-            if not ok:
-                return None
-            pwd = str(pwd)
-            return InstallAuth("sudo", pwd) if pwd else None
-        except Exception:
-            # Fallback console si problème Qt
-            pass
-    # Fallback console
-    try:
-        print(f"[INSTALL] {title}: {msg}")
-        ans = input("Continuer ? [y/N] ").strip().lower()
-        if ans not in ("y", "yes", "o", "oui"):
-            return None
-    except Exception:
-        # Si input non disponible, on tente quand même la suite
-        pass
-    if is_windows:
-        return InstallAuth("uac", None)
-    try:
-        pwd = getpass.getpass("Mot de passe (sudo): ")
-        return InstallAuth("sudo", pwd) if pwd else None
-    except Exception:
-        return None
 
 
 class Dialog:
@@ -227,18 +35,23 @@ class Dialog:
     def show_msgbox(
         self, kind: str, title: str, text: str, *, default: Optional[str] = None
     ) -> Optional[bool]:
+        """Show a message box using Core.dialogs.show_msgbox."""
         return show_msgbox(kind, title, text, default=default)
 
     def msg_info(self, title: str, text: str) -> None:
+        """Show an info message box."""
         show_msgbox("info", title, text)
 
     def msg_warn(self, title: str, text: str) -> None:
+        """Show a warning message box."""
         show_msgbox("warning", title, text)
 
     def msg_error(self, title: str, text: str) -> None:
+        """Show an error message box."""
         show_msgbox("error", title, text)
 
     def msg_question(self, title: str, text: str, default_yes: bool = True) -> bool:
+        """Show a question message box and return True if Yes, False otherwise."""
         return bool(
             show_msgbox("question", title, text, default="Yes" if default_yes else "No")
         )
@@ -255,12 +68,15 @@ class Dialog:
         print(msg)
 
     def log_info(self, message: str) -> None:
+        """Log an info message."""
         self.log(f"[INFO] {message}")
 
     def log_warn(self, message: str) -> None:
+        """Log a warning message."""
         self.log(f"[WARN] {message}")
 
     def log_error(self, message: str) -> None:
+        """Log an error message."""
         self.log(f"[ERROR] {message}")
 
     def sys_msgbox_for_installing(
@@ -269,23 +85,24 @@ class Dialog:
         explanation: Optional[str] = None,
         title: str = "Installation requise",
     ) -> Optional[InstallAuth]:
+        """Show a system installation authorization dialog using Core.dialogs."""
         return sys_msgbox_for_installing(subject, explanation=explanation, title=title)
 
     def progress(
         self, title: str, text: str = "", maximum: int = 0, cancelable: bool = False
     ) -> ProgressDialog:
-        """Crée et retourne un ProgressDialog de Core pour suivre une tâche.
+        """Create and return a ProgressDialog from Core.dialogs.
         
-        Utilise directement Core.dialogs.ProgressDialog pour assurer:
-        - L'héritage du thème de l'application
-        - L'intégration visuelle avec l'application principale
-        - La sécurité des threads
+        Uses Core.dialogs.ProgressDialog to ensure:
+        - Theme inheritance from the application
+        - Visual integration with the main application
+        - Thread safety
         
         Args:
-            title: Titre du dialog
-            text: Texte initial du dialog
-            maximum: Valeur maximale (0 = indéterminé)
-            cancelable: Si True, affiche un bouton Annuler
+            title: Dialog title
+            text: Initial dialog text
+            maximum: Maximum value (0 = indeterminate)
+            cancelable: If True, show a Cancel button
             
         Returns:
             ProgressDialog instance from Core.dialogs

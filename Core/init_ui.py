@@ -173,6 +173,13 @@ def init_ui(self):
         except Exception:
             pass
 
+    # Connecter les dialogs à l'application pour synchronisation du thème
+    try:
+        from Core.dialogs import connect_to_app
+        connect_to_app(self)
+    except Exception:
+        pass
+
     # Remplacer le layout principal par celui du .ui
     layout = QVBoxLayout(self)
     layout.addWidget(self.ui)

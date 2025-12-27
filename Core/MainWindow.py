@@ -184,6 +184,8 @@ class PyCompilerArkGui(QWidget):
 
         self.load_preferences()
         self.init_ui()
+        
+                
         # Détection langue système si préférence = "System"
         import locale
 
@@ -1547,15 +1549,7 @@ class PyCompilerArkGui(QWidget):
                 # Registry-based propagation to engine instances
                 try:
                     import Core.engines_loader as engines_loader
-
                     engines_loader.registry.apply_translations(self, tr)
-                except Exception:
-                    pass
-                # Propagate translations to all BCASL plugins
-                try:
-                    import bcasl.Loader as bcasl_loader
-
-                    bcasl_loader.apply_translations(self, tr)
                 except Exception:
                     pass
             except Exception:
@@ -1717,6 +1711,7 @@ class PyCompilerArkGui(QWidget):
             except Exception:
                 pass
 
+    
     def _has_active_background_tasks(self):
         # Compilation en cours
         if self.processes:
@@ -1728,6 +1723,13 @@ class PyCompilerArkGui(QWidget):
             and self.venv_manager.has_active_tasks()
         ):
             return True
+        # BCASL (pré-compilation) en cours
+        try:
+            bcasl_thread = getattr(self, "_bcasl_thread", None)
+            if bcasl_thread is not None and bcasl_thread.is_alive():
+                return True
+        except Exception:
+            pass
         return False
 
     def _terminate_background_tasks(self):
@@ -1745,7 +1747,10 @@ class PyCompilerArkGui(QWidget):
                 details.append("compilation")
             if hasattr(self, "venv_manager") and self.venv_manager:
                 details.extend(self.venv_manager.get_active_task_labels("Français"))
-            if getattr(self, "current_language", "Français") == "English":
+            
+            is_english = getattr(self, "current_language", "Français") == "English"
+            
+            if is_english:
                 mapping = {
                     "compilation": "build",
                     "création du venv": "venv creation",
@@ -1753,20 +1758,49 @@ class PyCompilerArkGui(QWidget):
                     "vérification/installation du venv": "venv check/installation",
                 }
                 details_disp = [mapping.get(d, d) for d in details]
-                msg = "A process is running"
+                
+                # Construire le message détaillé
+                title = "⚠️ Process Running"
+                msg = "A process is currently running:\n\n"
                 if details_disp:
-                    msg += " (" + ", ".join(details_disp) + ")"
-                msg += ". Do you really want to stop and quit?"
-                title = "Process running"
+                    for detail in details_disp:
+                        msg += f"  • {detail}\n"
+                    msg += "\n"
+                msg += "If you quit now, the process will be stopped and any unsaved work will be lost.\n\n"
+                msg += "Do you really want to quit?"
+                
+                yes_text = "Yes, Quit"
+                no_text = "No, Continue"
             else:
-                msg = "Un processus est en cours"
-                if details:
-                    msg += " (" + ", ".join(details) + ")"
-                msg += ". Voulez-vous vraiment arrêter et quitter ?"
-                title = "Processus en cours"
-            reply = QMessageBox.question(
-                self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-            )
+                details_disp = details
+                
+                # Construire le message détaillé
+                title = "⚠️ Processus en cours"
+                msg = "Un processus est actuellement en cours :\n\n"
+                if details_disp:
+                    for detail in details_disp:
+                        msg += f"  • {detail}\n"
+                    msg += "\n"
+                msg += "Si vous quittez maintenant, le processus sera arrêté et tout travail non sauvegardé sera perdu.\n\n"
+                msg += "Voulez-vous vraiment quitter ?"
+                
+                yes_text = "Oui, Quitter"
+                no_text = "Non, Continuer"
+            
+            # Créer la boîte de dialogue avec des boutons personnalisés
+            msgbox = QMessageBox(self)
+            msgbox.setWindowTitle(title)
+            msgbox.setText(msg)
+            msgbox.setIcon(QMessageBox.Warning)
+            msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msgbox.setDefaultButton(QMessageBox.No)
+            
+            # Personnaliser les textes des boutons
+            msgbox.button(QMessageBox.Yes).setText(yes_text)
+            msgbox.button(QMessageBox.No).setText(no_text)
+            
+            reply = msgbox.exec()
+            
             if reply == QMessageBox.Yes:
                 self._closing = True
                 # Annule les compilations en cours si nécessaire

@@ -36,15 +36,7 @@ META = PluginMeta(
     tags=["clean"]
 )
 
-# Default English translations (fallback)
-DEFAULT_TRANSLATIONS = {
-    "cleaner_title": "Cleaner",
-    "cleaner_question": "Do you want to clean the workspace (.pyc and __pycache__)?",
-    "cleaner_cancelled": "Cleaner cancelled by user",
-    "cleaner_completed": "Cleaner completed: {files} .pyc files and {dirs} __pycache__ directories removed",
-    "cleaner_error_file": "Failed to remove {path}: {error}",
-    "cleaner_error_dir": "Failed to remove {path}: {error}",
-}
+# Plugin no longer uses i18n; static messages are used directly.
 
 
 class Cleaner(BcPluginBase):
@@ -58,36 +50,10 @@ class Cleaner(BcPluginBase):
         super().__init__(META)
         self.cleaned_files = 0
         self.cleaned_dirs = 0
-        self._lang_data = {}  # Translation dictionary
-        self._gui = None  # GUI reference
 
-    def _get_translation(self, key: str, default: Optional[str] = None) -> str:
-        """Get translated string for the given key with fallback.
-        
-        Args:
-            key: Translation key
-            default: Default value if key not found
-            
-        Returns:
-            Translated string or default value
-        """
-        try:
-            # Try to get from loaded translations
-            if isinstance(self._lang_data, dict):
-                v = self._lang_data.get(key)
-                if isinstance(v, str) and v.strip():
-                    return v
-            
-            # Fallback to default translations
-            v = DEFAULT_TRANSLATIONS.get(key)
-            if isinstance(v, str) and v.strip():
-                return v
-            
-            # Last resort: use provided default
-            return default or key
-        except Exception:
-            return default or key
-
+    
+    
+    
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         """Nettoie le workspace avant la compilation.
         
@@ -96,18 +62,14 @@ class Cleaner(BcPluginBase):
         """
         try:
             # Demander confirmation à l'utilisateur
-            title = self._get_translation("cleaner_title")
-            question = self._get_translation("cleaner_question")
-            
             response = dialog.msg_question(
-                title=title,
-                text=question,
+                title="Cleaner",
+                text="Do you want to clean the workspace (.pyc and __pycache__)?",
                 default_yes=True,
             )
             
             if not response:
-                cancelled_msg = self._get_translation("cleaner_cancelled")
-                log.log_info(cancelled_msg)
+                log.log_info("Cleaner cancelled by user")
                 return
             
             # Réinitialiser les compteurs
@@ -120,228 +82,75 @@ class Cleaner(BcPluginBase):
             except Exception:
                 workspace_path = Path.cwd()
             
-            # Parcourir et supprimer les fichiers .pyc
+            # Créer le dialog de progression
+            progress = dialog.progress(title="Cleaning workspace...", cancelable=True)
+            progress.show()
+            
             try:
-                for file_path in ctx.iter_files(["**/*.pyc"], []):
+                # Étape 1: Parcourir et supprimer les fichiers .pyc
+                progress.set_message("Scanning for .pyc files and __pycache__ directories...")
+                
+                pyc_files = []
+                try:
+                    for file_path in ctx.iter_files(["**/*.pyc"], []):
+                        pyc_files.append(file_path)
+                except Exception as e:
+                    log.log_warn(f"Error iterating .pyc files: {e}")
+                
+                # Étape 2: Supprimer les fichiers .pyc
+                progress.set_message("Removing .pyc files...")
+                progress.set_progress(0, len(pyc_files))
+                
+                for idx, file_path in enumerate(pyc_files):
+                    if progress.is_canceled():
+                        break
                     try:
                         Path(file_path).unlink()
                         self.cleaned_files += 1
                     except Exception as e:
-                        error_msg = self._get_translation(
-                            "cleaner_error_file",
-                            "Failed to remove {path}: {error}"
-                        ).format(path=file_path, error=e)
-                        log.log_warn(error_msg)
-            except Exception as e:
-                log.log_warn(f"Error iterating .pyc files: {e}")
-            
-            # Parcourir et supprimer les dossiers __pycache__
-            try:
-                for pycache_dir in workspace_path.rglob("__pycache__"):
+                        log.log_warn(f"Failed to remove {file_path}: {e}")
+                    progress.set_progress(idx + 1, len(pyc_files))
+                
+                # Étape 3: Parcourir et supprimer les dossiers __pycache__
+                progress.set_message("Removing __pycache__ directories...")
+                
+                pycache_dirs = []
+                try:
+                    for pycache_dir in workspace_path.rglob("__pycache__"):
+                        pycache_dirs.append(pycache_dir)
+                except Exception as e:
+                    log.log_warn(f"Error iterating __pycache__ directories: {e}")
+                
+                progress.set_progress(0, len(pycache_dirs))
+                
+                for idx, pycache_dir in enumerate(pycache_dirs):
+                    if progress.is_canceled():
+                        break
                     try:
                         shutil.rmtree(pycache_dir)
                         self.cleaned_dirs += 1
                     except Exception as e:
-                        error_msg = self._get_translation(
-                            "cleaner_error_dir",
-                            "Failed to remove {path}: {error}"
-                        ).format(path=pycache_dir, error=e)
-                        log.log_warn(error_msg)
-            except Exception as e:
-                log.log_warn(f"Error iterating __pycache__ directories: {e}")
+                        log.log_warn(f"Failed to remove {pycache_dir}: {e}")
+                    progress.set_progress(idx + 1, len(pycache_dirs))
+                
+            finally:
+                progress.close()
             
             # Afficher le résumé
-            completed_msg = self._get_translation(
-                "cleaner_completed",
-                "Cleaner completed: {files} .pyc files and {dirs} __pycache__ directories removed"
-            ).format(files=self.cleaned_files, dirs=self.cleaned_dirs)
-            log.log_info(completed_msg)
+            log.log_info(
+                f"Cleaner completed: {self.cleaned_files} .pyc files and {self.cleaned_dirs} __pycache__ directories removed"
+            )
             
         except Exception as e:
             log.log_warn(f"Error during cleaning: {e}")
 
-    def apply_i18n(self, gui, tr: dict) -> None:
-        """Apply i18n translations from the application.
-        
-        Supports both namespaced and flat translation structures:
-        - Namespaced: tr["plugins"]["cleaner"] = {...}
-        - Flat: tr["cleaner_*"] = {...}
-        
-        Falls back to plugin-local languages/*.json if not provided by app.
-        
-        Args:
-            gui: GUI reference for error logging
-            tr: Translation dictionary from the application
-        """
-        try:
-            self._gui = gui
-            
-            # 1) Try to extract plugin translations from app's dict (preferred)
-            plugin_tr: dict = {}
-            try:
-                if isinstance(tr, dict):
-                    # Try namespaced structure: tr["plugins"]["cleaner"]
-                    plugs = tr.get("plugins", {})
-                    if isinstance(plugs, dict):
-                        maybe = plugs.get("cleaner", {})
-                        if isinstance(maybe, dict) and maybe:
-                            plugin_tr = maybe
-                    
-                    # Try flat structure: collect keys starting with "cleaner_"
-                    if not plugin_tr:
-                        collected = {
-                            k: v for k, v in tr.items()
-                            if isinstance(k, str) and k.startswith("cleaner_") and isinstance(v, str)
-                        }
-                        if collected:
-                            plugin_tr = collected
-            except Exception:
-                plugin_tr = {}
-            
-            # If app provided translations, use them directly
-            if isinstance(plugin_tr, dict) and plugin_tr:
-                self._lang_data = plugin_tr
-                return
-            
-            # 2) Fallback: load plugin-local JSON based on language code
-            try:
-                # Extract language code from translation metadata
-                code = None
-                try:
-                    if isinstance(tr, dict):
-                        meta = tr.get("_meta", {})
-                        if isinstance(meta, dict):
-                            code = meta.get("code")
-                except Exception:
-                    pass
-                
-                # Fallback to GUI language preference
-                if not code:
-                    try:
-                        code = getattr(gui, "current_language", None)
-                        if not code:
-                            code = getattr(gui, "language_pref", None)
-                        if not code:
-                            code = getattr(gui, "language", None)
-                    except Exception:
-                        pass
-                
-                # Default to English
-                if not code or code == "System":
-                    code = "en"
-                
-                # Load language file
-                lang_data = self._load_language_file(str(code))
-                if lang_data:
-                    self._lang_data = lang_data
-                else:
-                    # Fallback to default translations
-                    self._lang_data = DEFAULT_TRANSLATIONS.copy()
-                    
-            except Exception:
-                self._lang_data = DEFAULT_TRANSLATIONS.copy()
-                
-        except Exception as e:
-            # Ensure we always have fallback translations
-            self._lang_data = DEFAULT_TRANSLATIONS.copy()
-            try:
-                if hasattr(gui, "log") and gui.log:
-                    gui.log.append(f"⚠️ Error applying i18n to Cleaner plugin: {e}\n")
-            except Exception:
-                pass
-
-    def _load_language_file(self, code: str) -> Optional[dict]:
-        """Load language file for the given language code.
-        
-        Tries multiple candidates with fallbacks:
-        - Exact match (e.g., "fr-FR")
-        - Base language (e.g., "fr")
-        - English as last resort
-        
-        Args:
-            code: Language code (e.g., "en", "fr", "fr-FR")
-            
-        Returns:
-            Language dictionary or None if not found
-        """
-        try:
-            import json
-            import importlib.resources as ilr
-            
-            # Normalize code
-            raw = str(code).strip()
-            low = raw.lower().replace("_", "-")
-            
-            # Language aliases for normalization
-            aliases = {
-                "en-us": "en",
-                "en-gb": "en",
-                "en-uk": "en",
-                "fr-fr": "fr",
-                "fr-ca": "fr",
-                "pt-br": "pt-BR",
-                "zh-cn": "zh-CN",
-                "zh-tw": "zh-CN",
-            }
-            mapped = aliases.get(low, raw)
-            
-            # Build candidates list
-            candidates = []
-            if mapped not in candidates:
-                candidates.append(mapped)
-            
-            # Add base language (e.g., "fr" from "fr-FR")
-            base = None
-            try:
-                if "-" in mapped:
-                    base = mapped.split("-", 1)[0]
-                elif "_" in mapped:
-                    base = mapped.split("_", 1)[0]
-            except Exception:
-                pass
-            if base and base not in candidates:
-                candidates.append(base)
-            
-            # Add normalized variants
-            if low not in candidates:
-                candidates.append(low)
-            if raw not in candidates:
-                candidates.append(raw)
-            
-            # Always try English as fallback
-            if "en" not in candidates:
-                candidates.append("en")
-            
-            # Try to load each candidate
-            pkg = __package__
-            for cand in candidates:
-                try:
-                    with ilr.as_file(
-                        ilr.files(pkg).joinpath("languages", f"{cand}.json")
-                    ) as p:
-                        if os.path.isfile(str(p)):
-                            with open(str(p), encoding="utf-8") as f:
-                                data = json.load(f)
-                                if isinstance(data, dict):
-                                    return data
-                except Exception:
-                    continue
-            
-            return None
-            
-        except Exception:
-            return None
-
+    
 
 # Auto-register plugin in BCASL
 PLUGIN = Cleaner()
 
 
 def bcasl_register(manager):
-    """Register the Cleaner plugin with the BCASL manager.
-    
-    Args:
-        manager: BCASL manager instance
-    """
+    """Register the Cleaner plugin with the BCASL manager."""
     manager.add_plugin(PLUGIN)
 
