@@ -61,7 +61,7 @@ def _has_bcasl_marker(pkg_dir: Path) -> bool:
 
 def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
     """Découvre les plugins en important chaque package et en appelant bcasl_register(manager).
-    Retourne un mapping plugin_id -> meta dict {id, name, version, description, author}
+    Retourne un mapping plugin_id -> meta dict {id, name, version, description, author, requirements}
     """
     meta: dict[str, dict[str, Any]] = {}
     try:
@@ -103,6 +103,22 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
                         except Exception:
                             tags = []
                         
+                        # Récupérer les requirements
+                        reqs: list[str] = []
+                        try:
+                            if plg.meta.required_bcasl_version != "1.0.0":
+                                reqs.append(f"BCASL >= {plg.meta.required_bcasl_version}")
+                            if plg.meta.required_core_version != "1.0.0":
+                                reqs.append(f"Core >= {plg.meta.required_core_version}")
+                            if plg.meta.required_plugins_sdk_version != "1.0.0":
+                                reqs.append(f"Plugins SDK >= {plg.meta.required_plugins_sdk_version}")
+                            if plg.meta.required_bc_plugin_context_version != "1.0.0":
+                                reqs.append(f"BcPluginContext >= {plg.meta.required_bc_plugin_context_version}")
+                            if plg.meta.required_general_context_version != "1.0.0":
+                                reqs.append(f"GeneralContext >= {plg.meta.required_general_context_version}")
+                        except Exception:
+                            pass
+                        
                         m = {
                             "id": plg.meta.id,
                             "name": plg.meta.name,
@@ -110,6 +126,7 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
                             "description": plg.meta.description,
                             "author": plg.meta.author,
                             "tags": tags,
+                            "requirements": reqs,
                         }
                         meta[plg.meta.id] = m
                     except Exception:
@@ -621,31 +638,8 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
                 if tags:
                     tooltip += f"\n\nTags: {', '.join(tags)}"
                 
-                # Ajouter les requirements du plugin
-                reqs = []
-                # Récupérer les requirements depuis la métadonnée du plugin
-                # On doit chercher dans la métadonnée complète du plugin
-                try:
-                    # Chercher le plugin dans le registry pour obtenir les requirements
-                    from .executor import BCASL
-                    temp_mgr = BCASL(workspace_root, config={}, sandbox=False, plugin_timeout_s=0.0)
-                    reg = getattr(temp_mgr, "_registry", {})
-                    if pid in reg:
-                        plg = reg[pid].plugin
-                        if hasattr(plg, 'meta'):
-                            if plg.meta.required_bcasl_version != "1.0.0":
-                                reqs.append(f"BCASL >= {plg.meta.required_bcasl_version}")
-                            if plg.meta.required_core_version != "1.0.0":
-                                reqs.append(f"Core >= {plg.meta.required_core_version}")
-                            if plg.meta.required_plugins_sdk_version != "1.0.0":
-                                reqs.append(f"Plugins SDK >= {plg.meta.required_plugins_sdk_version}")
-                            if plg.meta.required_bc_plugin_context_version != "1.0.0":
-                                reqs.append(f"BcPluginContext >= {plg.meta.required_bc_plugin_context_version}")
-                            if plg.meta.required_general_context_version != "1.0.0":
-                                reqs.append(f"GeneralContext >= {plg.meta.required_general_context_version}")
-                except Exception:
-                    pass
-                
+                # Ajouter les requirements du plugin depuis meta_map
+                reqs = meta.get("requirements", [])
                 if reqs:
                     tooltip += f"\n\nRequirements:\n" + "\n".join(f"  • {req}" for req in reqs)
                 
