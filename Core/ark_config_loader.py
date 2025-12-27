@@ -145,7 +145,13 @@ def _deep_merge_dict(base: dict, override: dict) -> dict:
 
 def load_ark_config(workspace_dir: str) -> dict[str, Any]:
     """
-    Charge la configuration ARK depuis ARK_Main_Config.yml
+    Charge la configuration ARK depuis ARK_Main_Config.yml (YAML ONLY)
+    
+    Cherche les fichiers dans cet ordre (priorité):
+    1. ARK_Main_Config.yaml
+    2. ARK_Main_Config.yml
+    3. .ARK_Main_Config.yaml
+    4. .ARK_Main_Config.yml
     
     Args:
         workspace_dir: Chemin du workspace
@@ -160,9 +166,23 @@ def load_ark_config(workspace_dir: str) -> dict[str, Any]:
         return config
     
     workspace_path = Path(workspace_dir)
-    config_file = workspace_path / "ARK_Main_Config.yml"
     
-    if not config_file.exists():
+    # Chercher les fichiers YAML dans l'ordre de priorité
+    # Priorité: ARK_Main_Config.yaml > ARK_Main_Config.yml > .ARK_Main_Config.yaml > .ARK_Main_Config.yml
+    config_candidates = [
+        workspace_path / "ARK_Main_Config.yaml",
+        workspace_path / "ARK_Main_Config.yml",
+        workspace_path / ".ARK_Main_Config.yaml",
+        workspace_path / ".ARK_Main_Config.yml",
+    ]
+    
+    config_file = None
+    for candidate in config_candidates:
+        if candidate.exists() and candidate.is_file():
+            config_file = candidate
+            break
+    
+    if not config_file:
         return config
     
     try:
@@ -194,7 +214,7 @@ def load_ark_config(workspace_dir: str) -> dict[str, Any]:
         return config
         
     except Exception as e:
-        print(f"Warning: Failed to load ARK_Main_Config.yml: {e}")
+        print(f"Warning: Failed to load ARK config from {config_file}: {e}")
         return config
 
 
@@ -399,11 +419,35 @@ essential_props = ("checked", "text", "enabled", "visible", "currentIndex")
 
 
 def load_engine_ui_state(workspace_dir: str, engine_id: str) -> dict:
-    """Load saved UI state for an engine from ARK_Main_Config.yml.
+    """Load saved UI state for an engine from ARK_Main_Config.yml (YAML ONLY).
+    Cherche les fichiers dans cet ordre:
+    1. ARK_Main_Config.yaml
+    2. ARK_Main_Config.yml
+    3. .ARK_Main_Config.yaml
+    4. .ARK_Main_Config.yml
+    
     Returns a mapping {widgetName: {prop: value}} or {}.
     """
     try:
-        cfg = _read_yaml(Path(workspace_dir) / "ARK_Main_Config.yml") if workspace_dir else {}
+        if not workspace_dir:
+            return {}
+        
+        workspace_path = Path(workspace_dir)
+        
+        # Chercher les fichiers YAML dans l'ordre de priorité
+        config_candidates = [
+            workspace_path / "ARK_Main_Config.yaml",
+            workspace_path / "ARK_Main_Config.yml",
+            workspace_path / ".ARK_Main_Config.yaml",
+            workspace_path / ".ARK_Main_Config.yml",
+        ]
+        
+        cfg = {}
+        for candidate in config_candidates:
+            if candidate.exists() and candidate.is_file():
+                cfg = _read_yaml(candidate)
+                break
+        
         engines = cfg.get("engines", {}) if isinstance(cfg, dict) else {}
         e = engines.get(str(engine_id), {}) if isinstance(engines, dict) else {}
         ui = e.get("ui", {}) if isinstance(e, dict) else {}
@@ -414,7 +458,15 @@ def load_engine_ui_state(workspace_dir: str, engine_id: str) -> dict:
 
 
 def save_engine_ui_state(workspace_dir: str, engine_id: str, updates: dict) -> bool:
-    """Save UI state for an engine into ARK_Main_Config.yml.
+    """Save UI state for an engine into ARK_Main_Config.yml (YAML ONLY).
+    Cherche les fichiers existants dans cet ordre:
+    1. ARK_Main_Config.yaml
+    2. ARK_Main_Config.yml
+    3. .ARK_Main_Config.yaml
+    4. .ARK_Main_Config.yml
+    
+    Si aucun fichier n'existe, crée ARK_Main_Config.yml par défaut.
+    
     - workspace_dir: project workspace path
     - engine_id: id string (e.g. 'pyinstaller')
     - updates: {widgetName: {prop: value}}
@@ -423,7 +475,26 @@ def save_engine_ui_state(workspace_dir: str, engine_id: str, updates: dict) -> b
     if not workspace_dir:
         return False
     try:
-        cfg_path = Path(workspace_dir) / "ARK_Main_Config.yml"
+        workspace_path = Path(workspace_dir)
+        
+        # Chercher les fichiers YAML existants dans l'ordre de priorité
+        config_candidates = [
+            workspace_path / "ARK_Main_Config.yaml",
+            workspace_path / "ARK_Main_Config.yml",
+            workspace_path / ".ARK_Main_Config.yaml",
+            workspace_path / ".ARK_Main_Config.yml",
+        ]
+        
+        cfg_path = None
+        for candidate in config_candidates:
+            if candidate.exists() and candidate.is_file():
+                cfg_path = candidate
+                break
+        
+        # Si aucun fichier n'existe, utiliser ARK_Main_Config.yml par défaut
+        if cfg_path is None:
+            cfg_path = workspace_path / "ARK_Main_Config.yml"
+        
         cfg = _read_yaml(cfg_path)
         if not isinstance(cfg, dict):
             cfg = {}

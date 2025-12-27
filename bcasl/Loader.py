@@ -18,7 +18,7 @@
 BCASL loader (simplifié)
 
 Objectifs de simplification:
-- Config YAML (bcasl.yaml/yml) ou JSON (bcasl.json/.bcasl.json) - YAML prioritaire
+- Config YAML uniquement (bcasl.yaml ou bcasl.yml) - YAML ONLY, NO JSON
 - Détection de plugins minimale: packages dans Plugins/ ayant __init__.py
 - Ordre: plugin_order depuis config sinon basé sur tags simples, sinon alphabétique
 - UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
@@ -142,17 +142,11 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
-    """Charge bcasl.yaml/yml ou bcasl.json si présent, sinon génère une config par défaut minimale et l'écrit.
+    """Charge bcasl.yaml ou bcasl.yml si présent, sinon génère une config par défaut minimale et l'écrit.
     
     Fusionne aussi avec ARK_Main_Config.yml si disponible pour les patterns et options plugins.
-    Priorité: YAML > JSON
+    YAML ONLY - JSON files are NOT supported.
     """
-
-    def _read_json(p: Path) -> dict[str, Any]:
-        try:
-            return json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
 
     def _read_yaml(p: Path) -> dict[str, Any]:
         try:
@@ -160,14 +154,12 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         except Exception:
             return {}
 
-    # 1) Fichiers candidats (YAML prioritaire, puis JSON)
-    for name in ("bcasl.yaml", "bcasl.yml", "bcasl.json", ".bcasl.json"):
+    # 1) Fichiers candidats (YAML uniquement - NO JSON)
+    # Priorité: bcasl.yaml > bcasl.yml > .bcasl.yaml > .bcasl.yml
+    for name in ("bcasl.yaml", "bcasl.yml", ".bcasl.yaml", ".bcasl.yml"):
         p = workspace_root / name
         if p.exists() and p.is_file():
-            if name.endswith((".yaml", ".yml")):
-                data = _read_yaml(p)
-            else:
-                data = _read_json(p)
+            data = _read_yaml(p)
             
             if isinstance(data, dict) and data:
                 # Fusionner avec ARK_Main_Config.yml si disponible
