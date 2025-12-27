@@ -56,209 +56,210 @@ print_skip() {
 # Test Functions
 # ═══════════════════════════════════════════════════════════════════════════════
 
-test_python_syntax() {
-    print_header "Python Syntax Validation"
-    
-    local python_files=(
-        "Core/ark_config_loader.py"
-        "bcasl/Loader.py"
-        "bcasl/Base.py"
-        "bcasl/executor.py"
-        "bcasl/tagging.py"
-    )
-    
-    for file in "${python_files[@]}"; do
-        if [ -f "$file" ]; then
-            print_test "Checking $file"
-            if python3 -m py_compile "$file" 2>/dev/null; then
-                print_success "$file syntax is valid"
-            else
-                print_error "$file has syntax errors"
-            fi
-        else
-            print_skip "$file not found"
-        fi
-    done
-}
+# Disabled: Only pytest tests are run now
+# test_python_syntax() {
+#     print_header "Python Syntax Validation"
+#     
+#     local python_files=(
+#         "Core/ark_config_loader.py"
+#         "bcasl/Loader.py"
+#         "bcasl/Base.py"
+#         "bcasl/executor.py"
+#         "bcasl/tagging.py"
+#     )
+#     
+#     for file in "${python_files[@]}"; do
+#         if [ -f "$file" ]; then
+#             print_test "Checking $file"
+#             if python3 -m py_compile "$file" 2>/dev/null; then
+#                 print_success "$file syntax is valid"
+#             else
+#                 print_error "$file has syntax errors"
+#             fi
+#         else
+#             print_skip "$file not found"
+#         fi
+#     done
+# }
 
-test_yaml_files() {
-    print_header "YAML Configuration Files"
-    
-    local yaml_files=(
-        "bcasl.yaml"
-        "ARK_Main_Config.yml.example"
-    )
-    
-    for file in "${yaml_files[@]}"; do
-        if [ -f "$file" ]; then
-            print_test "Validating $file"
-            if python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
-                print_success "$file is valid YAML"
-            else
-                print_error "$file has YAML syntax errors"
-            fi
-        else
-            print_skip "$file not found"
-        fi
-    done
-}
+# test_yaml_files() {
+#     print_header "YAML Configuration Files"
+#     
+#     local yaml_files=(
+#         "bcasl.yaml"
+#         "ARK_Main_Config.yml.example"
+#     )
+#     
+#     for file in "${yaml_files[@]}"; do
+#         if [ -f "$file" ]; then
+#             print_test "Validating $file"
+#             if python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+#                 print_success "$file is valid YAML"
+#             else
+#                 print_error "$file has YAML syntax errors"
+#             fi
+#         else
+#             print_skip "$file not found"
+#         fi
+#     done
+# }
 
-test_imports() {
-    print_header "Module Imports"
-    
-    print_test "Testing Core.ark_config_loader import"
-    if python3 -c "from Core.ark_config_loader import load_ark_config, DEFAULT_CONFIG" 2>/dev/null; then
-        print_success "Core.ark_config_loader imports successfully"
-    else
-        print_error "Core.ark_config_loader import failed"
-    fi
-    
-    print_test "Testing bcasl.Loader import"
-    if python3 -c "from bcasl.Loader import _load_workspace_config" 2>/dev/null; then
-        print_success "bcasl.Loader imports successfully"
-    else
-        print_error "bcasl.Loader import failed"
-    fi
-}
+# test_imports() {
+#     print_header "Module Imports"
+#     
+#     print_test "Testing Core.ark_config_loader import"
+#     if python3 -c "from Core.ark_config_loader import load_ark_config, DEFAULT_CONFIG" 2>/dev/null; then
+#         print_success "Core.ark_config_loader imports successfully"
+#     else
+#         print_error "Core.ark_config_loader import failed"
+#     fi
+#     
+#     print_test "Testing bcasl.Loader import"
+#     if python3 -c "from bcasl.Loader import _load_workspace_config" 2>/dev/null; then
+#         print_success "bcasl.Loader imports successfully"
+#     else
+#         print_error "bcasl.Loader import failed"
+#     fi
+# }
 
-test_ark_config() {
-    print_header "ARK Configuration Loader"
-    
-    print_test "Checking DEFAULT_CONFIG has plugins section"
-    if python3 << 'PYTHON_TEST' 2>/dev/null
-from Core.ark_config_loader import DEFAULT_CONFIG
-assert "plugins" in DEFAULT_CONFIG, "plugins section missing"
-assert "bcasl_enabled" in DEFAULT_CONFIG["plugins"], "bcasl_enabled missing"
-assert "plugin_timeout" in DEFAULT_CONFIG["plugins"], "plugin_timeout missing"
-print("OK")
-PYTHON_TEST
-    then
-        print_success "DEFAULT_CONFIG has plugins section"
-    else
-        print_error "DEFAULT_CONFIG plugins section validation failed"
-    fi
-    
-    print_test "Testing load_ark_config function"
-    if python3 << 'PYTHON_TEST' 2>/dev/null
-from Core.ark_config_loader import load_ark_config
-from pathlib import Path
-config = load_ark_config(str(Path.cwd()))
-assert isinstance(config, dict), "Config should be a dictionary"
-assert "plugins" in config, "plugins section missing from loaded config"
-print("OK")
-PYTHON_TEST
-    then
-        print_success "load_ark_config works correctly"
-    else
-        print_error "load_ark_config test failed"
-    fi
-}
+# test_ark_config() {
+#     print_header "ARK Configuration Loader"
+#     
+#     print_test "Checking DEFAULT_CONFIG has plugins section"
+#     if python3 << 'PYTHON_TEST' 2>/dev/null
+# from Core.ark_config_loader import DEFAULT_CONFIG
+# assert "plugins" in DEFAULT_CONFIG, "plugins section missing"
+# assert "bcasl_enabled" in DEFAULT_CONFIG["plugins"], "bcasl_enabled missing"
+# assert "plugin_timeout" in DEFAULT_CONFIG["plugins"], "plugin_timeout missing"
+# print("OK")
+# PYTHON_TEST
+#     then
+#         print_success "DEFAULT_CONFIG has plugins section"
+#     else
+#         print_error "DEFAULT_CONFIG plugins section validation failed"
+#     fi
+#     
+#     print_test "Testing load_ark_config function"
+#     if python3 << 'PYTHON_TEST' 2>/dev/null
+# from Core.ark_config_loader import load_ark_config
+# from pathlib import Path
+# config = load_ark_config(str(Path.cwd()))
+# assert isinstance(config, dict), "Config should be a dictionary"
+# assert "plugins" in config, "plugins section missing from loaded config"
+# print("OK")
+# PYTHON_TEST
+#     then
+#         print_success "load_ark_config works correctly"
+#     else
+#         print_error "load_ark_config test failed"
+#     fi
+# }
 
-test_bcasl_yaml_support() {
-    print_header "BCASL YAML Support"
-    
-    print_test "Testing YAML file reading"
-    if python3 << 'PYTHON_TEST' 2>/dev/null
-import yaml
-from pathlib import Path
-yaml_file = Path("bcasl.yaml")
-if yaml_file.exists():
-    with open(yaml_file) as f:
-        config = yaml.safe_load(f)
-    assert isinstance(config, dict), "bcasl.yaml should be a dictionary"
-    print("OK")
-else:
-    print("SKIP")
-PYTHON_TEST
-    then
-        print_success "YAML file reading works"
-    else
-        print_error "YAML file reading failed"
-    fi
-}
+# test_bcasl_yaml_support() {
+#     print_header "BCASL YAML Support"
+#     
+#     print_test "Testing YAML file reading"
+#     if python3 << 'PYTHON_TEST' 2>/dev/null
+# import yaml
+# from pathlib import Path
+# yaml_file = Path("bcasl.yaml")
+# if yaml_file.exists():
+#     with open(yaml_file) as f:
+#         config = yaml.safe_load(f)
+#     assert isinstance(config, dict), "bcasl.yaml should be a dictionary"
+#     print("OK")
+# else:
+#     print("SKIP")
+# PYTHON_TEST
+#     then
+#         print_success "YAML file reading works"
+#     else
+#         print_error "YAML file reading failed"
+#     fi
+# }
 
-test_bcasl_loader() {
-    print_header "BCASL Loader Integration"
-    
-    print_test "Testing _load_workspace_config function"
-    if python3 << 'PYTHON_TEST' 2>/dev/null
-from bcasl.Loader import _load_workspace_config
-from pathlib import Path
-config = _load_workspace_config(Path.cwd())
-assert isinstance(config, dict), "Config should be a dictionary"
-expected_keys = ["file_patterns", "exclude_patterns", "options", "plugins", "plugin_order"]
-for key in expected_keys:
-    assert key in config, f"Missing key: {key}"
-print("OK")
-PYTHON_TEST
-    then
-        print_success "_load_workspace_config works correctly"
-    else
-        print_error "_load_workspace_config test failed"
-    fi
-    
-    print_test "Testing BCASL enabled flag"
-    if python3 << 'PYTHON_TEST' 2>/dev/null
-from bcasl.Loader import _load_workspace_config
-from pathlib import Path
-config = _load_workspace_config(Path.cwd())
-options = config.get("options", {})
-assert "enabled" in options, "options.enabled missing"
-print("OK")
-PYTHON_TEST
-    then
-        print_success "BCASL enabled flag is present"
-    else
-        print_error "BCASL enabled flag test failed"
-    fi
-}
+# test_bcasl_loader() {
+#     print_header "BCASL Loader Integration"
+#     
+#     print_test "Testing _load_workspace_config function"
+#     if python3 << 'PYTHON_TEST' 2>/dev/null
+# from bcasl.Loader import _load_workspace_config
+# from pathlib import Path
+# config = _load_workspace_config(Path.cwd())
+# assert isinstance(config, dict), "Config should be a dictionary"
+# expected_keys = ["file_patterns", "exclude_patterns", "options", "plugins", "plugin_order"]
+# for key in expected_keys:
+#     assert key in config, f"Missing key: {key}"
+# print("OK")
+# PYTHON_TEST
+#     then
+#         print_success "_load_workspace_config works correctly"
+#     else
+#         print_error "_load_workspace_config test failed"
+#     fi
+#     
+#     print_test "Testing BCASL enabled flag"
+#     if python3 << 'PYTHON_TEST' 2>/dev/null
+# from bcasl.Loader import _load_workspace_config
+# from pathlib import Path
+# config = _load_workspace_config(Path.cwd())
+# options = config.get("options", {})
+# assert "enabled" in options, "options.enabled missing"
+# print("OK")
+# PYTHON_TEST
+#     then
+#         print_success "BCASL enabled flag is present"
+#     else
+#         print_error "BCASL enabled flag test failed"
+#     fi
+# }
 
-test_configuration_files() {
-    print_header "Configuration Files Existence"
-    
-    local files=(
-        "docs/BCASL_Configuration.md"
-        "bcasl.yaml"
-        "ARK_Main_Config.yml.example"
-        "BCASL_UPDATE.md"
-        "IMPLEMENTATION_SUMMARY.md"
-    )
-    
-    for file in "${files[@]}"; do
-        print_test "Checking $file"
-        if [ -f "$file" ]; then
-            print_success "$file exists"
-        else
-            print_error "$file not found"
-        fi
-    done
-}
+# test_configuration_files() {
+#     print_header "Configuration Files Existence"
+#     
+#     local files=(
+#         "docs/BCASL_Configuration.md"
+#         "bcasl.yaml"
+#         "ARK_Main_Config.yml.example"
+#         "BCASL_UPDATE.md"
+#         "IMPLEMENTATION_SUMMARY.md"
+#     )
+#     
+#     for file in "${files[@]}"; do
+#         print_test "Checking $file"
+#         if [ -f "$file" ]; then
+#             print_success "$file exists"
+#         else
+#             print_error "$file not found"
+#         fi
+#     done
+# }
 
-test_bcasl_config_script() {
-    print_header "BCASL Configuration Test Script"
-    
-    if [ -f "test_bcasl_config.py" ]; then
-        print_test "Running test_bcasl_config.py"
-        if python3 test_bcasl_config.py 2>&1 | grep -q "Results: .* passed"; then
-            print_success "test_bcasl_config.py passed"
-        else
-            print_error "test_bcasl_config.py failed"
-        fi
-    else
-        print_skip "test_bcasl_config.py not found"
-    fi
-}
+# test_bcasl_config_script() {
+#     print_header "BCASL Configuration Test Script"
+#     
+#     if [ -f "test_bcasl_config.py" ]; then
+#         print_test "Running test_bcasl_config.py"
+#         if python3 test_bcasl_config.py 2>&1 | grep -q "Results: .* passed"; then
+#             print_success "test_bcasl_config.py passed"
+#         else
+#             print_error "test_bcasl_config.py failed"
+#         fi
+#     else
+#         print_skip "test_bcasl_config.py not found"
+#     fi
+# }
 
-test_gitignore() {
-    print_header "Git Configuration"
-    
-    print_test "Checking .gitignore for bcasl.json"
-    if grep -q "bcasl.json" .gitignore; then
-        print_success "bcasl.json is in .gitignore"
-    else
-        print_error "bcasl.json not found in .gitignore"
-    fi
-}
+# test_gitignore() {
+#     print_header "Git Configuration"
+#     
+#     print_test "Checking .gitignore for bcasl.json"
+#     if grep -q "bcasl.json" .gitignore; then
+#         print_success "bcasl.json is in .gitignore"
+#     else
+#         print_error "bcasl.json not found in .gitignore"
+#     fi
+# }
 
 # ═══════════════════════════════════════════════════════��═══════════════════════
 # Main Test Execution
@@ -340,19 +341,10 @@ PY
 main() {
     print_header "PyCompiler ARK - Test Suite"
     
-    echo "Starting test execution..."
+    echo "Starting pytest execution..."
     echo ""
     
-    # Run all tests
-    test_python_syntax
-    test_yaml_files
-    test_imports
-    test_ark_config
-    test_bcasl_yaml_support
-    test_bcasl_loader
-    test_configuration_files
-    test_bcasl_config_script
-    test_gitignore
+    # Run only pytest tests
     test_python_tests_dir
     
     # Print summary

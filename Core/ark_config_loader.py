@@ -217,8 +217,6 @@ def should_exclude_file(file_path: str, workspace_dir: str, exclusion_patterns: 
     Returns:
         True si le fichier doit être exclu, False sinon
     """
-    import fnmatch
-    
     try:
         file_path_obj = Path(file_path)
         workspace_path_obj = Path(workspace_dir)
@@ -228,11 +226,14 @@ def should_exclude_file(file_path: str, workspace_dir: str, exclusion_patterns: 
         except ValueError:
             return True
         
+        # Use Path.match() which properly handles ** glob patterns
         relative_str = relative_path.as_posix()
         for pattern in exclusion_patterns:
-            if fnmatch.fnmatch(relative_str, pattern):
+            # Try matching against the relative path
+            if relative_path.match(pattern):
                 return True
-            if fnmatch.fnmatch(file_path_obj.name, pattern):
+            # Also try matching just the filename for simple patterns like "*.pyc"
+            if file_path_obj.match(pattern):
                 return True
         
         return False

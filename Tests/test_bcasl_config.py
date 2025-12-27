@@ -1,4 +1,19 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2025 Ague Samuel Amen
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Test script to verify BCASL YAML configuration support and ARK integration.
 """
@@ -30,7 +45,6 @@ def test_ark_config_loader():
     assert "plugins" in config, "plugins section missing from loaded config"
     
     print("✓ ARK configuration loaded successfully")
-    return True
 
 
 def test_bcasl_yaml_support():
@@ -53,7 +67,6 @@ def test_bcasl_yaml_support():
     else:
         print("⚠ bcasl.yaml not found (this is optional)")
     
-    return True
 
 
 def test_bcasl_loader_integration():
@@ -79,8 +92,6 @@ def test_bcasl_loader_integration():
     options = config.get("options", {})
     assert "enabled" in options, "options.enabled missing"
     print(f"✓ BCASL enabled: {options.get('enabled', True)}")
-    
-    return True
 
 
 def test_yaml_priority():
@@ -114,8 +125,6 @@ def test_yaml_priority():
         
         # The config should have merged with defaults, but YAML should be loaded first
         print("✓ YAML file priority verified")
-    
-    return True
 
 
 def main():
