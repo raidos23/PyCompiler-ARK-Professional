@@ -26,25 +26,37 @@ from Core.ark_config_loader import (
 
 # Nouvelle version de try_start_processes pour gérer les fichiers ignorés dynamiquement
 def _continue_compile_all(self):
-    # Charger la configuration ARK
+    # Charger la configuration ARK complète
     ark_config = load_ark_config(self.workspace_dir)
     exclusion_patterns = ark_config.get("exclusion_patterns", [])
+    inclusion_patterns = ark_config.get("inclusion_patterns", ["**/*.py"])
     auto_detect_entry_points = ark_config.get("auto_detect_entry_points", True)
+    compile_only_main_ark = ark_config.get("compile_only_main", False)
+    main_file_names_ark = ark_config.get("main_file_names", ["main.py", "app.py"])
     
     # Déplacé depuis compile_all pour poursuivre après BCASL sans bloquer l'UI
+    # Compteurs pour les exclusions
+    exclusion_counts = {
+        "site_packages": 0,
+        "ark_patterns": 0,
+        "no_entry_point": 0,
+        "read_error": 0,
+        "not_exists": 0
+    }
+    
     def is_executable_script(path):
         # Vérifie que le fichier existe, n'est pas dans site-packages, et contient un point d'entrée
         if not os.path.exists(path):
-            self.log.append(f"❌ Fichier inexistant : {path}")
+            exclusion_counts["not_exists"] += 1
             return False
         
         # Vérifier les patterns d'exclusion depuis ARK_Main_Config.yml
         if should_exclude_file(path, self.workspace_dir, exclusion_patterns):
-            self.log.append(f"⏩ Ignoré (pattern d'exclusion ARK) : {path}")
+            exclusion_counts["ark_patterns"] += 1
             return False
         
         if "site-packages" in path:
-            self.log.append(f"⏩ Ignoré (site-packages) : {path}")
+            exclusion_counts["site_packages"] += 1
             return False
         
         # Si auto_detect_entry_points est désactivé, accepter tous les fichiers
@@ -60,10 +72,10 @@ def _continue_compile_all(self):
                 ):
                     return True
                 else:
-                    self.log.append(f"⏩ Ignoré (pas de point d'entrée) : {path}")
+                    exclusion_counts["no_entry_point"] += 1
                     return False
         except Exception as e:
-            self.log.append(f"⏩ Ignoré (erreur lecture) : {path} ({e})")
+            exclusion_counts["read_error"] += 1
             return False
 
     # Détection du compilateur actif
@@ -75,10 +87,6 @@ def _continue_compile_all(self):
         if self.compiler_tabs.currentIndex() == 1:  # 0 = PyInstaller, 1 = Nuitka
             use_nuitka = True
 
-    # Utiliser la configuration ARK pour déterminer les fichiers à compiler
-    compile_only_main_ark = ark_config.get("compile_only_main", False)
-    main_file_names_ark = ark_config.get("main_file_names", ["main.py", "app.py"])
-    
     # L'option UI a priorité sur la config ARK
     compile_only_main = self.opt_main_only.isChecked() if hasattr(self, "opt_main_only") else compile_only_main_ark
     
@@ -90,13 +98,11 @@ def _continue_compile_all(self):
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
         self.queue = [(f, True) for f in files_ok]
-        len(files_ok)
     else:
         # PyInstaller : applique la logique main.py/app.py uniquement si l'option est cochée
         if self.selected_files:
             files_ok = [f for f in self.selected_files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            len(files_ok)
         elif compile_only_main:
             # Utiliser les noms de fichiers depuis la config ARK
             files = [
@@ -106,17 +112,34 @@ def _continue_compile_all(self):
             ]
             files_ok = [f for f in files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            len(files_ok)
             if not files_ok:
                 main_names_str = ", ".join(main_file_names_ark)
                 self.log.append(
-                    f"⚠️ Aucun fichier exécutable trouvé parmi : {main_names_str}\n"
+                    f"❌ Aucun fichier exécutable trouvé parmi : {main_names_str}\n"
+                    f"   Raison : Les fichiers spécifiés n'ont pas de point d'entrée (if __name__ == '__main__') ou n'existent pas.\n"
                 )
+                self.set_controls_enabled(True)
+                if hasattr(self, "compiler_tabs") and self.compiler_tabs:
+                    self.compiler_tabs.setEnabled(True)
                 return
         else:
             files_ok = [f for f in self.python_files if is_executable_script(f)]
             self.queue = [(f, True) for f in files_ok]
-            len(files_ok)
+
+    # Vérifier s'il y a des fichiers à compiler
+    if not files_ok:
+        self.log.append(
+            f"❌ Aucun fichier exécutable à compiler.\n"
+            f"   Raisons possibles :\n"
+            f"   • Aucun fichier Python sélectionné ou dans le workspace\n"
+            f"   • Les fichiers n'ont pas de point d'entrée (if __name__ == '__main__')\n"
+            f"   • Les fichiers sont dans site-packages ou correspondent à des patterns d'exclusion\n"
+            f"   • Les fichiers n'existent pas ou ne sont pas accessibles\n"
+        )
+        self.set_controls_enabled(True)
+        if hasattr(self, "compiler_tabs") and self.compiler_tabs:
+            self.compiler_tabs.setEnabled(True)
+        return
 
     self.current_compiling.clear()
     self.processes.clear()
@@ -125,8 +148,13 @@ def _continue_compile_all(self):
     # Afficher les informations de configuration ARK
     if ark_config:
         self.log.append("📋 Configuration ARK chargée depuis ARK_Main_Config.yml\n")
+        # Afficher les paramètres de compilation utilisés
+        self.log.append(f"   • Patterns d'inclusion : {', '.join(inclusion_patterns)}\n")
+        self.log.append(f"   • Patterns d'exclusion : {len(exclusion_patterns)} pattern(s)\n")
+        self.log.append(f"   • Détection point d'entrée : {'Activée' if auto_detect_entry_points else 'Désactivée'}\n")
+        self.log.append(f"   • Compiler uniquement main : {'Oui' if compile_only_main else 'Non'}\n")
     
-    self.log.append("🔨 Compilation parallèle démarrée...\n")
+    self.log.append(f"🔨 Compilation parallèle démarrée ({len(files_ok)} fichier(s))...\n")
 
     self.set_controls_enabled(False)
     self.try_start_processes()
@@ -224,77 +252,3 @@ def compile_all(self):
         except Exception:
             pass
         return
-
-    def is_executable_script(path):
-        # Vérifie que le fichier existe, n'est pas dans site-packages, et contient un point d'entrée
-        if not os.path.exists(path):
-            self.log.append(f"❌ Fichier inexistant : {path}")
-            return False
-        if "site-packages" in path:
-            self.log.append(f"⏩ Ignoré (site-packages) : {path}")
-            return False
-        try:
-            with open(path, encoding="utf-8") as f:
-                content = f.read()
-                if (
-                    "if __name__ == '__main__'" in content
-                    or 'if __name__ == "__main__"' in content
-                ):
-                    return True
-                else:
-                    self.log.append(f"⏩ Ignoré (pas de point d'entrée) : {path}")
-                    return False
-        except Exception as e:
-            self.log.append(f"⏩ Ignoré (erreur lecture) : {path} ({e})")
-            return False
-
-    # Détection du compilateur actif
-    use_nuitka = False
-    if hasattr(self, "compiler_tabs") and self.compiler_tabs:
-        self.compiler_tabs.setEnabled(
-            False
-        )  # Désactive les onglets au début de la compilation
-        if self.compiler_tabs.currentIndex() == 1:  # 0 = PyInstaller, 1 = Nuitka
-            use_nuitka = True
-
-    # Sélection des fichiers à compiler selon le compilateur
-    if use_nuitka:
-        # Nuitka : compile tous les fichiers sélectionnés ou tous les fichiers du workspace
-        if self.selected_files:
-            files_ok = [f for f in self.selected_files if is_executable_script(f)]
-        else:
-            files_ok = [f for f in self.python_files if is_executable_script(f)]
-        self.queue = [(f, True) for f in files_ok]
-        len(files_ok)
-    else:
-        # PyInstaller : applique la logique main.py/app.py uniquement si l'option est cochée
-        if self.selected_files:
-            files_ok = [f for f in self.selected_files if is_executable_script(f)]
-            self.queue = [(f, True) for f in files_ok]
-            len(files_ok)
-        elif self.opt_main_only.isChecked():
-            files = [
-                f
-                for f in self.python_files
-                if os.path.basename(f) in ("main.py", "app.py")
-            ]
-            files_ok = [f for f in files if is_executable_script(f)]
-            self.queue = [(f, True) for f in files_ok]
-            len(files_ok)
-            if not files_ok:
-                self.log.append(
-                    "⚠️ Aucun main.py ou app.py exécutable trouvé dans le workspace.\n"
-                )
-                return
-        else:
-            files_ok = [f for f in self.python_files if is_executable_script(f)]
-            self.queue = [(f, True) for f in files_ok]
-            len(files_ok)
-
-    self.current_compiling.clear()
-    self.processes.clear()
-    self.progress.setRange(0, 0)  # Mode indéterminé pendant toute la compilation
-    self.log.append("🔨 Compilation parallèle démarrée...\n")
-
-    self.set_controls_enabled(False)
-    self.try_start_processes()

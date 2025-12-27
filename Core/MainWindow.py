@@ -391,7 +391,14 @@ class PyCompilerArkGui(QWidget):
         self.update_command_preview()
 
     def add_py_files_from_folder(self, folder):
+        from Core.ark_config_loader import load_ark_config, should_exclude_file
+        
         count = 0
+        excluded_count = 0
+        # Charger la configuration ARK pour les patterns d'exclusion
+        ark_config = load_ark_config(self.workspace_dir)
+        exclusion_patterns = ark_config.get("exclusion_patterns", [])
+        
         for root, _, files in os.walk(folder):
             for f in files:
                 if f.endswith(".py"):
@@ -402,6 +409,12 @@ class PyCompilerArkGui(QWidget):
                         == self.workspace_dir
                     ):
                         continue
+                    
+                    # Vérifier les patterns d'exclusion depuis ARK_Main_Config.yml
+                    if should_exclude_file(full_path, self.workspace_dir, exclusion_patterns):
+                        excluded_count += 1
+                        continue
+                    
                     if full_path not in self.python_files:
                         self.python_files.append(full_path)
                         relative_path = (
@@ -411,6 +424,14 @@ class PyCompilerArkGui(QWidget):
                         )
                         self.file_list.addItem(relative_path)
                         count += 1
+        
+        # Afficher un message récapitulatif si des fichiers ont été exclus
+        if excluded_count > 0:
+            self.log_i18n(
+                f"⏩ Exclusion appliquée : {excluded_count} fichier(s) exclu(s) selon ARK_Main_Config.yml",
+                f"⏩ Exclusion applied: {excluded_count} file(s) excluded according to ARK_Main_Config.yml"
+            )
+        
         return count
 
     def select_workspace(self):
@@ -1298,8 +1319,17 @@ class PyCompilerArkGui(QWidget):
         self.btn_select_icon.setEnabled(enabled)
         self.btn_select_files.setEnabled(enabled)
         self.btn_remove_file.setEnabled(enabled)
-        self.btn_export_config.setEnabled(enabled)
-        self.btn_import_config.setEnabled(enabled)
+        # Check if buttons exist before calling setEnabled
+        try:
+            if hasattr(self, "btn_export_config") and self.btn_export_config:
+                self.btn_export_config.setEnabled(enabled)
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "btn_import_config") and self.btn_import_config:
+                self.btn_import_config.setEnabled(enabled)
+        except Exception:
+            pass
         # Désactiver aussi le bouton d'analyse des dépendances
         try:
             if hasattr(self, "btn_suggest_deps") and self.btn_suggest_deps:
