@@ -105,10 +105,8 @@ DEFAULT_CONFIG = {
         "include_modules": [],  # Modules to explicitly include
     },
     
-    # Plugins (BCASL/ACASL)
     "plugins": {
         "bcasl_enabled": True,  # Enable pre-compilation plugins
-        "acasl_enabled": True,  # Enable post-compilation plugins
         "plugin_timeout": 0,  # Plugin timeout in seconds (0 = unlimited)
     },
     
@@ -397,11 +395,9 @@ dependencies:
     # - "hidden_module"
 
 # ───────────────────────────────────────────────────────────────
-# PLUGINS (BCASL/ACASL)
 # ───────────────────────────────────────────────────────────────
 plugins:
   bcasl_enabled: true  # Enable pre-compilation plugins
-  acasl_enabled: true  # Enable post-compilation plugins
   plugin_timeout: 0  # Plugin timeout in seconds (0 = unlimited)
 
 # ───────────────────────────────────────────────────────────────

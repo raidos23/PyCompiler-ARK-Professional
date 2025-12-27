@@ -59,7 +59,6 @@
   "tt_select_icon": "Elegir un archivo .ico para el ejecutable generado (solo Windows).",
   "tt_help": "Abrir la ayuda e información del software.",
   "tt_api_loader": "Configurar plugins de API (BCASL) para ejecutar antes de la compilación.",
-  "tt_acasl_loader": "Configurar plugins ACASL para ejecutar después de la compilación.",
   "tt_venv_button": "Seleccionar manualmente un directorio venv para usar en la compilación.",
   "tt_suggest_deps": "Analizar el proyecto en busca de dependencias de Python faltantes.",
   "tt_show_stats": "Mostrar estadísticas de compilación (tiempo, número de archivos, memoria).",

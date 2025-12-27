@@ -219,15 +219,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="btn_acasl_loader">
-            <property name="text">
-             <string>🧩 Ac Plugins Loader</string>
-            </property>
-            <property name="toolTip">
-             <string>Charger ACASL Loader</string>
-            </property>
-           </widget>
-          </item>
+           </item>
           <item>
            <widget class="QPushButton" name="btn_show_stats">
             <property name="text">

@@ -51,7 +51,6 @@
   "tt_select_icon": "生成される実行ファイル用の .ico ファイルを選択します（Windows のみ）。",
   "tt_help": "ソフトウェアのヘルプと情報を開きます。",
   "tt_api_loader": "コンパイル前に実行する API（BCASL）プラグインを設定します。",
-  "tt_acasl_loader": "コンパイル後に実行する ACASL プラグインを設定します。",
   "tt_venv_button": "コンパイルに使用する venv ディレクトリを手動で選択します。",
   "tt_suggest_deps": "プロジェクトを解析して不足している Python 依存関係を検出します。",
   "tt_show_stats": "ビルドの統計情報（時間、ファイル数、メモリ）を表示します。",

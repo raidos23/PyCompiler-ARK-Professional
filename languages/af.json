@@ -59,7 +59,6 @@
   "tt_select_icon": "Kies 'n .ico-lêer vir die gegenereerde uitvoerbare (slegs Windows).",
   "tt_help": "Open hulp en inligting oor die sagteware.",
   "tt_api_loader": "Stel API (BCASL) inproppe op om voor kompilasie te loop.",
-  "tt_acasl_loader": "Stel ACASL-inproppe op om ná kompilasie te loop.",
   "tt_venv_button": "Kies handmatig 'n venv-lêergids om vir kompilasie te gebruik.",
   "tt_suggest_deps": "Ontleed die projek vir ontbrekende Python-afhanklikhede.",
   "tt_show_stats": "Wys boustatistieke (tyd, aantal lêers, geheue).",

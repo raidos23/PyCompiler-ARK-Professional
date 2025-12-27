@@ -59,7 +59,6 @@
   "tt_select_icon": "생성된 실행 파일의 .ico 파일을 선택합니다(Windows 전용).",
   "tt_help": "소프트웨어의 도움말과 정보를 엽니다.",
   "tt_api_loader": "컴파일 전에 실행할 API(BCASL) 플러그인을 구성합니다.",
-  "tt_acasl_loader": "컴파일 후에 실행할 ACASL 플러그인을 구성합니다.",
   "tt_venv_button": "컴파일에 사용할 venv 디렉터리를 수동으로 선택합니다.",
   "tt_suggest_deps": "프로젝트를 분석하여 누락된 Python 의존성을 찾습니다.",
   "tt_show_stats": "빌드 통계(시간, 파일 수, 메모리)를 표시합니다.",

@@ -51,7 +51,6 @@
   "tt_select_icon": "为生成的可执行文件选择一个 .ico 文件（仅限 Windows）。",
   "tt_help": "打开软件的帮助和信息。",
   "tt_api_loader": "配置在编译前运行的 API（BCASL）插件。",
-  "tt_acasl_loader": "配置在编译后运行的 ACASL 插件。",
   "tt_venv_button": "手动选择用于编译的 venv 目录。",
   "tt_suggest_deps": "分析项目以查找缺失的 Python 依赖项。",
   "tt_show_stats": "显示构建统计信息（时间、文��数量、内存）。",

@@ -108,12 +108,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btn_acasl_loader">
-         <property name="text">
-          <string>🔌 ACASL API Loader</string>
-         </property>
-        </widget>
-       </item>
+        </item>
        <item>
         <widget class="QPushButton" name="btn_help">
          <property name="text">
