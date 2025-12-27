@@ -143,46 +143,7 @@
          </layout>
         </widget>
        </item>
-       <item>
-        <widget class="QFrame" name="frame_config_actions">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
-         </property>
-         <layout class="QVBoxLayout" name="layout_config_actions">
-          <property name="spacing">
-           <number>8</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_config_actions">
-            <property name="text">
-             <string>Configuration</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_export_config">
-            <property name="text">
-             <string>💾 Exporter</string>
-            </property>
-            <property name="toolTip">
-             <string>Exporter la configuration actuelle</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btn_import_config">
-            <property name="text">
-             <string>📥 Importer</string>
-            </property>
-            <property name="toolTip">
-             <string>Importer une configuration</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
+              <item>
         <widget class="QFrame" name="frame_tools">
          <property name="frameShape">
           <enum>QFrame::Shape::StyledPanel</enum>

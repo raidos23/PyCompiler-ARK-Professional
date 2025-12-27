@@ -256,8 +256,6 @@ def init_ui(self):
     self.btn_remove_file = self.ui.findChild(QPushButton, "btn_remove_file")
     self.btn_build_all = self.ui.findChild(QPushButton, "btn_build_all")
     self.btn_cancel_all = self.ui.findChild(QPushButton, "btn_cancel_all")
-    self.btn_export_config = self.ui.findChild(QPushButton, "btn_export_config")
-    self.btn_import_config = self.ui.findChild(QPushButton, "btn_import_config")
     self.btn_help = self.ui.findChild(QPushButton, "btn_help")
     self.btn_suggest_deps = self.ui.findChild(QPushButton, "btn_suggest_deps")
     self.btn_api_loader = self.ui.findChild(QPushButton, "btn_api_loader")
@@ -289,14 +287,6 @@ def init_ui(self):
     if self.btn_build_all:
         self.btn_build_all.setToolTip(
             "Lancer la compilation de tous les fichiers sélectionnés."
-        )
-    if self.btn_export_config:
-        self.btn_export_config.setToolTip(
-            "Exporter la configuration actuelle dans un fichier JSON."
-        )
-    if self.btn_import_config:
-        self.btn_import_config.setToolTip(
-            "Importer une configuration depuis un fichier JSON."
         )
     if self.btn_cancel_all:
         self.btn_cancel_all.setToolTip("Annuler toutes les compilations en cours.")
@@ -556,8 +546,6 @@ def init_ui(self):
     self.btn_select_icon.clicked.connect(self.select_icon)
     self.btn_build_all.clicked.connect(self.compile_all)
     self.btn_cancel_all.clicked.connect(self.cancel_all_compilations)
-    self.btn_export_config.clicked.connect(self.export_config)
-    self.btn_import_config.clicked.connect(self.import_config)
 
     from bcasl import open_bc_loader_dialog
 
