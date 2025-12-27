@@ -159,6 +159,24 @@ def sdk_info() -> dict:
     }
 
 
+def check_engine_compatibility(engine_class, required_sdk_version: str = None) -> bool:
+    """Check if an engine is compatible with the current SDK version.
+    
+    Args:
+        engine_class: The engine class to check
+        required_sdk_version: Minimum required SDK version (defaults to engine's requirement)
+    
+    Returns:
+        True if compatible, False otherwise
+    """
+    try:
+        if required_sdk_version is None:
+            required_sdk_version = getattr(engine_class, "required_sdk_version", "1.0.0")
+        return ensure_min_sdk(required_sdk_version)
+    except Exception:
+        return False
+
+
 __all__ = [
     "CompilerEngine",
     "compute_auto_for_engine",
@@ -195,6 +213,7 @@ __all__ = [
     "ensure_min_sdk",
     "get_capabilities",
     "sdk_info",
+    "check_engine_compatibility",
     "__version__",
     # Config helpers
     "save_engine_ui",

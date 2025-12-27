@@ -52,6 +52,11 @@ class PluginMeta:
     description: courte description
     author: optionnel
     tags: liste de tags pour la priorité d'exécution (ex: ["lint", "format"])
+    required_bcasl_version: version minimale requise de BCASL (ex: "2.0.0")
+    required_core_version: version minimale requise du Core (ex: "1.0.0")
+    required_plugins_sdk_version: version minimale requise du Plugins SDK (ex: "1.0.0")
+    required_bc_plugin_context_version: version minimale requise de BcPluginContext (ex: "1.0.0")
+    required_general_context_version: version minimale requise de GeneralContext (ex: "1.0.0")
     """
 
     id: str
@@ -60,6 +65,11 @@ class PluginMeta:
     description: str = ""
     author: str = ""
     tags: tuple[str, ...] = ()
+    required_bcasl_version: str = "1.0.0"
+    required_core_version: str = "1.0.0"
+    required_plugins_sdk_version: str = "1.0.0"
+    required_bc_plugin_context_version: str = "1.0.0"
+    required_general_context_version: str = "1.0.0"
 
     def __post_init__(self) -> None:
         nid = (self.id or "").strip()
@@ -128,7 +138,167 @@ class BcPluginBase:
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority}>"
+        """Return detailed plugin representation with compatibility requirements."""
+        reqs = []
+        if self.meta.required_bcasl_version != "1.0.0":
+            reqs.append(f"bcasl>={self.meta.required_bcasl_version}")
+        if self.meta.required_core_version != "1.0.0":
+            reqs.append(f"core>={self.meta.required_core_version}")
+        if self.meta.required_plugins_sdk_version != "1.0.0":
+            reqs.append(f"sdk>={self.meta.required_plugins_sdk_version}")
+        if self.meta.required_bc_plugin_context_version != "1.0.0":
+            reqs.append(f"bc>={self.meta.required_bc_plugin_context_version}")
+        if self.meta.required_general_context_version != "1.0.0":
+            reqs.append(f"gc>={self.meta.required_general_context_version}")
+        
+        req_str = f" [{', '.join(reqs)}]" if reqs else ""
+        return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority}{req_str}>"
+
+    def get_compatibility_info(self) -> dict[str, str]:
+        """Get plugin compatibility information.
+        
+        Returns:
+            Dictionary with required versions for BCASL and Core
+        """
+        return {
+            "plugin_id": self.meta.id,
+            "plugin_name": self.meta.name,
+            "plugin_version": self.meta.version,
+            "required_bcasl_version": self.meta.required_bcasl_version,
+            "required_core_version": self.meta.required_core_version,
+        }
+
+    def is_compatible_with_bcasl(self, bcasl_version: str) -> bool:
+        """Check if plugin is compatible with given BCASL version.
+        
+        Args:
+            bcasl_version: BCASL version string to check against
+            
+        Returns:
+            True if compatible, False otherwise
+        """
+        def parse_version(v: str) -> tuple:
+            try:
+                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                major = int(parts[0]) if len(parts) > 0 else 0
+                minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                return (major, minor, patch)
+            except Exception:
+                return (0, 0, 0)
+        
+        current = parse_version(bcasl_version)
+        required = parse_version(self.meta.required_bcasl_version)
+        return current >= required
+
+    def is_compatible_with_core(self, core_version: str) -> bool:
+        """Check if plugin is compatible with given Core version.
+        
+        Args:
+            core_version: Core version string to check against
+            
+        Returns:
+            True if compatible, False otherwise
+        """
+        def parse_version(v: str) -> tuple:
+            try:
+                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                major = int(parts[0]) if len(parts) > 0 else 0
+                minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                return (major, minor, patch)
+            except Exception:
+                return (0, 0, 0)
+        
+        current = parse_version(core_version)
+        required = parse_version(self.meta.required_core_version)
+        return current >= required
+
+    def is_compatible_with_plugins_sdk(self, sdk_version: str) -> bool:
+        """Check if plugin is compatible with given Plugins SDK version.
+        
+        Args:
+            sdk_version: Plugins SDK version string to check against
+            
+        Returns:
+            True if compatible, False otherwise
+        """
+        def parse_version(v: str) -> tuple:
+            try:
+                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                major = int(parts[0]) if len(parts) > 0 else 0
+                minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                return (major, minor, patch)
+            except Exception:
+                return (0, 0, 0)
+        
+        current = parse_version(sdk_version)
+        required = parse_version(self.meta.required_plugins_sdk_version)
+        return current >= required
+
+    def is_compatible_with_bc_plugin_context(self, context_version: str) -> bool:
+        """Check if plugin is compatible with given BcPluginContext version.
+        
+        Args:
+            context_version: BcPluginContext version string to check against
+            
+        Returns:
+            True if compatible, False otherwise
+        """
+        def parse_version(v: str) -> tuple:
+            try:
+                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                major = int(parts[0]) if len(parts) > 0 else 0
+                minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                return (major, minor, patch)
+            except Exception:
+                return (0, 0, 0)
+        
+        current = parse_version(context_version)
+        required = parse_version(self.meta.required_bc_plugin_context_version)
+        return current >= required
+
+    def is_compatible_with_general_context(self, context_version: str) -> bool:
+        """Check if plugin is compatible with given GeneralContext version.
+        
+        Args:
+            context_version: GeneralContext version string to check against
+            
+        Returns:
+            True if compatible, False otherwise
+        """
+        def parse_version(v: str) -> tuple:
+            try:
+                parts = v.strip().split("+")[0].split("-")[0].split(".")
+                major = int(parts[0]) if len(parts) > 0 else 0
+                minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                return (major, minor, patch)
+            except Exception:
+                return (0, 0, 0)
+        
+        current = parse_version(context_version)
+        required = parse_version(self.meta.required_general_context_version)
+        return current >= required
+
+    def get_full_compatibility_info(self) -> dict[str, str]:
+        """Get complete plugin compatibility information including all SDKs.
+        
+        Returns:
+            Dictionary with all required versions
+        """
+        return {
+            "plugin_id": self.meta.id,
+            "plugin_name": self.meta.name,
+            "plugin_version": self.meta.version,
+            "required_bcasl_version": self.meta.required_bcasl_version,
+            "required_core_version": self.meta.required_core_version,
+            "required_plugins_sdk_version": self.meta.required_plugins_sdk_version,
+            "required_bc_plugin_context_version": self.meta.required_bc_plugin_context_version,
+            "required_general_context_version": self.meta.required_general_context_version,
+        }
 
     def apply_i18n(self, gui, tr: dict[str, str]) -> None:
         raise NotImplementedError

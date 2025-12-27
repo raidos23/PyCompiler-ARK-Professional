@@ -20,10 +20,12 @@ from .Context import (
     PreCompileContext,
 )
 
+__version__ = "1.0.0"
 
 __all__ = [
     "BcPluginBase",
     "Generate_Bc_Plugin_Template",
     "PluginMeta",
     "PreCompileContext",
+    "__version__",
 ]

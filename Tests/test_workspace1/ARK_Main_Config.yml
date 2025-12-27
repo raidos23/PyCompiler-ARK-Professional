@@ -1,0 +1,15 @@
+# Test ARK configuration
+inclusion_patterns:
+  - "**/*.py"
+exclusion_patterns:
+  - "**/__pycache__/**"
+  - "**/*.pyc"
+  - ".git/**"
+  - "venv/**"
+  - ".venv/**"
+plugins:
+  bcasl_enabled: true
+  plugin_timeout: 0.0
+output:
+  directory: "dist"
+  clean_before_build: false

@@ -33,7 +33,12 @@ META = PluginMeta(
     version="1.0.0",
     description="Clean the workspace (.pyc and __pycache__)",
     author="Samuel Amen Ague",
-    tags=["clean"]
+    tags=["clean"],
+    required_bcasl_version="2.0.0",
+    required_core_version="1.0.0",
+    required_plugins_sdk_version="1.0.0",
+    required_bc_plugin_context_version="1.0.0",
+    required_general_context_version="1.0.0",
 )
 
 # Plugin no longer uses i18n; static messages are used directly.

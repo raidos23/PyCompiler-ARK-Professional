@@ -22,6 +22,12 @@ import sys
 
 from . import registry as registry  # re-export registry module
 from .base import CompilerEngine  # re-export base type
+from .validator import (
+    EngineCompatibilityCheckResult,
+    check_engine_compatibility,
+    validate_engines_compatibility,
+    print_engine_compatibility_report,
+)
 
 __version__ = "1.0.0"
 

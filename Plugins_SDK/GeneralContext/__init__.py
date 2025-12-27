@@ -15,5 +15,6 @@
 
 from .Dialog import Dialog as Dialog
 
+__version__ = "1.0.0"
 
-__all__ = ["Dialog"]
+__all__ = ["Dialog", "__version__"]

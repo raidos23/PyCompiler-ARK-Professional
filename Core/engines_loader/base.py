@@ -33,6 +33,9 @@ class CompilerEngine:
 
     id: str = "base"
     name: str = "BaseEngine"
+    version: str = "1.0.0"
+    required_core_version: str = "1.0.0"
+    required_sdk_version: str = "1.0.0"
 
     def preflight(self, gui, file: str) -> bool:
         """Perform preflight checks and setup. Return True if OK, False to abort."""
