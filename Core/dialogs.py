@@ -19,6 +19,12 @@
 """
 Dialogues personnalisés pour PyCompiler ARK++.
 Inclut ProgressDialog, boîtes de message, et autres dialogues spécifiques.
+
+IMPORTANT: Tous les dialogs ici exécutent les opérations Qt dans le thread principal
+via le système d'invoker de Plugins_SDK.GeneralContext.Dialog pour assurer:
+- L'héritage du thème de l'application
+- L'intégration visuelle avec l'application principale
+- La sécurité des threads
 """
 
 # À compléter avec les classes de dialogues personnalisés
@@ -31,6 +37,14 @@ from PySide6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+# Import du système Dialog thread-safe de Plugins_SDK
+try:
+    from Plugins_SDK.GeneralContext.Dialog import _invoke_in_main_thread
+except Exception:
+    # Fallback si Plugins_SDK n'est pas disponible
+    def _invoke_in_main_thread(fn, *args, **kwargs):
+        return fn(*args, **kwargs)
 
 
 class ProgressDialog(QDialog):

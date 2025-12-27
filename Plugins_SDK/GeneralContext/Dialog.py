@@ -15,26 +15,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Union,
     NamedTuple,
 )
-import fnmatch
-import json
 import getpass
 import re
 import platform
-import io
 
 # Simple redaction of obvious secrets in logs
 _REDACT_PATTERNS = [
@@ -42,12 +30,16 @@ _REDACT_PATTERNS = [
     re.compile(r"(authorization\s*[:]\s*bearer\s+)([A-Za-z0-9\-_.]+)", re.IGNORECASE),
     re.compile(r"(token\s*[:=]\s*)([A-Za-z0-9\-_.]{12,})", re.IGNORECASE),
 ]
+
 # Qt toolkits
 try:
     from PySide6 import QtCore as _QtC, QtWidgets as _QtW  # type: ignore
 except Exception:  # pragma: no cover
     _QtW = None  # type: ignore
     _QtC = None  # type: ignore
+
+# Import des classes de Core.dialogs
+from Core.dialogs import ProgressDialog, CompilationProcessDialog, _invoke_in_main_thread
 
 
 def _redact_secrets(text: str) -> str:
@@ -100,6 +92,7 @@ def show_msgbox(
 ):
     """
     Show a message box if a Qt toolkit is available; fallback to console output otherwise.
+    Executes in the main Qt thread to ensure theme inheritance and proper UI integration.
 
     kind: 'info' | 'warning' | 'error' | 'question'
     Returns:
@@ -116,165 +109,49 @@ def show_msgbox(
                 else False
             )
         return None
-    try:
-        parent = parent or _qt_active_parent()
-        mb = _QtW.QMessageBox(parent)
-        mb.setWindowTitle(str(title))
-        mb.setText(str(text))
-        if kind == "warning":
-            mb.setIcon(_QtW.QMessageBox.Warning)
-        elif kind == "error":
-            mb.setIcon(_QtW.QMessageBox.Critical)
-        elif kind == "question":
-            mb.setIcon(_QtW.QMessageBox.Question)
-        else:
-            mb.setIcon(_QtW.QMessageBox.Information)
-
-        if kind == "question":
-            yes = _QtW.QMessageBox.Yes
-            no = _QtW.QMessageBox.No
-            mb.setStandardButtons(yes | no)
-            if default and str(default).lower() == "no":
-                mb.setDefaultButton(no)
+    
+    def _show_in_main_thread():
+        try:
+            parent_widget = parent or _qt_active_parent()
+            mb = _QtW.QMessageBox(parent_widget)
+            mb.setWindowTitle(str(title))
+            mb.setText(str(text))
+            if kind == "warning":
+                mb.setIcon(_QtW.QMessageBox.Warning)
+            elif kind == "error":
+                mb.setIcon(_QtW.QMessageBox.Critical)
+            elif kind == "question":
+                mb.setIcon(_QtW.QMessageBox.Question)
             else:
-                mb.setDefaultButton(yes)
-            res = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
-            return res == yes
-        else:
-            ok = _QtW.QMessageBox.Ok
-            mb.setStandardButtons(ok)
-            mb.setDefaultButton(ok)
-            _ = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
+                mb.setIcon(_QtW.QMessageBox.Information)
+
+            if kind == "question":
+                yes = _QtW.QMessageBox.Yes
+                no = _QtW.QMessageBox.No
+                mb.setStandardButtons(yes | no)
+                if default and str(default).lower() == "no":
+                    mb.setDefaultButton(no)
+                else:
+                    mb.setDefaultButton(yes)
+                res = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
+                return res == yes
+            else:
+                ok = _QtW.QMessageBox.Ok
+                mb.setStandardButtons(ok)
+                mb.setDefaultButton(ok)
+                _ = mb.exec_() if hasattr(mb, "exec_") else mb.exec()
+                return None
+        except Exception:
+            print(f"[MSGBOX:{kind}] {title}: {text}")
+            if kind == "question":
+                return (
+                    True
+                    if (default and str(default).lower() in ("yes", "ok", "true", "1"))
+                    else False
+                )
             return None
-    except Exception:
-        print(f"[MSGBOX:{kind}] {title}: {text}")
-        if kind == "question":
-            return (
-                True
-                if (default and str(default).lower() in ("yes", "ok", "true", "1"))
-                else False
-            )
-        return None
-
-
-class ProgressHandle:
-    """Gestion d'une progression avec Qt (QProgressDialog) si disponible, sinon fallback console.
-
-    Utilisation typique:
-        ph = create_progress("Installation", "Téléchargement...", maximum=100)
-        for i in range(101):
-            ph.update(i, f"Étape {i}/100")
-        ph.close()
-    """
-
-    def __init__(
-        self,
-        title: str = "",
-        text: str = "",
-        maximum: int = 0,
-        cancelable: bool = False,
-    ) -> None:
-        self._title = str(title)
-        self._text = str(text)
-        self.maximum = int(maximum) if maximum else 0
-        self.value = 0
-        self._cancelable = bool(cancelable)
-        self._canceled = False
-        self._dlg = None
-        self._last_pct = -1
-        if _QtW is not None:
-            try:
-                parent = _qt_active_parent()
-                dlg = _QtW.QProgressDialog(parent)
-                dlg.setWindowTitle(self._title or "Progression")
-                dlg.setLabelText(self._text or self._title)
-                if self._cancelable:
-                    dlg.setCancelButtonText("Annuler")
-                else:
-                    dlg.setCancelButton(None)
-                dlg.setAutoClose(False)
-                dlg.setAutoReset(False)
-                if self.maximum > 0:
-                    dlg.setRange(0, self.maximum)
-                else:
-                    # Indéterminée (busy)
-                    dlg.setRange(0, 0)
-                dlg.setMinimumDuration(0)
-                try:
-                    dlg.canceled.connect(self._on_canceled)  # type: ignore[attr-defined]
-                except Exception:
-                    pass
-                dlg.show()
-                self._dlg = dlg
-            except Exception:
-                self._dlg = None
-
-    def _on_canceled(self) -> None:  # Qt signal
-        self._canceled = True
-
-    @property
-    def canceled(self) -> bool:
-        return self._canceled
-
-    def set_maximum(self, maximum: int) -> None:
-        self.maximum = int(maximum) if maximum else 0
-        if self._dlg is not None:
-            try:
-                if self.maximum > 0:
-                    self._dlg.setRange(0, self.maximum)
-                else:
-                    self._dlg.setRange(0, 0)
-            except Exception:
-                pass
-
-    def update(self, value: Optional[int] = None, text: Optional[str] = None) -> None:
-        if value is not None:
-            self.value = max(0, int(value))
-        if text is not None:
-            self._text = str(text)
-        if self._dlg is not None:
-            try:
-                if text is not None:
-                    self._dlg.setLabelText(self._text)
-                if self.maximum > 0:
-                    self._dlg.setValue(min(self.value, self.maximum))
-                _ = _QtW.QApplication.processEvents()  # type: ignore[attr-defined]
-            except Exception:
-                pass
-        else:
-            # Fallback console simple (évite le spam)
-            if self.maximum > 0:
-                pct = int(min(100, max(0, (self.value * 100) / self.maximum)))
-                if pct != self._last_pct:
-                    print(f"[PROGRESS] {self._title}: {pct}% - {self._text}")
-                    self._last_pct = pct
-            else:
-                print(f"[PROGRESS] {self._title}: {self._text}")
-
-    def step(self, delta: int = 1) -> None:
-        self.update(self.value + int(delta))
-
-    def close(self) -> None:
-        if self._dlg is not None:
-            try:
-                # Valeur finale si bornée
-                if self.maximum > 0:
-                    self._dlg.setValue(self.maximum)
-                self._dlg.reset()
-                self._dlg.close()
-            except Exception:
-                pass
-            finally:
-                self._dlg = None
-
-
-def create_progress(
-    title: str, text: str = "", maximum: int = 0, cancelable: bool = False
-) -> ProgressHandle:
-    """Crée un handle de progression (Qt si dispo, sinon console)."""
-    return ProgressHandle(
-        title=title, text=text, maximum=maximum, cancelable=cancelable
-    )
+    
+    return _invoke_in_main_thread(_show_in_main_thread)
 
 
 class InstallAuth(NamedTuple):
@@ -345,8 +222,8 @@ def sys_msgbox_for_installing(
 
 
 class Dialog:
+    """Dialog class for plugins - uses Core.dialogs classes for all UI operations."""
 
-    # methode de boîtes de Dialog pour permettre une interaction Ui avec les Plugins
     def show_msgbox(
         self, kind: str, title: str, text: str, *, default: Optional[str] = None
     ) -> Optional[bool]:
@@ -396,11 +273,21 @@ class Dialog:
 
     def progress(
         self, title: str, text: str = "", maximum: int = 0, cancelable: bool = False
-    ) -> "ProgressHandle":
-        """Crée et retourne un handle de progression utilisable pour suivre une tâche.
-        - maximum=0 => progression indéterminée (busy)
-        - cancelable=True => bouton Annuler (si Qt disponible)
+    ) -> ProgressDialog:
+        """Crée et retourne un ProgressDialog de Core pour suivre une tâche.
+        
+        Utilise directement Core.dialogs.ProgressDialog pour assurer:
+        - L'héritage du thème de l'application
+        - L'intégration visuelle avec l'application principale
+        - La sécurité des threads
+        
+        Args:
+            title: Titre du dialog
+            text: Texte initial du dialog
+            maximum: Valeur maximale (0 = indéterminé)
+            cancelable: Si True, affiche un bouton Annuler
+            
+        Returns:
+            ProgressDialog instance from Core.dialogs
         """
-        return create_progress(
-            title=title, text=text, maximum=maximum, cancelable=cancelable
-        )
+        return ProgressDialog(title=title, cancelable=cancelable)

@@ -44,6 +44,14 @@ from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 
 from .dialogs import ProgressDialog
 
+# Import du système Dialog thread-safe de Plugins_SDK
+try:
+    from Plugins_SDK.GeneralContext.Dialog import _invoke_in_main_thread
+except Exception:
+    # Fallback si Plugins_SDK n'est pas disponible
+    def _invoke_in_main_thread(fn, *args, **kwargs):
+        return fn(*args, **kwargs)
+
 
 class SysDependencyManager:
     def __init__(self, parent_widget=None):

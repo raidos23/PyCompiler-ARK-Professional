@@ -22,6 +22,8 @@ from Plugins_SDK.GeneralContext import Dialog
 
 
 # Create instances of Dialog for logging and user interaction
+# These now automatically execute in the main Qt thread, ensuring theme inheritance
+# and proper UI integration with the main application
 log = Dialog()
 dialog = Dialog()
 
