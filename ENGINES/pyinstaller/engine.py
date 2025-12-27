@@ -303,6 +303,43 @@ class PyInstallerEngine(CompilerEngine):
 
             tab = getattr(gui, "tab_pyinstaller", None)
             if tab and isinstance(tab, QWidget):
+                # Save UI state automatically when user toggles/edits widgets
+                try:
+                    from engine_sdk import save_engine_ui as _save
+                    # Checkboxes to persist
+                    for _name in (
+                        "opt_onefile",
+                        "opt_windowed",
+                        "opt_noconfirm",
+                        "opt_clean",
+                        "opt_noupx",
+                        "opt_debug",
+                    ):
+                        try:
+                            _w = getattr(gui, _name, None)
+                            if _w is not None and hasattr(_w, "toggled"):
+                                _w.toggled.connect(
+                                    lambda v, n=_name: _save(
+                                        gui, "pyinstaller", {n: {"checked": bool(v)}}
+                                    )
+                                )
+                        except Exception:
+                            pass
+                    # Text fields to persist
+                    try:
+                        _w = getattr(gui, "output_dir_input", None)
+                        if _w is not None and hasattr(_w, "textChanged"):
+                            _w.textChanged.connect(
+                                lambda s: _save(
+                                    gui,
+                                    "pyinstaller",
+                                    {"output_dir_input": {"text": str(s)}},
+                                )
+                            )
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
                 return tab, gui.tr("PyInstaller", "PyInstaller")
         except Exception:
             pass

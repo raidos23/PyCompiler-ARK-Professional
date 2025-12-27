@@ -115,6 +115,20 @@ DEFAULT_CONFIG = {
         "bcasl_enabled": True,
         "plugin_timeout": 0.0,
     },
+
+    # Engines UI state (persisted widget states per engine)
+    "engines": {
+        "pyinstaller": {
+            "ui": {
+                "widgets": {}
+            }
+        },
+        "nuitka": {
+            "ui": {
+                "widgets": {}
+            }
+        }
+    },
 }
 
 
@@ -335,6 +349,15 @@ environment_manager:
     - "pip"
   auto_detect: true
   fallback_to_pip: true
+
+# ENGINES (UI state persistence)
+engines:
+  pyinstaller:
+    ui:
+      widgets: {}
+  nuitka:
+    ui:
+      widgets: {}
 """
         
         with open(config_file, 'w', encoding='utf-8') as f:
@@ -344,4 +367,93 @@ environment_manager:
         
     except Exception as e:
         print(f"Warning: Failed to create ARK_Main_Config.yml: {e}")
+        return False
+
+
+# --- Simple Engine UI state helpers (for non-dev friendly persistence) ---
+
+def _read_yaml(path: Path) -> dict:
+    try:
+        if path.exists():
+            with open(path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f) or {}
+                return data if isinstance(data, dict) else {}
+    except Exception:
+        pass
+    return {}
+
+
+def _write_yaml_atomic(path: Path, data: dict) -> bool:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        with open(tmp, 'w', encoding='utf-8') as f:
+            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+        os.replace(tmp, path)
+        return True
+    except Exception:
+        return False
+
+
+essential_props = ("checked", "text", "enabled", "visible", "currentIndex")
+
+
+def load_engine_ui_state(workspace_dir: str, engine_id: str) -> dict:
+    """Load saved UI state for an engine from ARK_Main_Config.yml.
+    Returns a mapping {widgetName: {prop: value}} or {}.
+    """
+    try:
+        cfg = _read_yaml(Path(workspace_dir) / "ARK_Main_Config.yml") if workspace_dir else {}
+        engines = cfg.get("engines", {}) if isinstance(cfg, dict) else {}
+        e = engines.get(str(engine_id), {}) if isinstance(engines, dict) else {}
+        ui = e.get("ui", {}) if isinstance(e, dict) else {}
+        widgets = ui.get("widgets", {}) if isinstance(ui, dict) else {}
+        return widgets if isinstance(widgets, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_engine_ui_state(workspace_dir: str, engine_id: str, updates: dict) -> bool:
+    """Save UI state for an engine into ARK_Main_Config.yml.
+    - workspace_dir: project workspace path
+    - engine_id: id string (e.g. 'pyinstaller')
+    - updates: {widgetName: {prop: value}}
+    Returns True on success, False otherwise.
+    """
+    if not workspace_dir:
+        return False
+    try:
+        cfg_path = Path(workspace_dir) / "ARK_Main_Config.yml"
+        cfg = _read_yaml(cfg_path)
+        if not isinstance(cfg, dict):
+            cfg = {}
+        engines = cfg.get("engines")
+        if not isinstance(engines, dict):
+            engines = {}
+            cfg["engines"] = engines
+        e = engines.get(str(engine_id))
+        if not isinstance(e, dict):
+            e = {}
+            engines[str(engine_id)] = e
+        ui = e.get("ui")
+        if not isinstance(ui, dict):
+            ui = {}
+            e["ui"] = ui
+        widgets = ui.get("widgets")
+        if not isinstance(widgets, dict):
+            widgets = {}
+            ui["widgets"] = widgets
+        # Merge per widget
+        for wname, props in (updates or {}).items():
+            if not isinstance(wname, str) or not isinstance(props, dict):
+                continue
+            cur = widgets.get(wname)
+            if not isinstance(cur, dict):
+                cur = {}
+                widgets[wname] = cur
+            for k, v in props.items():
+                if k in essential_props:
+                    cur[k] = v
+        return _write_yaml_atomic(cfg_path, cfg)
+    except Exception:
         return False

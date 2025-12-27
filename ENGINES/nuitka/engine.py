@@ -424,6 +424,39 @@ class NuitkaEngine(CompilerEngine):
 
             tab = getattr(gui, "tab_nuitka", None)
             if tab and isinstance(tab, QWidget):
+                # Save UI state automatically when user toggles/edits widgets
+                try:
+                    from engine_sdk import save_engine_ui as _save
+                    # Checkboxes for nuitka
+                    for _name in (
+                        "nuitka_onefile",
+                        "nuitka_standalone",
+                        "nuitka_disable_console",
+                        "nuitka_show_progress",
+                    ):
+                        try:
+                            _w = getattr(gui, _name, None)
+                            if _w is not None and hasattr(_w, "toggled"):
+                                _w.toggled.connect(
+                                    lambda v, n=_name: _save(
+                                        gui, "nuitka", {n: {"checked": bool(v)}}
+                                    )
+                                )
+                        except Exception:
+                            pass
+                    # Output dir for nuitka
+                    try:
+                        _w = getattr(gui, "nuitka_output_dir", None)
+                        if _w is not None and hasattr(_w, "textChanged"):
+                            _w.textChanged.connect(
+                                lambda s: _save(
+                                    gui, "nuitka", {"nuitka_output_dir": {"text": str(s)}}
+                                )
+                            )
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
                 return tab, _tr("Nuitka", "Nuitka")
         except Exception:
             pass

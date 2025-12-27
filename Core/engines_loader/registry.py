@@ -15,9 +15,10 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 
 from .base import CompilerEngine
+from Core.ark_config_loader import load_engine_ui_state, save_engine_ui_state
 
 _REGISTRY: dict[str, type[CompilerEngine]] = {}
 _ORDER: list[str] = []
@@ -63,6 +64,49 @@ def register(engine_cls: type[CompilerEngine]):
         return engine_cls
 
 
+def _apply_widgets_state(container, widgets_state: dict) -> None:
+    """Apply basic properties to child widgets given a simple state mapping.
+    Supported props: checked, text, enabled, visible, currentIndex.
+    """
+    try:
+        for wname, props in widgets_state.items():
+            try:
+                w = container.findChild(object, wname)
+                if w is None:
+                    continue
+                for k, v in (props or {}).items():
+                    try:
+                        if k == "checked" and hasattr(w, "setChecked"):
+                            w.setChecked(bool(v))
+                        elif k == "text" and hasattr(w, "setText"):
+                            w.setText(str(v))
+                        elif k == "enabled" and hasattr(w, "setEnabled"):
+                            w.setEnabled(bool(v))
+                        elif k == "visible" and hasattr(w, "setVisible"):
+                            w.setVisible(bool(v))
+                        elif k == "currentIndex" and hasattr(w, "setCurrentIndex"):
+                            w.setCurrentIndex(int(v))
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+
+def save_engine_ui(gui, engine_id: str, updates: dict[str, dict[str, Any]]) -> bool:
+    """Public helper for engines to persist UI state into ARK_Main_Config.yml.
+    Engines pass a mapping {widgetName: {prop: value}}. Returns True on success.
+    """
+    try:
+        ws = getattr(gui, "workspace_dir", None)
+        if not ws:
+            return False
+        return save_engine_ui_state(ws, engine_id, updates)
+    except Exception:
+        return False
+
+
 def get_engine(eid: str) -> Optional[type[CompilerEngine]]:
     try:
         return _REGISTRY.get(eid)
@@ -97,6 +141,15 @@ def bind_tabs(gui) -> None:
                 if not pair:
                     continue
                 widget, label = pair
+                # Apply saved UI state for this engine (simple mapping by objectName)
+                try:
+                    ws = getattr(gui, "workspace_dir", None)
+                    if ws:
+                        widgets_state = load_engine_ui_state(ws, eid)
+                        if isinstance(widgets_state, dict) and widgets_state:
+                            _apply_widgets_state(widget, widgets_state)
+                except Exception:
+                    pass
                 try:
                     existing = tabs.indexOf(widget)
                 except Exception:

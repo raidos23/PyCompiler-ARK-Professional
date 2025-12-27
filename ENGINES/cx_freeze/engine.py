@@ -797,6 +797,14 @@ class CxFreezeEngine(CompilerEngine):
         row = QHBoxLayout()
         out_edit = QLineEdit()
         out_edit.setObjectName("cx_output_dir")
+        # Persist changes to ARK config
+        try:
+            from engine_sdk import save_engine_ui as _save
+            out_edit.textChanged.connect(
+                lambda s: _save(gui, "cx_freeze", {"cx_output_dir": {"text": str(s)}})
+            )
+        except Exception:
+            pass
         try:
             out_edit.setPlaceholderText(
                 gui.tr(
@@ -859,6 +867,14 @@ class CxFreezeEngine(CompilerEngine):
             self._cx_tn_label = None
         tn_edit = QLineEdit()
         tn_edit.setObjectName("cx_target_name")
+        # Persist target name
+        try:
+            from engine_sdk import save_engine_ui as _save
+            tn_edit.textChanged.connect(
+                lambda s: _save(gui, "cx_freeze", {"cx_target_name": {"text": str(s)}})
+            )
+        except Exception:
+            pass
         try:
             tn_edit.setPlaceholderText(
                 gui.tr(
@@ -875,6 +891,15 @@ class CxFreezeEngine(CompilerEngine):
         row2 = QHBoxLayout()
         base_label = QLabel(gui.tr("Base", "Base"))
         base_combo = QComboBox()
+        base_combo.setObjectName("cx_base_combo")
+        # Persist base combo index
+        try:
+            from engine_sdk import save_engine_ui as _save
+            base_combo.currentIndexChanged.connect(
+                lambda idx: _save(gui, "cx_freeze", {"cx_base_combo": {"currentIndex": int(idx)}})
+            )
+        except Exception:
+            pass
         try:
             if platform.system() == "Windows":
                 base_combo.addItems(["Console", "Win32GUI"])
@@ -883,11 +908,27 @@ class CxFreezeEngine(CompilerEngine):
         except Exception:
             pass
         cb_deps = QCheckBox(gui.tr("Inclure dépendances", "Include dependencies"))
+        # Persist deps toggle
+        try:
+            from engine_sdk import save_engine_ui as _save
+            cb_deps.toggled.connect(
+                lambda v: _save(gui, "cx_freeze", {"cx_include_deps": {"checked": bool(v)}})
+            )
+        except Exception:
+            pass
         try:
             cb_deps.setChecked(True)
         except Exception:
             pass
         cb_enc = QCheckBox(gui.tr("Inclure encodings", "Include encodings"))
+        # Persist encodings toggle
+        try:
+            from engine_sdk import save_engine_ui as _save
+            cb_enc.toggled.connect(
+                lambda v: _save(gui, "cx_freeze", {"cx_include_encodings": {"checked": bool(v)}})
+            )
+        except Exception:
+            pass
         row2.addWidget(base_label)
         row2.addWidget(base_combo)
         row2.addStretch(1)
@@ -908,6 +949,15 @@ class CxFreezeEngine(CompilerEngine):
         except Exception:
             self._cx_icon_title = None
         icon_edit = QLineEdit()
+        icon_edit.setObjectName("cx_icon_path")
+        # Persist icon path
+        try:
+            from engine_sdk import save_engine_ui as _save
+            icon_edit.textChanged.connect(
+                lambda s: _save(gui, "cx_freeze", {"cx_icon_path": {"text": str(s)}})
+            )
+        except Exception:
+            pass
         icon_btn = QPushButton(gui.tr("Parcourir…", "Browse…"))
         self._cx_icon_browse_btn = icon_btn
 
@@ -945,6 +995,15 @@ class CxFreezeEngine(CompilerEngine):
         except Exception:
             self._cx_optimize_title = None
         opt_combo = QComboBox()
+        opt_combo.setObjectName("cx_optimize_level")
+        # Persist optimization level
+        try:
+            from engine_sdk import save_engine_ui as _save
+            opt_combo.currentIndexChanged.connect(
+                lambda idx: _save(gui, "cx_freeze", {"cx_optimize_level": {"currentIndex": int(idx)}})
+            )
+        except Exception:
+            pass
         opt_combo.addItems(["0", "1", "2"])  # python -O / -OO equivalent
         opt_row.addWidget(opt_combo)
         opt_row.addStretch(1)
