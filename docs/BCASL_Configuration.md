@@ -2,7 +2,13 @@
 
 ## Overview
 
-BCASL (Before-Compilation Actions System Loader) is now fully integrated with the ARK global configuration system. The activation/deactivation of BCASL is managed through the global `ARK_Main_Config.yml` file, while BCASL-specific settings can be configured in a dedicated YAML or JSON file.
+**Scope:** This guide is specifically for configuring **BC (Before Compilation) plugins** that use the BCASL system.
+
+BCASL (Before-Compilation Actions System Loader) is fully integrated with the ARK global configuration system. This configuration system controls **BC plugins** - pre-compilation plugins that run before the build process starts.
+
+The activation/deactivation of BCASL (and all BC plugins) is managed through the global `ARK_Main_Config.yml` file, while BCASL-specific settings are configured in a dedicated **YML file only** (YAML format).
+
+**Note:** This configuration does **not** apply to compilation engines (PyInstaller, Nuitka, etc.). Engine configuration is managed separately in `ARK_Main_Config.yml`. See [ARK Configuration Guide](./ARK_Configuration.md) for engine configuration.
 
 ## Configuration Files
 
@@ -25,20 +31,19 @@ plugins:
   - `0.0` or negative: No timeout (unlimited execution)
   - Positive value: Timeout in seconds
 
-### 2. BCASL-Specific Configuration
+### 2. BCASL-Specific Configuration (YML ONLY)
 
-BCASL can be configured using either YAML or JSON format. The loader checks for files in this order:
+BCASL configuration uses **YML format only** (no JSON, no YAML). The loader checks for files in this order:
 
-1. `bcasl.yaml` (preferred)
-2. `bcasl.yml`
-3. `bcasl.json`
-4. `.bcasl.json`
+1. `bcasl.yml` (preferred)
+2. `.bcasl.yml` (hidden file)
 
-#### YAML Configuration Example (`bcasl.yaml`)
+#### YML Configuration Example (`bcasl.yml`)
 
 ```yaml
 # BCASL Configuration File
 # This file defines BCASL-specific settings
+# Format: YML only (no JSON, no YAML)
 
 # File patterns for plugin processing
 file_patterns:
@@ -53,6 +58,8 @@ exclude_patterns:
 
 # BCASL options
 options:
+  enabled: true                    # Enable/disable BCASL (can be overridden by ARK config)
+  plugin_timeout_s: 0.0            # Plugin timeout in seconds (0 = unlimited)
   sandbox: true                    # Run plugins in sandbox mode
   plugin_parallelism: 0            # 0 = sequential, >0 = parallel
   iter_files_cache: true           # Cache file iteration results
@@ -68,45 +75,20 @@ plugin_order:
   - Cleaner
 ```
 
-#### JSON Configuration Example (`bcasl.json`)
-
-```json
-{
-  "file_patterns": ["**/*.py"],
-  "exclude_patterns": [
-    "**/__pycache__/**",
-    "**/*.pyc",
-    ".git/**",
-    "venv/**",
-    ".venv/**"
-  ],
-  "options": {
-    "sandbox": true,
-    "plugin_parallelism": 0,
-    "iter_files_cache": true
-  },
-  "plugins": {
-    "Cleaner": {
-      "enabled": true,
-      "priority": 0
-    }
-  },
-  "plugin_order": ["Cleaner"]
-}
-```
-
 ## Configuration Priority
 
 The configuration is resolved in the following order:
 
-1. **BCASL-specific file** (bcasl.yaml/yml or bcasl.json)
+1. **BCASL-specific file** (bcasl.yml or .bcasl.yml)
    - Provides BCASL-specific settings
    - Defines plugin order and individual plugin settings
+   - **Format: YML only**
 
 2. **ARK Global Configuration** (ARK_Main_Config.yml)
    - Overrides BCASL enabled/disabled state
    - Sets plugin timeout
    - Provides file patterns and exclusion patterns
+   - **Format: YML only**
 
 3. **Default Configuration**
    - Used if no configuration files are found
@@ -146,7 +128,7 @@ inclusion_patterns:
   - "**/*.py"
 ```
 
-### Step 2: Create bcasl.yaml
+### Step 2: Create bcasl.yml
 
 ```yaml
 file_patterns:
@@ -157,6 +139,8 @@ exclude_patterns:
   - "**/*.pyc"
 
 options:
+  enabled: true
+  plugin_timeout_s: 0.0
   sandbox: true
   plugin_parallelism: 0
   iter_files_cache: true
@@ -205,16 +189,30 @@ The BCASL Loader dialog allows you to:
 1. **Enable/Disable BCASL**: Toggle the global BCASL switch
 2. **Enable/Disable Individual Plugins**: Check/uncheck plugins
 3. **Reorder Plugins**: Drag plugins up/down to change execution order
-4. **Save Configuration**: Changes are saved to `bcasl.json`
+4. **Save Configuration**: Changes are saved to `bcasl.yml` (YML format only)
 
-**Note**: The global enabled/disabled state is controlled by `ARK_Main_Config.yml`, but can be overridden in the UI by modifying `bcasl.json`.
+**Note**: The global enabled/disabled state is controlled by `ARK_Main_Config.yml`, but can be overridden in the UI by modifying `bcasl.yml`.
+
+## File Format Requirements
+
+### ✅ Supported Formats
+- **YML files**: `bcasl.yml`, `.bcasl.yml`
+- **ARK Config**: `ARK_Main_Config.yml`, `ARK_Main_Config.yaml`, `.ARK_Main_Config.yml`, `.ARK_Main_Config.yaml`
+
+### ❌ NOT Supported
+- JSON files (`.json`)
+- YAML files (`.yaml`) for BCASL config
+- Any other format
 
 ## Migration from Old Configuration
 
 If you have an existing `bcasl.json` file:
 
-1. The file will continue to work as before
-2. To use YAML format, create a `bcasl.yaml` file (it will take precedence)
+1. **The JSON file will be ignored** - BCASL now uses YML format only
+2. To migrate your configuration:
+   - Convert your `bcasl.json` to `bcasl.yml` format
+   - Use the BCASL Loader UI to reconfigure plugins
+   - Save the new configuration (automatically saved as `bcasl.yml`)
 3. To manage BCASL activation globally, add the `plugins` section to `ARK_Main_Config.yml`
 
 ## Troubleshooting
@@ -222,7 +220,7 @@ If you have an existing `bcasl.json` file:
 ### BCASL is not running
 
 1. Check if `bcasl_enabled: true` in `ARK_Main_Config.yml`
-2. Verify the configuration file syntax (YAML/JSON)
+2. Verify the configuration file is in YML format (not JSON)
 3. Check the application logs for error messages
 4. Ensure plugins are properly installed in the `Plugins/` directory
 
@@ -230,17 +228,19 @@ If you have an existing `bcasl.json` file:
 
 1. Verify the configuration file is in the workspace root directory
 2. Check file permissions (must be readable)
-3. Ensure YAML/JSON syntax is valid
+3. Ensure YML syntax is valid (proper indentation, no tabs)
 4. Restart the application to reload configuration
+5. Verify you're using `.yml` extension (not `.yaml` or `.json`)
 
 ### Plugins not executing in expected order
 
-1. Check the `plugin_order` list in `bcasl.yaml`
+1. Check the `plugin_order` list in `bcasl.yml`
 2. Verify plugin IDs match exactly (case-sensitive)
 3. Use the BCASL Loader UI to reorder plugins visually
 4. Check individual plugin `enabled` status
 
 ## See Also
 
-- [ARK Configuration Guide](./ARK_Configuration.md)
-- [How to Create a BCASL Plugin](./how_to_create_a_BC_plugin.md)
+- [How to Create a BCASL Plugin](./how_to_create_a_BC_plugin.md) - Complete BC plugin development guide
+- [ARK Configuration Guide](./ARK_Configuration.md) - Global configuration system (includes engine configuration)
+- [About SDKs](./About_Sdks.md) - Overview of Plugins_SDK (BC plugins) and Engine SDK
