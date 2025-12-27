@@ -18,7 +18,7 @@
 BCASL loader (simplifié)
 
 Objectifs de simplification:
-- Config YAML uniquement (bcasl.yaml ou bcasl.yml) - YAML ONLY, NO JSON
+- Config YML uniquement (bcasl.yml ou .bcasl.yml) - YML ONLY, NO YAML, NO JSON
 - Détection de plugins minimale: packages dans Plugins/ ayant __init__.py
 - Ordre: plugin_order depuis config sinon basé sur tags simples, sinon alphabétique
 - UI minimale pour activer/désactiver et réordonner (pas d'éditeur brut multi-format)
@@ -28,7 +28,6 @@ Objectifs de simplification:
 """
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 from typing import Any, Optional
@@ -142,24 +141,24 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
-    """Charge bcasl.yaml ou bcasl.yml si présent, sinon génère une config par défaut minimale et l'écrit.
+    """Charge bcasl.yml si présent, sinon génère une config par défaut minimale et l'écrit.
     
     Fusionne aussi avec ARK_Main_Config.yml si disponible pour les patterns et options plugins.
-    YAML ONLY - JSON files are NOT supported.
+    YML ONLY - YAML and JSON files are NOT supported.
     """
 
-    def _read_yaml(p: Path) -> dict[str, Any]:
+    def _read_yml(p: Path) -> dict[str, Any]:
         try:
             return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         except Exception:
             return {}
 
-    # 1) Fichiers candidats (YAML uniquement - NO JSON)
-    # Priorité: bcasl.yaml > bcasl.yml > .bcasl.yaml > .bcasl.yml
-    for name in ("bcasl.yaml", "bcasl.yml", ".bcasl.yaml", ".bcasl.yml"):
+    # 1) Fichiers candidats (YML uniquement - NO YAML, NO JSON)
+    # Priorité: bcasl.yml > .bcasl.yml
+    for name in ("bcasl.yml", ".bcasl.yml"):
         p = workspace_root / name
         if p.exists() and p.is_file():
-            data = _read_yaml(p)
+            data = _read_yml(p)
             
             if isinstance(data, dict) and data:
                 # Fusionner avec ARK_Main_Config.yml si disponible
@@ -274,11 +273,11 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
             "plugins": detected_plugins,
             "plugin_order": plugin_order,
         }
-        # Ecriture best-effort
+        # Ecriture best-effort en YML uniquement
         try:
-            target = workspace_root / "bcasl.json"
+            target = workspace_root / "bcasl.yml"
             target.write_text(
-                json.dumps(default_cfg, ensure_ascii=False, indent=2) + "\n",
+                yaml.safe_dump(default_cfg, allow_unicode=True, sort_keys=False),
                 encoding="utf-8",
             )
         except Exception:
@@ -499,7 +498,7 @@ def resolve_bcasl_timeout(self) -> float:
 
 def open_bc_loader_dialog(self) -> None:  # UI minimale
     """Fenêtre simple pour activer/désactiver et réordonner les plugins(BCASL).
-    Persiste dans <workspace>/bcasl.json uniquement (JSON).
+    Persiste dans <workspace>/bcasl.yml uniquement (YML).
     """
     try:  # Importer QtWidgets à la demande pour compatibilité headless
         from PySide6.QtWidgets import (
@@ -736,18 +735,18 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
             except Exception:
                 pass
 
-            # Ecrire JSON uniquement
-            target = workspace_root / "bcasl.json"
+            # Ecrire YML uniquement
+            target = workspace_root / "bcasl.yml"
             try:
                 target.write_text(
-                    json.dumps(cfg_out, ensure_ascii=False, indent=2) + "\n",
+                    yaml.safe_dump(cfg_out, allow_unicode=True, sort_keys=False),
                     encoding="utf-8",
                 )
                 if hasattr(self, "log") and self.log is not None:
                     self.log.append(
                         self.tr(
-                            "✅ Plugins enregistrés dans bcasl.json",
-                            "✅ Plugins plugins saved to bcasl.json",
+                            "✅ Plugins enregistrés dans bcasl.yml",
+                            "✅ Plugins saved to bcasl.yml",
                         )
                     )
                 dlg.accept()
@@ -756,8 +755,8 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
                     dlg,
                     self.tr("Erreur", "Error"),
                     self.tr(
-                        f"Impossible d'écrire bcasl.json: {e}",
-                        f"Failed to write bcasl.json: {e}",
+                        f"Impossible d'écrire bcasl.yml: {e}",
+                        f"Failed to write bcasl.yml: {e}",
                     ),
                 )
 
