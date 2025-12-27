@@ -405,11 +405,35 @@ if QObject is not None and Signal is not None:  # pragma: no cover
 
 
 def apply_translations(gui, tr: dict) -> None:
-    """Propagate i18n translations to all BCASL plugins that expose 'apply_i18n(gui, tr)'."""
+    """Propagate i18n translations to all BCASL plugins that expose 'apply_i18n(gui, tr)'.
+    Cette fonction est synchronisée avec le système i18n global de l'application:
+    - Utilise le dictionnaire "tr" fourni par l'app (déjà résolu selon la préférence de langue)
+    - Itère sur le registre des plugins BCASL vivants et appelle apply_i18n(gui, tr) s'il existe
+    - Tolère les erreurs plugin par plugin pour ne pas interrompre l'app
+    """
     try:
-        # Import the plugin instances registry from GeneralContext
+        # Registre maintenu par le SDK Général
         from Plugins_SDK.GeneralContext.i18n import INSTANCES
-        
+
+        # Optionnel: si le GUI fournit un getter de traduction synchronisé, le privilégier
+        # pour garantir la cohérence avec le reste de l'application
+        try:
+            if hasattr(gui, "get_app_translations") and callable(gui.get_app_translations):
+                lang_pref = None
+                try:
+                    # Si le GUI expose la langue courante
+                    lang_pref = getattr(gui, "current_language", None)
+                except Exception:
+                    lang_pref = None
+                try:
+                    tr_from_gui = gui.get_app_translations(lang_pref)
+                    if isinstance(tr_from_gui, dict) and tr_from_gui:
+                        tr = tr_from_gui
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         for plugin_id, inst in list(INSTANCES.items()):
             try:
                 fn = getattr(inst, "apply_i18n", None)

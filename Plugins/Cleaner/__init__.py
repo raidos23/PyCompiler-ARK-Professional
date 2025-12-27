@@ -104,9 +104,37 @@ class Cleaner(BcPluginBase):
             log.log_info(cancelled_msg)
 
     def apply_i18n(self, gui, tr: dict[str, str]) -> None:
-        """Apply plugin-local i18n from Plugins/Cleaner/languages/*.json independent of app languages."""
+        """Apply i18n using the application's translation dict (preferred),
+        with fallback to plugin-local languages/*.json if not provided.
+        Keeps plugin translations synchronized with the app's i18n system.
+        """
         try:
             self._gui = gui
+
+            # 1) Preferred: extract plugin translations from the app's dict
+            plugin_tr: dict = {}
+            try:
+                # Namespaced structure: tr["plugins"]["cleaner"] = {...}
+                if isinstance(tr, dict):
+                    plugs = tr.get("plugins", {})
+                    if isinstance(plugs, dict):
+                        maybe = plugs.get("cleaner", {})
+                        if isinstance(maybe, dict):
+                            plugin_tr = maybe
+                # Flat structure: collect keys starting with "cleaner_"
+                if not plugin_tr and isinstance(tr, dict):
+                    collected = {k: v for k, v in tr.items() if isinstance(k, str) and k.startswith("cleaner_")}
+                    if collected:
+                        plugin_tr = collected
+            except Exception:
+                plugin_tr = {}
+
+            # If app provided translations, use them directly
+            if isinstance(plugin_tr, dict) and plugin_tr:
+                self._lang_data = plugin_tr
+                return
+
+            # 2) Fallback: load plugin-local JSON as before
             # Resolve language code preference
             code = None
             try:
@@ -117,17 +145,14 @@ class Cleaner(BcPluginBase):
                 code = None
             if not code:
                 try:
-                    # Try GUI preferences
                     pref = getattr(gui, "language_pref", getattr(gui, "language", "System"))
                     if isinstance(pref, str) and pref != "System":
                         code = pref
                 except Exception:
                     pass
-            # Fallback
             if not code:
                 code = "en"
-            
-            # Normalize codes and build robust fallback candidates
+
             raw = str(code)
             low = raw.lower().replace("_", "-")
             aliases = {
@@ -144,8 +169,7 @@ class Cleaner(BcPluginBase):
                 "zh-cn": "zh-CN",
             }
             mapped = aliases.get(low, raw)
-            
-            # Candidate order: mapped -> base (before '-') -> exact lower -> exact raw -> 'en'
+
             candidates = []
             if mapped not in candidates:
                 candidates.append(mapped)
@@ -165,14 +189,13 @@ class Cleaner(BcPluginBase):
                 candidates.append(raw)
             if "en" not in candidates:
                 candidates.append("en")
-            
-            # Load plugin-local JSON using the first existing candidate
+
             import importlib.resources as ilr
             import json as _json
-            
+
             pkg = __package__
             lang_data = {}
-            
+
             def _load_lang(c: str) -> bool:
                 nonlocal lang_data
                 try:
@@ -186,11 +209,11 @@ class Cleaner(BcPluginBase):
                 except Exception:
                     pass
                 return False
-            
+
             for cand in candidates:
                 if _load_lang(cand):
                     break
-            
+
             self._lang_data = lang_data
         except Exception:
             self._lang_data = {}
