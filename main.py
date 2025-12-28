@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-
-
 """
 PyCompiler ARK++ — Cross-platform hardened bootstrap
 - OS-specific environment safety (UTF-8, DPI, Wayland/macOS)
@@ -453,5 +451,6 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     import multiprocessing
+
     multiprocessing.set_start_method("spawn", force=True)
     sys.exit(main(sys.argv))

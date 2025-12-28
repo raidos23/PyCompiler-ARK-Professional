@@ -170,7 +170,7 @@ class TestVersionConsistency:
         """Test that versions_dict matches all_versions"""
         all_versions = get_all_versions()
         versions_dict = get_versions_dict()
-        
+
         for name, info in all_versions.items():
             assert name in versions_dict
             assert versions_dict[name] == info.version

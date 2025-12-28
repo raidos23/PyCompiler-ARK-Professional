@@ -20,6 +20,7 @@ import pytest
 
 from .workspace_support import ensure_base_workspace, get_shared_workspace
 
+
 @pytest.fixture(scope="session", autouse=True)
 def prepare_base_workspace():
     """Create a base test workspace at the start of the test session.

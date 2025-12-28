@@ -24,14 +24,12 @@ TAG_PRIORITY_MAP = {
     "sanitize": 0,
     "prune": 0,
     "tidy": 0,
-    
     # Phase 1: Validation et vérification des prérequis
     "validation": 10,
     "presence": 10,
     "check": 10,
     "requirements": 10,
     "verify": 10,
-    
     # Phase 2: Préparation et génération des ressources
     "prepare": 20,
     "codegen": 20,
@@ -43,7 +41,6 @@ TAG_PRIORITY_MAP = {
     "bootstrap": 20,
     "configure": 20,
     "setup": 20,
-    
     # Phase 3: Conformité et injection de headers
     "license": 30,
     "header": 30,
@@ -53,7 +50,6 @@ TAG_PRIORITY_MAP = {
     "banner": 30,
     "copyright": 30,
     "metadata": 30,
-    
     # Phase 4: Linting, formatage et vérification de type
     "lint": 40,
     "format": 40,
@@ -66,7 +62,6 @@ TAG_PRIORITY_MAP = {
     "isort": 40,
     "sort-imports": 40,
     "style": 40,
-    
     # Phase 5: Obfuscation, protection et transpilation (dernière passe)
     "obfuscation": 50,
     "obfuscate": 50,
@@ -82,10 +77,10 @@ DEFAULT_TAG_PRIORITY = 100
 
 def compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
     """Trie les plugins par score de tag (plus petit d'abord), puis par id.
-    
+
     Utilise TAG_PRIORITY_MAP pour déterminer la priorité basée sur les tags.
     Tags pris depuis meta_map[pid]["tags"]. Inconnu => DEFAULT_TAG_PRIORITY.
-    
+
     Phases d'exécution:
     - 0: Nettoyage (clean, cleanup, sanitize)
     - 10: Validation (check, requirements, verify)
@@ -95,9 +90,10 @@ def compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
     - 50: Obfuscation (obfuscate, transpile, protect, encrypt)
     - 100: Défaut (aucun tag reconnu)
     """
+
     def _compute_score(pid: str) -> int:
         """Calcule le score de priorité pour un plugin.
-        
+
         Retourne le score minimum parmi tous les tags du plugin.
         Si aucun tag, retourne DEFAULT_TAG_PRIORITY.
         """
@@ -105,10 +101,10 @@ def compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
             tags = meta_map.get(pid, {}).get("tags")
             if not tags:
                 return DEFAULT_TAG_PRIORITY
-            
+
             if not isinstance(tags, (list, tuple)):
                 return DEFAULT_TAG_PRIORITY
-            
+
             # Normaliser les tags et trouver le score minimum
             scores = []
             for tag in tags:
@@ -116,11 +112,11 @@ def compute_tag_order(meta_map: dict[str, dict[str, Any]]) -> list[str]:
                 if tag_str:
                     score = TAG_PRIORITY_MAP.get(tag_str, DEFAULT_TAG_PRIORITY)
                     scores.append(score)
-            
+
             return min(scores) if scores else DEFAULT_TAG_PRIORITY
         except Exception:
             return DEFAULT_TAG_PRIORITY
-    
+
     # Trier par (score, id) pour stabilité et lisibilité
     return sorted(meta_map.keys(), key=lambda x: (_compute_score(x), x))
 
@@ -129,7 +125,7 @@ def get_tag_phase_name(tag: str) -> str:
     """Retourne le nom lisible de la phase pour un tag donné."""
     tag_lower = str(tag).strip().lower()
     score = TAG_PRIORITY_MAP.get(tag_lower, DEFAULT_TAG_PRIORITY)
-    
+
     phase_names = {
         0: "Nettoyage",
         10: "Validation",
@@ -139,21 +135,23 @@ def get_tag_phase_name(tag: str) -> str:
         50: "Obfuscation",
         100: "Défaut",
     }
-    
+
     return phase_names.get(score, f"Phase {score}")
 
 
 def describe_plugin_priority(plugin_id: str, tags: list[str]) -> str:
     """Retourne une description lisible de la priorité d'un plugin.
-    
+
     Exemple: "plugin_id (lint, format) -> Phase 4: Linting"
     """
     if not tags:
         return f"{plugin_id} (aucun tag) -> Phase {DEFAULT_TAG_PRIORITY}: Défaut"
-    
+
     tag_str = ", ".join(str(t).strip().lower() for t in tags)
-    scores = [TAG_PRIORITY_MAP.get(str(t).strip().lower(), DEFAULT_TAG_PRIORITY) for t in tags]
+    scores = [
+        TAG_PRIORITY_MAP.get(str(t).strip().lower(), DEFAULT_TAG_PRIORITY) for t in tags
+    ]
     min_score = min(scores) if scores else DEFAULT_TAG_PRIORITY
     phase_name = get_tag_phase_name(min_score)
-    
+
     return f"{plugin_id} ({tag_str}) -> Phase {min_score}: {phase_name}"

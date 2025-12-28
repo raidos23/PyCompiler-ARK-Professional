@@ -148,14 +148,14 @@ def _find_pip_executable(venv_path: str = None, workspace_dir: str = None) -> tu
     Retourne un tuple (program, prefix_args) où:
     - program: chemin vers l'exécutable ou 'python'
     - prefix_args: arguments à préfixer ([] pour pip direct, ['-m', 'pip'] pour module)
-    
+
     Stratégies (dans l'ordre):
     1. pip du venv (Scripts/pip.exe ou bin/pip)
     2. python -m pip du venv
     3. python -m pip du système
     """
     import sys
-    
+
     # Déterminer le chemin du venv
     if venv_path:
         venv_dir = os.path.abspath(venv_path)
@@ -164,12 +164,12 @@ def _find_pip_executable(venv_path: str = None, workspace_dir: str = None) -> tu
     else:
         # Fallback: utiliser python -m pip du système
         return (sys.executable, ["-m", "pip"])
-    
+
     is_windows = platform.system() == "Windows"
     bin_dir = os.path.join(venv_dir, "Scripts" if is_windows else "bin")
     pip_name = "pip.exe" if is_windows else "pip"
     pip_exe = os.path.join(bin_dir, pip_name)
-    
+
     # Stratégie 1: pip exécutable du venv
     if os.path.isfile(pip_exe):
         try:
@@ -178,13 +178,13 @@ def _find_pip_executable(venv_path: str = None, workspace_dir: str = None) -> tu
                 [pip_exe, "--version"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=5
+                timeout=5,
             )
             if result.returncode == 0:
                 return (pip_exe, [])
         except Exception:
             pass
-    
+
     # Stratégie 2: python -m pip du venv
     python_exe = os.path.join(bin_dir, "python.exe" if is_windows else "python")
     if os.path.isfile(python_exe):
@@ -193,26 +193,26 @@ def _find_pip_executable(venv_path: str = None, workspace_dir: str = None) -> tu
                 [python_exe, "-m", "pip", "--version"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=5
+                timeout=5,
             )
             if result.returncode == 0:
                 return (python_exe, ["-m", "pip"])
         except Exception:
             pass
-    
+
     # Stratégie 3: python -m pip du système
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "--version"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=5
+            timeout=5,
         )
         if result.returncode == 0:
             return (sys.executable, ["-m", "pip"])
     except Exception:
         pass
-    
+
     # Fallback ultime
     return (sys.executable, ["-m", "pip"])
 
@@ -246,7 +246,7 @@ def suggest_missing_dependencies(self):
             part.startswith(".") or part == "__pycache__" for part in f.split(os.sep)
         )
     ]
-    
+
     # Créer une barre de progression pour l'analyse
     analysis_progress = None
     try:
@@ -260,7 +260,7 @@ def suggest_missing_dependencies(self):
         analysis_progress.show()
     except Exception:
         pass
-    
+
     # Analyse chaque fichier Python pour détecter les imports
     for idx, file in enumerate(filtered_files):
         try:
@@ -268,10 +268,12 @@ def suggest_missing_dependencies(self):
             if analysis_progress:
                 file_name = os.path.basename(file)
                 analysis_progress.set_message(
-                    self.tr("Analyse de {file}...", "Analyzing {file}...").format(file=file_name)
+                    self.tr("Analyse de {file}...", "Analyzing {file}...").format(
+                        file=file_name
+                    )
                 )
                 analysis_progress.set_progress(idx, len(filtered_files))
-            
+
             with open(file, encoding="utf-8") as f:
                 source = f.read()
                 tree = ast.parse(source, filename=file)
@@ -292,12 +294,10 @@ def suggest_missing_dependencies(self):
             modules.update([mod.split(".")[0] for mod in importlib_imports])
         except Exception as e:
             self.log.append(f"⚠️ Erreur analyse dépendances dans {file} : {e}")
-    
+
     # Fermer la barre de progression d'analyse
     if analysis_progress:
-        analysis_progress.set_message(
-            self.tr("Analyse terminée", "Analysis completed")
-        )
+        analysis_progress.set_message(self.tr("Analyse terminée", "Analysis completed"))
         analysis_progress.set_progress(len(filtered_files), len(filtered_files))
     # Exclure les modules standards Python (stdlib)
     import sys
@@ -323,7 +323,7 @@ def suggest_missing_dependencies(self):
         analysis_progress.set_message(
             self.tr("Vérification des modules...", "Checking modules...")
         )
-    
+
     # Liste des modules à vérifier (hors standard et hors modules internes)
     suggestions = [
         m for m in modules if not _is_stdlib_module(m) and m not in internal_modules
@@ -361,13 +361,10 @@ def suggest_missing_dependencies(self):
     # Vérifie la présence des modules dans le venv (via pip show)
     # Utilise la fonction robuste de détection du pip
     pip_program, pip_prefix = _find_pip_executable(
-        venv_path=self.venv_path_manuel,
-        workspace_dir=self.workspace_dir
+        venv_path=self.venv_path_manuel, workspace_dir=self.workspace_dir
     )
     try:
-        self.log.append(
-            f"ℹ️ Utilisation de pip: {pip_program} {' '.join(pip_prefix)}"
-        )
+        self.log.append(f"ℹ️ Utilisation de pip: {pip_program} {' '.join(pip_prefix)}")
     except Exception:
         pass
     # Vérification des modules avec progression
@@ -376,10 +373,12 @@ def suggest_missing_dependencies(self):
         try:
             if analysis_progress:
                 analysis_progress.set_message(
-                    self.tr("Vérification de {module}...", "Checking {module}...").format(module=module)
+                    self.tr(
+                        "Vérification de {module}...", "Checking {module}..."
+                    ).format(module=module)
                 )
                 analysis_progress.set_progress(idx, len(suggestions))
-            
+
             cmd = [pip_program, *pip_prefix, "show", module]
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0:
@@ -388,7 +387,7 @@ def suggest_missing_dependencies(self):
             self.log.append(
                 f"⚠️ Erreur lors de la vérification du module {module} : {e}"
             )
-    
+
     # Fermer la barre de progression d'analyse
     if analysis_progress:
         analysis_progress.close()

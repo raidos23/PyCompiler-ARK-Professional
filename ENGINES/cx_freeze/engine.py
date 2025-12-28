@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-
-
 from __future__ import annotations
 
 import os
@@ -803,6 +801,7 @@ class CxFreezeEngine(CompilerEngine):
         # Persist changes to ARK config
         try:
             from engine_sdk import save_engine_ui as _save
+
             out_edit.textChanged.connect(
                 lambda s: _save(gui, "cx_freeze", {"cx_output_dir": {"text": str(s)}})
             )
@@ -873,6 +872,7 @@ class CxFreezeEngine(CompilerEngine):
         # Persist target name
         try:
             from engine_sdk import save_engine_ui as _save
+
             tn_edit.textChanged.connect(
                 lambda s: _save(gui, "cx_freeze", {"cx_target_name": {"text": str(s)}})
             )
@@ -898,8 +898,11 @@ class CxFreezeEngine(CompilerEngine):
         # Persist base combo index
         try:
             from engine_sdk import save_engine_ui as _save
+
             base_combo.currentIndexChanged.connect(
-                lambda idx: _save(gui, "cx_freeze", {"cx_base_combo": {"currentIndex": int(idx)}})
+                lambda idx: _save(
+                    gui, "cx_freeze", {"cx_base_combo": {"currentIndex": int(idx)}}
+                )
             )
         except Exception:
             pass
@@ -914,8 +917,11 @@ class CxFreezeEngine(CompilerEngine):
         # Persist deps toggle
         try:
             from engine_sdk import save_engine_ui as _save
+
             cb_deps.toggled.connect(
-                lambda v: _save(gui, "cx_freeze", {"cx_include_deps": {"checked": bool(v)}})
+                lambda v: _save(
+                    gui, "cx_freeze", {"cx_include_deps": {"checked": bool(v)}}
+                )
             )
         except Exception:
             pass
@@ -927,8 +933,11 @@ class CxFreezeEngine(CompilerEngine):
         # Persist encodings toggle
         try:
             from engine_sdk import save_engine_ui as _save
+
             cb_enc.toggled.connect(
-                lambda v: _save(gui, "cx_freeze", {"cx_include_encodings": {"checked": bool(v)}})
+                lambda v: _save(
+                    gui, "cx_freeze", {"cx_include_encodings": {"checked": bool(v)}}
+                )
             )
         except Exception:
             pass
@@ -956,6 +965,7 @@ class CxFreezeEngine(CompilerEngine):
         # Persist icon path
         try:
             from engine_sdk import save_engine_ui as _save
+
             icon_edit.textChanged.connect(
                 lambda s: _save(gui, "cx_freeze", {"cx_icon_path": {"text": str(s)}})
             )
@@ -1002,8 +1012,11 @@ class CxFreezeEngine(CompilerEngine):
         # Persist optimization level
         try:
             from engine_sdk import save_engine_ui as _save
+
             opt_combo.currentIndexChanged.connect(
-                lambda idx: _save(gui, "cx_freeze", {"cx_optimize_level": {"currentIndex": int(idx)}})
+                lambda idx: _save(
+                    gui, "cx_freeze", {"cx_optimize_level": {"currentIndex": int(idx)}}
+                )
             )
         except Exception:
             pass
@@ -1387,8 +1400,7 @@ class CxFreezeEngine(CompilerEngine):
             pass
 
     def on_success(self, gui, file: str) -> None:
-        """Action post-succès: ouvrir le dossier de sortie cx_Freeze si identifiable.
-        """
+        """Action post-succès: ouvrir le dossier de sortie cx_Freeze si identifiable."""
         try:
             out_dir = None
             # Priorité au champ de l'onglet cx_Freeze s'il est présent

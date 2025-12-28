@@ -23,6 +23,7 @@ from Core.ark_config_loader import (
     get_environment_manager_options,
 )
 
+
 class TestArkConfigLoaderDeepAndGetters(unittest.TestCase):
     def test_deep_merge_dict_nested(self):
         base = {"a": 1, "b": {"x": 1, "y": 2}, "c": {"m": {"n": 0}}}
@@ -54,6 +55,7 @@ class TestArkConfigLoaderDeepAndGetters(unittest.TestCase):
         env = get_environment_manager_options(DEFAULT_CONFIG)
         self.assertIsInstance(env, dict)
         self.assertIn("priority", env)
+
 
 if __name__ == "__main__":
     unittest.main()

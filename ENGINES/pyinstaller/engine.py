@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-
 from __future__ import annotations
 
 import os
@@ -309,6 +308,7 @@ class PyInstallerEngine(CompilerEngine):
                 # Save UI state automatically when user toggles/edits widgets
                 try:
                     from engine_sdk import save_engine_ui as _save
+
                     # Checkboxes to persist
                     for _name in (
                         "opt_onefile",

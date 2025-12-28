@@ -46,7 +46,9 @@ class TestBCASLWorkspaceConfigExtended(unittest.TestCase):
         (self.ws / name).write_text(content, encoding="utf-8")
 
     def write_json(self, name: str, obj):
-        (self.ws / name).write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
+        (self.ws / name).write_text(
+            json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     def test_default_generation_without_configs(self):
         # Ensure no pre-existing bcasl configs
@@ -96,7 +98,10 @@ class TestBCASLWorkspaceConfigExtended(unittest.TestCase):
             )
             self.write_yaml("ARK_Main_Config.yml", ark)
             # Create minimal bcasl.yaml to be merged
-            self.write_yaml("bcasl.yaml", "file_patterns:\n  - '**/*.py'\nexclude_patterns:\n  - '.git/**'\n")
+            self.write_yaml(
+                "bcasl.yaml",
+                "file_patterns:\n  - '**/*.py'\nexclude_patterns:\n  - '.git/**'\n",
+            )
             cfg = _load_workspace_config(self.ws)
             # inclusion_patterns from ARK should override into file_patterns
             self.assertIn("src/**/*.py", cfg.get("file_patterns", []))

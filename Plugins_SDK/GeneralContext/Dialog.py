@@ -58,7 +58,9 @@ class Dialog:
 
     def log(self, message: str) -> None:
         """Log a message with optional redaction of secrets."""
-        msg = _redact_secrets(message) if getattr(self, "redact_logs", True) else message
+        msg = (
+            _redact_secrets(message) if getattr(self, "redact_logs", True) else message
+        )
         if hasattr(self, "log_fn") and self.log_fn:
             try:
                 self.log_fn(msg)
@@ -92,18 +94,18 @@ class Dialog:
         self, title: str, text: str = "", maximum: int = 0, cancelable: bool = False
     ) -> ProgressDialog:
         """Create and return a ProgressDialog from Core.dialogs.
-        
+
         Uses Core.dialogs.ProgressDialog to ensure:
         - Theme inheritance from the application
         - Visual integration with the main application
         - Thread safety
-        
+
         Args:
             title: Dialog title
             text: Initial dialog text
             maximum: Maximum value (0 = indeterminate)
             cancelable: If True, show a Cancel button
-            
+
         Returns:
             ProgressDialog instance from Core.dialogs
         """

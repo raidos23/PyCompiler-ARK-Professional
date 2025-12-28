@@ -46,66 +46,72 @@ META = PluginMeta(
 
 class Cleaner(BcPluginBase):
     """Plugin de nettoyage du workspace avant compilation.
-    
+
     Supprime les fichiers .pyc et les dossiers __pycache__ pour réduire la taille
     et éviter les problèmes de cache lors de la compilation.
     """
-    
+
     def __init__(self):
         super().__init__(META)
         self.cleaned_files = 0
         self.cleaned_dirs = 0
 
-    
-    
-    
     def on_pre_compile(self, ctx: PreCompileContext) -> None:
         """Nettoie le workspace avant la compilation.
-        
+
         Args:
-            ctx: PreCompileContext avec les informations du workspace
+            ctx: PreCompileContext avec les informations du workspace depuis bcasl.yml
         """
         try:
+            # Vérifier que le workspace est valide et configuré dans bcasl.yml
+            if not ctx.is_workspace_valid():
+                log.log_warn("Workspace is not valid or bcasl.yml not found")
+                return
+
             # Demander confirmation à l'utilisateur
             response = dialog.msg_question(
                 title="Cleaner",
                 text="Do you want to clean the workspace (.pyc and __pycache__)?",
                 default_yes=True,
             )
-            
+
             if not response:
                 log.log_info("Cleaner cancelled by user")
                 return
-            
+
             # Réinitialiser les compteurs
             self.cleaned_files = 0
             self.cleaned_dirs = 0
+
+            # Obtenir le chemin du workspace depuis bcasl.yml
+            workspace_path = ctx.get_workspace_root()
+            workspace_name = ctx.get_workspace_name()
             
-            # Déterminer le chemin du workspace
-            try:
-                workspace_path = Path(ctx.workspace) if hasattr(ctx, 'workspace') else Path.cwd()
-            except Exception:
-                workspace_path = Path.cwd()
-            
+            log.log_info(f"Cleaning workspace: {workspace_name} ({workspace_path})")
+
             # Créer le dialog de progression
             progress = dialog.progress(title="Cleaning workspace...", cancelable=True)
             progress.show()
-            
+
             try:
                 # Étape 1: Parcourir et supprimer les fichiers .pyc
-                progress.set_message("Scanning for .pyc files and __pycache__ directories...")
-                
+                progress.set_message(
+                    "Scanning for .pyc files and __pycache__ directories..."
+                )
+
                 pyc_files = []
                 try:
-                    for file_path in ctx.iter_files(["**/*.pyc"], []):
+                    # Utiliser les patterns d'exclusion depuis bcasl.yml
+                    exclude_patterns = ctx.get_exclude_patterns()
+                    for file_path in ctx.iter_files(["**/*.pyc"], exclude_patterns):
                         pyc_files.append(file_path)
                 except Exception as e:
                     log.log_warn(f"Error iterating .pyc files: {e}")
-                
+
                 # Étape 2: Supprimer les fichiers .pyc
                 progress.set_message("Removing .pyc files...")
                 progress.set_progress(0, len(pyc_files))
-                
+
                 for idx, file_path in enumerate(pyc_files):
                     if progress.is_canceled():
                         break
@@ -115,19 +121,19 @@ class Cleaner(BcPluginBase):
                     except Exception as e:
                         log.log_warn(f"Failed to remove {file_path}: {e}")
                     progress.set_progress(idx + 1, len(pyc_files))
-                
+
                 # Étape 3: Parcourir et supprimer les dossiers __pycache__
                 progress.set_message("Removing __pycache__ directories...")
-                
+
                 pycache_dirs = []
                 try:
                     for pycache_dir in workspace_path.rglob("__pycache__"):
                         pycache_dirs.append(pycache_dir)
                 except Exception as e:
                     log.log_warn(f"Error iterating __pycache__ directories: {e}")
-                
+
                 progress.set_progress(0, len(pycache_dirs))
-                
+
                 for idx, pycache_dir in enumerate(pycache_dirs):
                     if progress.is_canceled():
                         break
@@ -137,19 +143,18 @@ class Cleaner(BcPluginBase):
                     except Exception as e:
                         log.log_warn(f"Failed to remove {pycache_dir}: {e}")
                     progress.set_progress(idx + 1, len(pycache_dirs))
-                
+
             finally:
                 progress.close()
-            
+
             # Afficher le résumé
             log.log_info(
                 f"Cleaner completed: {self.cleaned_files} .pyc files and {self.cleaned_dirs} __pycache__ directories removed"
             )
-            
+
         except Exception as e:
             log.log_warn(f"Error during cleaning: {e}")
 
-    
 
 # Auto-register plugin in BCASL
 PLUGIN = Cleaner()
@@ -158,4 +163,3 @@ PLUGIN = Cleaner()
 def bcasl_register(manager):
     """Register the Cleaner plugin with the BCASL manager."""
     manager.add_plugin(PLUGIN)
-

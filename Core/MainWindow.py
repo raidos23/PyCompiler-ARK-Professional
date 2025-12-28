@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-
-
 import asyncio
 import json
 import os
@@ -184,8 +182,7 @@ class PyCompilerArkGui(QWidget):
 
         self.load_preferences()
         self.init_ui()
-        
-                
+
         # Détection langue système si préférence = "System"
         import locale
 
@@ -392,13 +389,13 @@ class PyCompilerArkGui(QWidget):
 
     def add_py_files_from_folder(self, folder):
         from Core.ark_config_loader import load_ark_config, should_exclude_file
-        
+
         count = 0
         excluded_count = 0
         # Charger la configuration ARK pour les patterns d'exclusion
         ark_config = load_ark_config(self.workspace_dir)
         exclusion_patterns = ark_config.get("exclusion_patterns", [])
-        
+
         for root, _, files in os.walk(folder):
             for f in files:
                 if f.endswith(".py"):
@@ -409,12 +406,14 @@ class PyCompilerArkGui(QWidget):
                         == self.workspace_dir
                     ):
                         continue
-                    
+
                     # Vérifier les patterns d'exclusion depuis ARK_Main_Config.yml
-                    if should_exclude_file(full_path, self.workspace_dir, exclusion_patterns):
+                    if should_exclude_file(
+                        full_path, self.workspace_dir, exclusion_patterns
+                    ):
                         excluded_count += 1
                         continue
-                    
+
                     if full_path not in self.python_files:
                         self.python_files.append(full_path)
                         relative_path = (
@@ -424,14 +423,14 @@ class PyCompilerArkGui(QWidget):
                         )
                         self.file_list.addItem(relative_path)
                         count += 1
-        
+
         # Afficher un message récapitulatif si des fichiers ont été exclus
         if excluded_count > 0:
             self.log_i18n(
                 f"⏩ Exclusion appliquée : {excluded_count} fichier(s) exclu(s) selon ARK_Main_Config.yml",
-                f"⏩ Exclusion applied: {excluded_count} file(s) excluded according to ARK_Main_Config.yml"
+                f"⏩ Exclusion applied: {excluded_count} file(s) excluded according to ARK_Main_Config.yml",
             )
-        
+
         return count
 
     def select_workspace(self):
@@ -452,7 +451,7 @@ class PyCompilerArkGui(QWidget):
                 QApplication.processEvents()
             except Exception:
                 loading_dialog = None
-            
+
             # Ensure target folder exists; auto-create if missing; never refuse
             if not folder:
                 try:
@@ -553,10 +552,11 @@ class PyCompilerArkGui(QWidget):
                     self.log_i18n("Dossier venv détecté.", "Venv folder detected.")
             except Exception:
                 pass
-            
+
             # Créer le fichier ARK_Main_Config.yml s'il n'existe pas
             try:
                 from Core.ark_config_loader import create_default_ark_config
+
                 if create_default_ark_config(folder):
                     self.log_i18n(
                         "📋 Fichier ARK_Main_Config.yml créé dans le workspace.",
@@ -567,14 +567,14 @@ class PyCompilerArkGui(QWidget):
                     f"⚠️ Impossible de créer ARK_Main_Config.yml: {e}",
                     f"⚠️ Failed to create ARK_Main_Config.yml: {e}",
                 )
-            
+
             # Fermer le dialog de chargement
             try:
                 if loading_dialog:
                     loading_dialog.close()
             except Exception:
                 pass
-            
+
             return True
         except Exception as _e:
             try:
@@ -943,13 +943,14 @@ class PyCompilerArkGui(QWidget):
                 ),
             )
             return
-        
+
         config_path = os.path.join(self.workspace_dir, "ARK_Main_Config.yml")
-        
+
         # Créer le fichier s'il n'existe pas
         if not os.path.exists(config_path):
             try:
                 from Core.ark_config_loader import create_default_ark_config
+
                 if create_default_ark_config(self.workspace_dir):
                     self.log_i18n(
                         "📋 Fichier ARK_Main_Config.yml créé.",
@@ -965,12 +966,12 @@ class PyCompilerArkGui(QWidget):
                     ),
                 )
                 return
-        
+
         # Ouvrir le fichier dans l'éditeur par défaut
         try:
             import subprocess
             import platform
-            
+
             system = platform.system()
             if system == "Windows":
                 os.startfile(config_path)
@@ -978,7 +979,7 @@ class PyCompilerArkGui(QWidget):
                 subprocess.run(["open", config_path])
             else:  # Linux
                 subprocess.run(["xdg-open", config_path])
-            
+
             self.log_i18n(
                 f"📝 Ouverture de {config_path}",
                 f"📝 Opening {config_path}",
@@ -1579,6 +1580,7 @@ class PyCompilerArkGui(QWidget):
                 # Registry-based propagation to engine instances
                 try:
                     import Core.engines_loader as engines_loader
+
                     engines_loader.registry.apply_translations(self, tr)
                 except Exception:
                     pass
@@ -1741,7 +1743,6 @@ class PyCompilerArkGui(QWidget):
             except Exception:
                 pass
 
-    
     def _has_active_background_tasks(self):
         # Compilation en cours
         if self.processes:
@@ -1777,9 +1778,9 @@ class PyCompilerArkGui(QWidget):
                 details.append("compilation")
             if hasattr(self, "venv_manager") and self.venv_manager:
                 details.extend(self.venv_manager.get_active_task_labels("Français"))
-            
+
             is_english = getattr(self, "current_language", "Français") == "English"
-            
+
             if is_english:
                 mapping = {
                     "compilation": "build",
@@ -1788,7 +1789,7 @@ class PyCompilerArkGui(QWidget):
                     "vérification/installation du venv": "venv check/installation",
                 }
                 details_disp = [mapping.get(d, d) for d in details]
-                
+
                 # Construire le message détaillé
                 title = "⚠️ Process Running"
                 msg = "A process is currently running:\n\n"
@@ -1798,12 +1799,12 @@ class PyCompilerArkGui(QWidget):
                     msg += "\n"
                 msg += "If you quit now, the process will be stopped and any unsaved work will be lost.\n\n"
                 msg += "Do you really want to quit?"
-                
+
                 yes_text = "Yes, Quit"
                 no_text = "No, Continue"
             else:
                 details_disp = details
-                
+
                 # Construire le message détaillé
                 title = "⚠️ Processus en cours"
                 msg = "Un processus est actuellement en cours :\n\n"
@@ -1813,10 +1814,10 @@ class PyCompilerArkGui(QWidget):
                     msg += "\n"
                 msg += "Si vous quittez maintenant, le processus sera arrêté et tout travail non sauvegardé sera perdu.\n\n"
                 msg += "Voulez-vous vraiment quitter ?"
-                
+
                 yes_text = "Oui, Quitter"
                 no_text = "Non, Continuer"
-            
+
             # Créer la boîte de dialogue avec des boutons personnalisés
             msgbox = QMessageBox(self)
             msgbox.setWindowTitle(title)
@@ -1824,13 +1825,13 @@ class PyCompilerArkGui(QWidget):
             msgbox.setIcon(QMessageBox.Warning)
             msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             msgbox.setDefaultButton(QMessageBox.No)
-            
+
             # Personnaliser les textes des boutons
             msgbox.button(QMessageBox.Yes).setText(yes_text)
             msgbox.button(QMessageBox.No).setText(no_text)
-            
+
             reply = msgbox.exec()
-            
+
             if reply == QMessageBox.Yes:
                 self._closing = True
                 # Annule les compilations en cours si nécessaire

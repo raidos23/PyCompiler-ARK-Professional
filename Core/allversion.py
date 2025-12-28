@@ -121,7 +121,9 @@ def get_system_version() -> str:
     import sys
     import platform
 
-    python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    python_version = (
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
     system_info = f"{platform.system()} {platform.release()}"
     return f"Python {python_version} on {system_info}"
 

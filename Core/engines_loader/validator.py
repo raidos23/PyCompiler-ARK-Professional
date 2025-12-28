@@ -41,7 +41,7 @@ class EngineCompatibilityCheckResult:
 def parse_version(version_string: str) -> Tuple[int, int, int]:
     """
     Parse a version string into (major, minor, patch).
-    
+
     Supports formats:
     - "1.0.0" -> (1, 0, 0)
     - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
@@ -51,15 +51,15 @@ def parse_version(version_string: str) -> Tuple[int, int, int]:
     try:
         # Remove leading/trailing whitespace
         s = version_string.strip()
-        
+
         # Handle "1.0.0+" format (+ at the end means "or higher")
         # We just strip it since our comparison logic already uses >= semantics
         if s.endswith("+"):
             s = s[:-1].strip()
-        
+
         # Remove build metadata and pre-release identifiers
         s = s.split("+")[0].split("-")[0]
-        
+
         # Parse major.minor.patch
         parts = s.split(".")
         major = int(parts[0]) if len(parts) > 0 else 0
@@ -77,7 +77,7 @@ def check_engine_compatibility(
 ) -> EngineCompatibilityCheckResult:
     """
     Check if an engine is compatible with the current system versions.
-    
+
     Compatibility check uses >= (greater than or equal) semantics:
     - If engine requires Core 1.0.0, it accepts Core 1.0.0, 1.0.1, 1.1.0, 2.0.0, etc.
     - If engine requires SDK 1.0.0, it accepts SDK 1.0.0, 1.0.1, 1.1.0, 2.0.0, etc.
@@ -164,7 +164,9 @@ def validate_engines_compatibility(
                         engine_id=getattr(engine, "id", "unknown"),
                         engine_name=getattr(engine, "name", "Unknown"),
                         is_compatible=False,
-                        missing_requirements=["No explicit version requirements specified"],
+                        missing_requirements=[
+                            "No explicit version requirements specified"
+                        ],
                         error_message=f"Engine '{getattr(engine, 'name', 'Unknown')}' ({getattr(engine, 'id', 'unknown')}) does not specify version requirements. "
                         f"Please add required_core_version and required_sdk_version class attributes.",
                     )
@@ -172,7 +174,9 @@ def validate_engines_compatibility(
                     continue
 
             # Check compatibility
-            result = check_engine_compatibility(engine, core_version, engine_sdk_version)
+            result = check_engine_compatibility(
+                engine, core_version, engine_sdk_version
+            )
 
             if result.is_compatible:
                 compatible_engines.append(engine)

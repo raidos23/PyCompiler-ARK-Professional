@@ -57,9 +57,7 @@ def parse_version(version_string: str) -> Tuple[int, int, int]:
         return (0, 0, 0)
 
 
-def compare_versions(
-    current: str, required: str, mode: str = "gte"
-) -> bool:
+def compare_versions(current: str, required: str, mode: str = "gte") -> bool:
     """
     Compare two version strings.
 
@@ -295,7 +293,9 @@ def print_compatibility_report(
     compatible_count = sum(1 for r in results.values() if r.is_compatible)
     incompatible_count = len(results) - compatible_count
 
-    print(f"\nSummary: {compatible_count} compatible, {incompatible_count} incompatible\n")
+    print(
+        f"\nSummary: {compatible_count} compatible, {incompatible_count} incompatible\n"
+    )
 
     for name, result in results.items():
         status = "✓ COMPATIBLE" if result.is_compatible else "✗ INCOMPATIBLE"

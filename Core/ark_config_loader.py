@@ -50,12 +50,10 @@ DEFAULT_CONFIG = {
     # File patterns
     "exclusion_patterns": DEFAULT_EXCLUSION_PATTERNS,
     "inclusion_patterns": ["**/*.py"],
-    
     # Compilation behavior
     "compile_only_main": False,
     "main_file_names": ["main.py", "app.py"],
     "auto_detect_entry_points": True,
-    
     # PyInstaller options
     "pyinstaller": {
         "onefile": True,
@@ -67,7 +65,6 @@ DEFAULT_CONFIG = {
         "debug": False,
         "additional_options": [],
     },
-    
     # Nuitka options
     "nuitka": {
         "onefile": True,
@@ -78,13 +75,11 @@ DEFAULT_CONFIG = {
         "icon": None,
         "additional_options": [],
     },
-    
     # Output configuration
     "output": {
         "directory": "dist",
         "clean_before_build": False,
     },
-    
     # Dependencies
     "dependencies": {
         "requirements_files": [
@@ -102,32 +97,21 @@ DEFAULT_CONFIG = {
         ],
         "auto_generate_from_imports": True,
     },
-    
     # Environment Manager Priorities
     "environment_manager": {
         "priority": ["poetry", "pipenv", "conda", "pdm", "uv", "pip"],
         "auto_detect": True,
         "fallback_to_pip": True,
     },
-    
     # Plugins Configuration
     "plugins": {
         "bcasl_enabled": True,
         "plugin_timeout": 0.0,
     },
-
     # Engines UI state (persisted widget states per engine)
     "engines": {
-        "pyinstaller": {
-            "ui": {
-                "widgets": {}
-            }
-        },
-        "nuitka": {
-            "ui": {
-                "widgets": {}
-            }
-        }
+        "pyinstaller": {"ui": {"widgets": {}}},
+        "nuitka": {"ui": {"widgets": {}}},
     },
 }
 
@@ -146,27 +130,28 @@ def _deep_merge_dict(base: dict, override: dict) -> dict:
 def load_ark_config(workspace_dir: str) -> dict[str, Any]:
     """
     Charge la configuration ARK depuis ARK_Main_Config.yml (YAML ONLY)
-    
+
     Cherche les fichiers dans cet ordre (priorité):
     1. ARK_Main_Config.yaml
     2. ARK_Main_Config.yml
     3. .ARK_Main_Config.yaml
     4. .ARK_Main_Config.yml
-    
+
     Args:
         workspace_dir: Chemin du workspace
-        
+
     Returns:
         Dictionnaire de configuration complet avec toutes les options disponibles
     """
     import copy
+
     config = copy.deepcopy(DEFAULT_CONFIG)
-    
+
     if not workspace_dir:
         return config
-    
+
     workspace_path = Path(workspace_dir)
-    
+
     # Chercher les fichiers YAML dans l'ordre de priorité
     # Priorité: ARK_Main_Config.yaml > ARK_Main_Config.yml > .ARK_Main_Config.yaml > .ARK_Main_Config.yml
     config_candidates = [
@@ -175,44 +160,50 @@ def load_ark_config(workspace_dir: str) -> dict[str, Any]:
         workspace_path / ".ARK_Main_Config.yaml",
         workspace_path / ".ARK_Main_Config.yml",
     ]
-    
+
     config_file = None
     for candidate in config_candidates:
         if candidate.exists() and candidate.is_file():
             config_file = candidate
             break
-    
+
     if not config_file:
         return config
-    
+
     try:
-        with open(config_file, 'r', encoding='utf-8') as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             user_config = yaml.safe_load(f) or {}
-        
+
         if not isinstance(user_config, dict):
             return config
-        
+
         # Fusionner la configuration utilisateur avec la configuration par défaut
         config = _deep_merge_dict(config, user_config)
-        
+
         # Validation et normalisation des patterns d'exclusion
         if "exclusion_patterns" in config:
             if isinstance(config["exclusion_patterns"], list):
                 user_patterns = [str(p) for p in config["exclusion_patterns"] if p]
-                config["exclusion_patterns"] = list(set(DEFAULT_EXCLUSION_PATTERNS + user_patterns))
-        
+                config["exclusion_patterns"] = list(
+                    set(DEFAULT_EXCLUSION_PATTERNS + user_patterns)
+                )
+
         # Validation des patterns d'inclusion
         if "inclusion_patterns" in config:
             if isinstance(config["inclusion_patterns"], list):
-                config["inclusion_patterns"] = [str(p) for p in config["inclusion_patterns"] if p]
-        
+                config["inclusion_patterns"] = [
+                    str(p) for p in config["inclusion_patterns"] if p
+                ]
+
         # Validation des noms de fichiers principaux
         if "main_file_names" in config:
             if isinstance(config["main_file_names"], list):
-                config["main_file_names"] = [str(n) for n in config["main_file_names"] if n]
-        
+                config["main_file_names"] = [
+                    str(n) for n in config["main_file_names"] if n
+                ]
+
         return config
-        
+
     except Exception as e:
         print(f"Warning: Failed to load ARK config from {config_file}: {e}")
         return config
@@ -239,27 +230,29 @@ def get_environment_manager_options(config: dict[str, Any]) -> dict[str, Any]:
     return config.get("environment_manager", {})
 
 
-def should_exclude_file(file_path: str, workspace_dir: str, exclusion_patterns: list[str]) -> bool:
+def should_exclude_file(
+    file_path: str, workspace_dir: str, exclusion_patterns: list[str]
+) -> bool:
     """
     Vérifie si un fichier doit être exclu selon les patterns
-    
+
     Args:
         file_path: Chemin du fichier à vérifier
         workspace_dir: Chemin du workspace
         exclusion_patterns: Liste des patterns d'exclusion
-        
+
     Returns:
         True si le fichier doit être exclu, False sinon
     """
     try:
         file_path_obj = Path(file_path)
         workspace_path_obj = Path(workspace_dir)
-        
+
         try:
             relative_path = file_path_obj.relative_to(workspace_path_obj)
         except ValueError:
             return True
-        
+
         # Use Path.match() which properly handles ** glob patterns
         relative_str = relative_path.as_posix()
         for pattern in exclusion_patterns:
@@ -269,9 +262,9 @@ def should_exclude_file(file_path: str, workspace_dir: str, exclusion_patterns: 
             # Also try matching just the filename for simple patterns like "*.pyc"
             if file_path_obj.match(pattern):
                 return True
-        
+
         return False
-        
+
     except Exception:
         return False
 
@@ -279,22 +272,22 @@ def should_exclude_file(file_path: str, workspace_dir: str, exclusion_patterns: 
 def create_default_ark_config(workspace_dir: str) -> bool:
     """
     Crée un fichier ARK_Main_Config.yml par défaut dans le workspace
-    
+
     Args:
         workspace_dir: Chemin du workspace
-        
+
     Returns:
         True si le fichier a été créé, False sinon
     """
     if not workspace_dir:
         return False
-    
+
     workspace_path = Path(workspace_dir)
     config_file = workspace_path / "ARK_Main_Config.yml"
-    
+
     if config_file.exists():
         return False
-    
+
     try:
         default_content = """# ══════════════════���════════════════════════════════════════════
 # ARK Main Configuration File
@@ -379,12 +372,12 @@ engines:
     ui:
       widgets: {}
 """
-        
-        with open(config_file, 'w', encoding='utf-8') as f:
+
+        with open(config_file, "w", encoding="utf-8") as f:
             f.write(default_content)
-        
+
         return True
-        
+
     except Exception as e:
         print(f"Warning: Failed to create ARK_Main_Config.yml: {e}")
         return False
@@ -392,10 +385,11 @@ engines:
 
 # --- Simple Engine UI state helpers (for non-dev friendly persistence) ---
 
+
 def _read_yaml(path: Path) -> dict:
     try:
         if path.exists():
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
                 return data if isinstance(data, dict) else {}
     except Exception:
@@ -407,7 +401,7 @@ def _write_yaml_atomic(path: Path, data: dict) -> bool:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")
-        with open(tmp, 'w', encoding='utf-8') as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
         os.replace(tmp, path)
         return True
@@ -425,15 +419,15 @@ def load_engine_ui_state(workspace_dir: str, engine_id: str) -> dict:
     2. ARK_Main_Config.yml
     3. .ARK_Main_Config.yaml
     4. .ARK_Main_Config.yml
-    
+
     Returns a mapping {widgetName: {prop: value}} or {}.
     """
     try:
         if not workspace_dir:
             return {}
-        
+
         workspace_path = Path(workspace_dir)
-        
+
         # Chercher les fichiers YAML dans l'ordre de priorité
         config_candidates = [
             workspace_path / "ARK_Main_Config.yaml",
@@ -441,13 +435,13 @@ def load_engine_ui_state(workspace_dir: str, engine_id: str) -> dict:
             workspace_path / ".ARK_Main_Config.yaml",
             workspace_path / ".ARK_Main_Config.yml",
         ]
-        
+
         cfg = {}
         for candidate in config_candidates:
             if candidate.exists() and candidate.is_file():
                 cfg = _read_yaml(candidate)
                 break
-        
+
         engines = cfg.get("engines", {}) if isinstance(cfg, dict) else {}
         e = engines.get(str(engine_id), {}) if isinstance(engines, dict) else {}
         ui = e.get("ui", {}) if isinstance(e, dict) else {}
@@ -464,9 +458,9 @@ def save_engine_ui_state(workspace_dir: str, engine_id: str, updates: dict) -> b
     2. ARK_Main_Config.yml
     3. .ARK_Main_Config.yaml
     4. .ARK_Main_Config.yml
-    
+
     Si aucun fichier n'existe, crée ARK_Main_Config.yml par défaut.
-    
+
     - workspace_dir: project workspace path
     - engine_id: id string (e.g. 'pyinstaller')
     - updates: {widgetName: {prop: value}}
@@ -476,7 +470,7 @@ def save_engine_ui_state(workspace_dir: str, engine_id: str, updates: dict) -> b
         return False
     try:
         workspace_path = Path(workspace_dir)
-        
+
         # Chercher les fichiers YAML existants dans l'ordre de priorité
         config_candidates = [
             workspace_path / "ARK_Main_Config.yaml",
@@ -484,17 +478,17 @@ def save_engine_ui_state(workspace_dir: str, engine_id: str, updates: dict) -> b
             workspace_path / ".ARK_Main_Config.yaml",
             workspace_path / ".ARK_Main_Config.yml",
         ]
-        
+
         cfg_path = None
         for candidate in config_candidates:
             if candidate.exists() and candidate.is_file():
                 cfg_path = candidate
                 break
-        
+
         # Si aucun fichier n'existe, utiliser ARK_Main_Config.yml par défaut
         if cfg_path is None:
             cfg_path = workspace_path / "ARK_Main_Config.yml"
-        
+
         cfg = _read_yaml(cfg_path)
         if not isinstance(cfg, dict):
             cfg = {}

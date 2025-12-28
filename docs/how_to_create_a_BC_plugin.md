@@ -276,20 +276,31 @@ finally:
 
 ### Accessing Configuration
 
-The `PreCompileContext` provides access to configuration:
+The `PreCompileContext` provides access to configuration from bcasl.yml:
 
 ```python
 def on_pre_compile(self, ctx: PreCompileContext) -> None:
-    # Access workspace path
-    workspace_path = Path(ctx.workspace) if hasattr(ctx, 'workspace') else ctx.project_root
+    # Verify workspace is valid
+    if not ctx.is_workspace_valid():
+        log.log_warn("Workspace is not valid")
+        return
+    
+    # Access workspace information
+    workspace_root = ctx.get_workspace_root()
+    workspace_name = ctx.get_workspace_name()
     
     # Access configuration
-    config = ctx.config
+    config = ctx.get_workspace_config()
+    metadata = ctx.get_workspace_metadata()
     
-    # Get plugin-specific options from bcasl.yml
-    plugin_opts = config.get("plugins", {}).get(self.meta.id, {})
-    enabled = plugin_opts.get("enabled", True)
-    priority = plugin_opts.get("priority", 100)
+    # Access file patterns
+    file_patterns = ctx.get_file_patterns()
+    exclude_patterns = ctx.get_exclude_patterns()
+    required_files = ctx.get_required_files()
+    
+    # Check for required files
+    if ctx.has_required_file("requirements.txt"):
+        log.log_info("Found requirements.txt")
 ```
 
 ### File Iteration
@@ -301,7 +312,7 @@ def on_pre_compile(self, ctx: PreCompileContext) -> None:
     # Find all Python files, excluding common directories
     py_files = list(ctx.iter_files(
         include=["**/*.py"],
-        exclude=["**/__pycache__/**", "**/venv/**", "**/.venv/**"]
+        exclude=ctx.get_exclude_patterns()
     ))
     
     # Results are cached by default for performance

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 def _kill_process_tree(pid: int, *, timeout: float = 5.0, log=None) -> bool:
     def _log(msg: str):
         try:

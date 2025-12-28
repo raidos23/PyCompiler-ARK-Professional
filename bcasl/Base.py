@@ -76,22 +76,18 @@ class PluginMeta:
         if not nid:
             raise ValueError("PluginMeta invalide: 'id' requis")
         object.__setattr__(self, "id", nid)
-        
+
         # Normaliser les tags: convertir en tuple de strings minuscules
         try:
             if isinstance(self.tags, str):
                 # Si c'est une string, la splitter par virgule
                 normalized = tuple(
-                    t.strip().lower() 
-                    for t in str(self.tags).split(",") 
-                    if t.strip()
+                    t.strip().lower() for t in str(self.tags).split(",") if t.strip()
                 )
             elif isinstance(self.tags, (list, tuple)):
                 # Si c'est une liste/tuple, normaliser chaque élément
                 normalized = tuple(
-                    str(t).strip().lower() 
-                    for t in self.tags 
-                    if str(t).strip()
+                    str(t).strip().lower() for t in self.tags if str(t).strip()
                 )
             else:
                 normalized = ()
@@ -150,13 +146,13 @@ class BcPluginBase:
             reqs.append(f"bc>={self.meta.required_bc_plugin_context_version}")
         if self.meta.required_general_context_version != "1.0.0":
             reqs.append(f"gc>={self.meta.required_general_context_version}")
-        
+
         req_str = f" [{', '.join(reqs)}]" if reqs else ""
         return f"<Plugin {self.meta.id} v{self.meta.version} prio={self.priority}{req_str}>"
 
     def get_compatibility_info(self) -> dict[str, str]:
         """Get plugin compatibility information.
-        
+
         Returns:
             Dictionary with required versions for BCASL and Core
         """
@@ -170,19 +166,20 @@ class BcPluginBase:
 
     def is_compatible_with_bcasl(self, bcasl_version: str) -> bool:
         """Check if plugin is compatible with given BCASL version.
-        
+
         Supports version formats:
         - "1.0.0" -> (1, 0, 0)
         - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
         - "1.0.0-beta" -> (1, 0, 0)
         - "1.0.0+build123" -> (1, 0, 0)
-        
+
         Args:
             bcasl_version: BCASL version string to check against
-            
+
         Returns:
             True if compatible, False otherwise
         """
+
         def parse_version(v: str) -> tuple:
             try:
                 s = v.strip()
@@ -196,26 +193,27 @@ class BcPluginBase:
                 return (major, minor, patch)
             except Exception:
                 return (0, 0, 0)
-        
+
         current = parse_version(bcasl_version)
         required = parse_version(self.meta.required_bcasl_version)
         return current >= required
 
     def is_compatible_with_core(self, core_version: str) -> bool:
         """Check if plugin is compatible with given Core version.
-        
+
         Supports version formats:
         - "1.0.0" -> (1, 0, 0)
         - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
         - "1.0.0-beta" -> (1, 0, 0)
         - "1.0.0+build123" -> (1, 0, 0)
-        
+
         Args:
             core_version: Core version string to check against
-            
+
         Returns:
             True if compatible, False otherwise
         """
+
         def parse_version(v: str) -> tuple:
             try:
                 s = v.strip()
@@ -229,26 +227,27 @@ class BcPluginBase:
                 return (major, minor, patch)
             except Exception:
                 return (0, 0, 0)
-        
+
         current = parse_version(core_version)
         required = parse_version(self.meta.required_core_version)
         return current >= required
 
     def is_compatible_with_plugins_sdk(self, sdk_version: str) -> bool:
         """Check if plugin is compatible with given Plugins SDK version.
-        
+
         Supports version formats:
         - "1.0.0" -> (1, 0, 0)
         - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
         - "1.0.0-beta" -> (1, 0, 0)
         - "1.0.0+build123" -> (1, 0, 0)
-        
+
         Args:
             sdk_version: Plugins SDK version string to check against
-            
+
         Returns:
             True if compatible, False otherwise
         """
+
         def parse_version(v: str) -> tuple:
             try:
                 s = v.strip()
@@ -262,26 +261,27 @@ class BcPluginBase:
                 return (major, minor, patch)
             except Exception:
                 return (0, 0, 0)
-        
+
         current = parse_version(sdk_version)
         required = parse_version(self.meta.required_plugins_sdk_version)
         return current >= required
 
     def is_compatible_with_bc_plugin_context(self, context_version: str) -> bool:
         """Check if plugin is compatible with given BcPluginContext version.
-        
+
         Supports version formats:
         - "1.0.0" -> (1, 0, 0)
         - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
         - "1.0.0-beta" -> (1, 0, 0)
         - "1.0.0+build123" -> (1, 0, 0)
-        
+
         Args:
             context_version: BcPluginContext version string to check against
-            
+
         Returns:
             True if compatible, False otherwise
         """
+
         def parse_version(v: str) -> tuple:
             try:
                 s = v.strip()
@@ -295,26 +295,27 @@ class BcPluginBase:
                 return (major, minor, patch)
             except Exception:
                 return (0, 0, 0)
-        
+
         current = parse_version(context_version)
         required = parse_version(self.meta.required_bc_plugin_context_version)
         return current >= required
 
     def is_compatible_with_general_context(self, context_version: str) -> bool:
         """Check if plugin is compatible with given GeneralContext version.
-        
+
         Supports version formats:
         - "1.0.0" -> (1, 0, 0)
         - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
         - "1.0.0-beta" -> (1, 0, 0)
         - "1.0.0+build123" -> (1, 0, 0)
-        
+
         Args:
             context_version: GeneralContext version string to check against
-            
+
         Returns:
             True if compatible, False otherwise
         """
+
         def parse_version(v: str) -> tuple:
             try:
                 s = v.strip()
@@ -328,14 +329,14 @@ class BcPluginBase:
                 return (major, minor, patch)
             except Exception:
                 return (0, 0, 0)
-        
+
         current = parse_version(context_version)
         required = parse_version(self.meta.required_general_context_version)
         return current >= required
 
     def get_full_compatibility_info(self) -> dict[str, str]:
         """Get complete plugin compatibility information including all SDKs.
-        
+
         Returns:
             Dictionary with all required versions
         """
@@ -359,13 +360,94 @@ class PreCompileContext:
     """Contexte passé aux plugins.
 
     Fournit utilitaires peu coûteux pour la découverte des fichiers et la config.
+    Donne accès complet au workspace sélectionné et à ses métadonnées.
     """
 
     project_root: Path
     config: dict[str, Any] = field(default_factory=dict)
+    workspace_metadata: dict[str, Any] = field(default_factory=dict)
     _iter_cache: dict[tuple[tuple[str, ...], tuple[str, ...]], list[Path]] = field(
         default_factory=dict, repr=False, compare=False
     )
+
+    def _load_bcasl_config(self) -> dict[str, Any]:
+        """Charge la configuration depuis bcasl.yml."""
+        try:
+            import yaml
+            bcasl_file = self.project_root / "bcasl.yml"
+            if bcasl_file.exists():
+                with open(bcasl_file, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f) or {}
+        except Exception:
+            pass
+        return self.config
+
+    def get_workspace_root(self) -> Path:
+        """Retourne le chemin racine du workspace sélectionné depuis bcasl.yml."""
+        return self.project_root
+
+    def get_workspace_name(self) -> str:
+        """Retourne le nom du workspace (nom du dossier) depuis bcasl.yml."""
+        return self.project_root.name
+
+    def get_workspace_config(self) -> dict[str, Any]:
+        """Retourne la configuration complète du workspace depuis bcasl.yml."""
+        cfg = self._load_bcasl_config()
+        return dict(cfg) if cfg else {}
+
+    def get_workspace_metadata(self) -> dict[str, Any]:
+        """Retourne les métadonnées du workspace depuis bcasl.yml (fichiers requis, patterns, etc.)."""
+        cfg = self._load_bcasl_config()
+        return {
+            "workspace_name": self.project_root.name,
+            "workspace_path": str(self.project_root),
+            "file_patterns": cfg.get("file_patterns", []),
+            "exclude_patterns": cfg.get("exclude_patterns", []),
+            "required_files": cfg.get("required_files", []),
+        }
+
+    def get_file_patterns(self) -> tuple[str, ...]:
+        """Retourne les patterns d'inclusion des fichiers depuis bcasl.yml."""
+        cfg = self._load_bcasl_config()
+        patterns = cfg.get("file_patterns", []) if isinstance(cfg, dict) else []
+        return tuple(patterns) if patterns else ("**/*.py",)
+
+    def get_exclude_patterns(self) -> tuple[str, ...]:
+        """Retourne les patterns d'exclusion des fichiers depuis bcasl.yml."""
+        cfg = self._load_bcasl_config()
+        patterns = cfg.get("exclude_patterns", []) if isinstance(cfg, dict) else []
+        return tuple(patterns) if patterns else ()
+
+    def get_required_files(self) -> tuple[str, ...]:
+        """Retourne la liste des fichiers requis du workspace depuis bcasl.yml."""
+        cfg = self._load_bcasl_config()
+        files = cfg.get("required_files", []) if isinstance(cfg, dict) else []
+        return tuple(files) if files else ()
+
+    def has_required_file(self, filename: str) -> bool:
+        """Vérifie si un fichier requis existe dans le workspace (basé sur bcasl.yml)."""
+        try:
+            required = self.get_required_files()
+            return filename in required and (self.project_root / filename).is_file()
+        except Exception:
+            return False
+
+    def get_workspace_files(self, pattern: str = "**/*") -> list[Path]:
+        """Retourne tous les fichiers du workspace correspondant au pattern (patterns depuis bcasl.yml)."""
+        try:
+            return list(self.project_root.glob(pattern))
+        except Exception:
+            return []
+
+    def is_workspace_valid(self) -> bool:
+        """Vérifie si le workspace est valide (existe et est accessible, configuré dans bcasl.yml)."""
+        try:
+            bcasl_file = self.project_root / "bcasl.yml"
+            return (self.project_root.exists() and 
+                    self.project_root.is_dir() and 
+                    bcasl_file.exists())
+        except Exception:
+            return False
 
     def iter_files(
         self, include: Iterable[str], exclude: Iterable[str] = ()
@@ -379,7 +461,8 @@ class PreCompileContext:
         root = self.project_root
         inc = tuple(include) if include else ("**/*",)
         exc = tuple(exclude) if exclude else tuple()
-        # Optional caching to avoid repeated globbing across plugins
+        
+        # Déterminer si le cache est activé
         try:
             opt = (
                 dict(self.config or {}).get("options", {})
@@ -389,19 +472,21 @@ class PreCompileContext:
             enable_cache = bool(opt.get("iter_files_cache", True))
         except Exception:
             enable_cache = True
-        key = None
+        
+        # Créer une clé de cache cohérente (patterns normalisés et triés)
+        cache_key = None
         if enable_cache:
             try:
-                key = (tuple(sorted(inc)), tuple(sorted(exc)))
-                cached = self._iter_cache.get(key)
+                cache_key = (tuple(sorted(inc)), tuple(sorted(exc)))
+                cached = self._iter_cache.get(cache_key)
                 if cached is not None:
                     for p in cached:
                         yield p
                     return
             except Exception:
-                pass
+                enable_cache = False
 
-        # Pré-calcul des chemins exclus sous forme posix pour fnmatch
+        # Fonction pour vérifier si un chemin doit être exclu
         def is_excluded(p: Path) -> bool:
             s = p.as_posix()
             for pat in exc:
@@ -409,16 +494,28 @@ class PreCompileContext:
                     return True
             return False
 
+        # Collecter les fichiers avec déduplication (utiliser un set pour éviter les doublons)
+        seen: set[Path] = set()
         collected: list[Path] = []
+        
         for pat in inc:
-            for path in root.glob(pat):
-                if path.is_file() and not is_excluded(path):
-                    collected.append(path)
-        for p in collected:
-            yield p
-        if enable_cache and key is not None:
             try:
-                self._iter_cache[key] = collected
+                for path in root.glob(pat):
+                    if path.is_file() and not is_excluded(path):
+                        # Utiliser le chemin résolu pour la déduplication
+                        resolved = path.resolve()
+                        if resolved not in seen:
+                            seen.add(resolved)
+                            collected.append(path)
+                            yield path
+            except (OSError, ValueError):
+                # Ignorer les patterns invalides ou les erreurs d'accès
+                continue
+        
+        # Mettre en cache le résultat si activé
+        if enable_cache and cache_key is not None:
+            try:
+                self._iter_cache[cache_key] = collected
             except Exception:
                 pass
 

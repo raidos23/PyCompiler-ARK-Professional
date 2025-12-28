@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-
 from __future__ import annotations
 
 import os
@@ -430,6 +429,7 @@ class NuitkaEngine(CompilerEngine):
                 # Save UI state automatically when user toggles/edits widgets
                 try:
                     from engine_sdk import save_engine_ui as _save
+
                     # Checkboxes for nuitka
                     for _name in (
                         "nuitka_onefile",
@@ -453,7 +453,9 @@ class NuitkaEngine(CompilerEngine):
                         if _w is not None and hasattr(_w, "textChanged"):
                             _w.textChanged.connect(
                                 lambda s: _save(
-                                    gui, "nuitka", {"nuitka_output_dir": {"text": str(s)}}
+                                    gui,
+                                    "nuitka",
+                                    {"nuitka_output_dir": {"text": str(s)}},
                                 )
                             )
                     except Exception:
@@ -466,8 +468,7 @@ class NuitkaEngine(CompilerEngine):
         return None
 
     def on_success(self, gui, file: str) -> None:
-        """Action post-succès: ouvrir le dossier de sortie Nuitka si identifiable.
-        """
+        """Action post-succès: ouvrir le dossier de sortie Nuitka si identifiable."""
         try:
             # Priorité: champ UI dédié si présent (nuitka_output_dir)
             out_dir = None

@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-
-
 import json
 import os
 import platform
@@ -44,7 +42,6 @@ from ..preferences import MAX_PARALLEL
 # ACASL support removed (obsolete)
 
 
-
 def try_start_processes(self):
     from PySide6.QtWidgets import QApplication
 
@@ -59,12 +56,13 @@ def try_start_processes(self):
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         from PySide6.QtWidgets import QApplication
+
         QApplication.processEvents()
         self.log.append("✔️ Toutes les compilations sont terminées.\n")
         # Exécuter immédiatement les hooks de succès des moteurs et restaurer l'UI
         try:
             hooks = getattr(self, "_pending_engine_success_hooks", [])
-            for (eng, fpath) in hooks:
+            for eng, fpath in hooks:
                 try:
                     eng.on_success(self, fpath)
                 except Exception:
@@ -180,7 +178,7 @@ def start_compilation_process(self, file):
     process._cancel_file = cancel_file
     process.readyReadStandardOutput.connect(lambda p=process: self.handle_stdout(p))
     process.readyReadStandardError.connect(lambda p=process: self.handle_stderr(p))
-    
+
     # Capture stderr data before process deletion to avoid accessing deleted C++ object
     def _on_finished(ec, es, p=process):
         try:
@@ -198,7 +196,7 @@ def start_compilation_process(self, file):
                 p.deleteLater()
             except Exception:
                 pass
-    
+
     process.finished.connect(_on_finished)
     self.processes.append(process)
     self.current_compiling.add(file)

@@ -33,7 +33,7 @@ def _continue_compile_all(self):
     auto_detect_entry_points = ark_config.get("auto_detect_entry_points", True)
     compile_only_main_ark = ark_config.get("compile_only_main", False)
     main_file_names_ark = ark_config.get("main_file_names", ["main.py", "app.py"])
-    
+
     # Déplacé depuis compile_all pour poursuivre après BCASL sans bloquer l'UI
     # Compteurs pour les exclusions
     exclusion_counts = {
@@ -41,28 +41,28 @@ def _continue_compile_all(self):
         "ark_patterns": 0,
         "no_entry_point": 0,
         "read_error": 0,
-        "not_exists": 0
+        "not_exists": 0,
     }
-    
+
     def is_executable_script(path):
         # Vérifie que le fichier existe, n'est pas dans site-packages, et contient un point d'entrée
         if not os.path.exists(path):
             exclusion_counts["not_exists"] += 1
             return False
-        
+
         # Vérifier les patterns d'exclusion depuis ARK_Main_Config.yml
         if should_exclude_file(path, self.workspace_dir, exclusion_patterns):
             exclusion_counts["ark_patterns"] += 1
             return False
-        
+
         if "site-packages" in path:
             exclusion_counts["site_packages"] += 1
             return False
-        
+
         # Si auto_detect_entry_points est désactivé, accepter tous les fichiers
         if not auto_detect_entry_points:
             return True
-        
+
         try:
             with open(path, encoding="utf-8") as f:
                 content = f.read()
@@ -88,8 +88,12 @@ def _continue_compile_all(self):
             use_nuitka = True
 
     # L'option UI a priorité sur la config ARK
-    compile_only_main = self.opt_main_only.isChecked() if hasattr(self, "opt_main_only") else compile_only_main_ark
-    
+    compile_only_main = (
+        self.opt_main_only.isChecked()
+        if hasattr(self, "opt_main_only")
+        else compile_only_main_ark
+    )
+
     # Sélection des fichiers à compiler selon le compilateur
     if use_nuitka:
         # Nuitka : compile tous les fichiers sélectionnés ou tous les fichiers du workspace
@@ -144,17 +148,27 @@ def _continue_compile_all(self):
     self.current_compiling.clear()
     self.processes.clear()
     self.progress.setRange(0, 0)  # Mode indéterminé pendant toute la compilation
-    
+
     # Afficher les informations de configuration ARK
     if ark_config:
         self.log.append("📋 Configuration ARK chargée depuis ARK_Main_Config.yml\n")
         # Afficher les paramètres de compilation utilisés
-        self.log.append(f"   • Patterns d'inclusion : {', '.join(inclusion_patterns)}\n")
-        self.log.append(f"   • Patterns d'exclusion : {len(exclusion_patterns)} pattern(s)\n")
-        self.log.append(f"   • Détection point d'entrée : {'Activée' if auto_detect_entry_points else 'Désactivée'}\n")
-        self.log.append(f"   • Compiler uniquement main : {'Oui' if compile_only_main else 'Non'}\n")
-    
-    self.log.append(f"🔨 Compilation parallèle démarrée ({len(files_ok)} fichier(s))...\n")
+        self.log.append(
+            f"   • Patterns d'inclusion : {', '.join(inclusion_patterns)}\n"
+        )
+        self.log.append(
+            f"   • Patterns d'exclusion : {len(exclusion_patterns)} pattern(s)\n"
+        )
+        self.log.append(
+            f"   • Détection point d'entrée : {'Activée' if auto_detect_entry_points else 'Désactivée'}\n"
+        )
+        self.log.append(
+            f"   • Compiler uniquement main : {'Oui' if compile_only_main else 'Non'}\n"
+        )
+
+    self.log.append(
+        f"🔨 Compilation parallèle démarrée ({len(files_ok)} fichier(s))...\n"
+    )
 
     self.set_controls_enabled(False)
     self.try_start_processes()

@@ -1,6 +1,3 @@
-
-
-
 import hashlib
 import os
 import platform
@@ -61,62 +58,62 @@ class VenvManager:
 
         # Internal timers to enforce timeouts on background processes
         self._proc_timers: list[QTimer] = []
-        
+
         # Retry counters for resilience
         self._venv_check_retries = {}
         self._max_retries = 2
-        
+
         # Encoding detection for subprocess output
         self._output_encoding = "utf-8"
         self._fallback_encodings = ["utf-8", "latin-1", "cp1252", "ascii"]
-        
+
         # Environment manager detection
         self._detected_manager = None  # 'pip', 'poetry', 'conda', 'pipenv', 'uv', 'pdm'
         self._manager_commands = {
-            'poetry': {
-                'create_venv': ['poetry', 'env', 'use', 'python'],
-                'install': ['poetry', 'install'],
-                'add': ['poetry', 'add'],
-                'show': ['poetry', 'show'],
-                'check': ['poetry', 'check'],
-                'lock': ['poetry', 'lock'],
+            "poetry": {
+                "create_venv": ["poetry", "env", "use", "python"],
+                "install": ["poetry", "install"],
+                "add": ["poetry", "add"],
+                "show": ["poetry", "show"],
+                "check": ["poetry", "check"],
+                "lock": ["poetry", "lock"],
             },
-            'conda': {
-                'create_venv': ['conda', 'create', '-y', '-n'],
-                'install': ['conda', 'install', '-y'],
-                'activate': ['conda', 'activate'],
-                'list': ['conda', 'list'],
-                'check': ['conda', 'list'],
+            "conda": {
+                "create_venv": ["conda", "create", "-y", "-n"],
+                "install": ["conda", "install", "-y"],
+                "activate": ["conda", "activate"],
+                "list": ["conda", "list"],
+                "check": ["conda", "list"],
             },
-            'pipenv': {
-                'create_venv': ['pipenv', '--python'],
-                'install': ['pipenv', 'install'],
-                'add': ['pipenv', 'install'],
-                'show': ['pipenv', 'graph'],
-                'check': ['pipenv', 'check'],
-                'lock': ['pipenv', 'lock'],
+            "pipenv": {
+                "create_venv": ["pipenv", "--python"],
+                "install": ["pipenv", "install"],
+                "add": ["pipenv", "install"],
+                "show": ["pipenv", "graph"],
+                "check": ["pipenv", "check"],
+                "lock": ["pipenv", "lock"],
             },
-            'uv': {
-                'create_venv': ['uv', 'venv'],
-                'install': ['uv', 'pip', 'install', '-r'],
-                'add': ['uv', 'pip', 'install'],
-                'show': ['uv', 'pip', 'show'],
-                'check': ['uv', 'pip', 'check'],
+            "uv": {
+                "create_venv": ["uv", "venv"],
+                "install": ["uv", "pip", "install", "-r"],
+                "add": ["uv", "pip", "install"],
+                "show": ["uv", "pip", "show"],
+                "check": ["uv", "pip", "check"],
             },
-            'pdm': {
-                'create_venv': ['pdm', 'venv', 'create'],
-                'install': ['pdm', 'install'],
-                'add': ['pdm', 'add'],
-                'show': ['pdm', 'show'],
-                'check': ['pdm', 'check'],
-                'lock': ['pdm', 'lock'],
+            "pdm": {
+                "create_venv": ["pdm", "venv", "create"],
+                "install": ["pdm", "install"],
+                "add": ["pdm", "add"],
+                "show": ["pdm", "show"],
+                "check": ["pdm", "check"],
+                "lock": ["pdm", "lock"],
             },
-            'pip': {
-                'create_venv': ['python', '-m', 'venv'],
-                'install': ['pip', 'install', '-r'],
-                'add': ['pip', 'install'],
-                'show': ['pip', 'show'],
-                'check': ['pip', 'check'],
+            "pip": {
+                "create_venv": ["python", "-m", "venv"],
+                "install": ["pip", "install", "-r"],
+                "add": ["pip", "install"],
+                "show": ["pip", "show"],
+                "check": ["pip", "check"],
             },
         }
 
@@ -277,29 +274,29 @@ class VenvManager:
             import sys
             import sysconfig
             import importlib.util
-            
+
             # Check if it's a built-in module
             if module_name in sys.builtin_module_names:
                 return True
-            
+
             # Try to find the module spec
             spec = importlib.util.find_spec(module_name)
             if spec is None:
                 return False
-            
+
             # Check if it's a built-in or frozen module
             if getattr(spec, "origin", None) in ("built-in", "frozen"):
                 return True
-            
+
             # Check if it's in the stdlib path
             stdlib_path = sysconfig.get_path("stdlib") or ""
             stdlib_path = os.path.realpath(stdlib_path)
-            
+
             if getattr(spec, "origin", None):
                 origin_path = os.path.realpath(spec.origin)
                 if os.path.commonpath([origin_path, stdlib_path]) == stdlib_path:
                     return True
-            
+
             for loc in spec.submodule_search_locations or []:
                 loc_path = os.path.realpath(loc)
                 try:
@@ -307,7 +304,7 @@ class VenvManager:
                         return True
                 except Exception:
                     pass
-            
+
             return False
         except Exception:
             return False
@@ -324,11 +321,14 @@ class VenvManager:
                 if attempt < max_retries - 1:
                     try:
                         import time
+
                         time.sleep(0.5)  # Brief pause before retry
                     except Exception:
                         pass
                 else:
-                    self._safe_log(f"⚠️ Failed to remove {path} after {max_retries} attempts: {e}")
+                    self._safe_log(
+                        f"⚠️ Failed to remove {path} after {max_retries} attempts: {e}"
+                    )
                     return False
         return False
 
@@ -778,23 +778,23 @@ class VenvManager:
             base = os.path.abspath(base)
         except Exception:
             return []
-        
+
         venvs = []
         common_names = [".venv", "venv", ".env", "env", "virtualenv"]
-        
+
         for name in common_names:
             venv_path = os.path.join(base, name)
             if os.path.isdir(venv_path):
                 ok, _ = self.validate_venv_strict(venv_path)
                 if ok:
                     venvs.append(venv_path)
-        
+
         return venvs
 
     def _score_venv(self, venv_path: str, workspace_dir: str) -> tuple[int, str]:
         """Score a venv based on its completeness and requirements satisfaction.
         Returns (score, reason) where higher score = better venv.
-        
+
         Scoring criteria:
         - Has requirements.txt satisfied: +100
         - Has pyinstaller: +50
@@ -805,7 +805,7 @@ class VenvManager:
         """
         score = 0
         reasons = []
-        
+
         try:
             # Check if venv is valid
             ok, _ = self.validate_venv_strict(venv_path)
@@ -813,14 +813,14 @@ class VenvManager:
                 return 0, "Invalid venv structure"
             score += 10
             reasons.append("valid_structure")
-            
+
             # Check binding
             if self.verify_venv_binding(venv_path):
                 score += 20
                 reasons.append("verified_binding")
             else:
                 return score, "Invalid binding (python/pip don't point to venv)"
-            
+
             # Check for requirements.txt
             req_path = os.path.join(workspace_dir, "requirements.txt")
             if os.path.isfile(req_path):
@@ -829,11 +829,12 @@ class VenvManager:
                 if os.path.isfile(py_exe):
                     try:
                         import subprocess
+
                         result = subprocess.run(
                             [py_exe, "-m", "pip", "check"],
                             capture_output=True,
                             text=True,
-                            timeout=10
+                            timeout=10,
                         )
                         if result.returncode == 0:
                             score += 100
@@ -842,7 +843,7 @@ class VenvManager:
                             reasons.append("requirements_not_satisfied")
                     except Exception:
                         reasons.append("requirements_check_failed")
-            
+
             # Check for key tools
             tools_to_check = [
                 ("pyinstaller", 50),
@@ -852,20 +853,20 @@ class VenvManager:
                 if self.has_tool_binary(venv_path, tool):
                     score += tool_score
                     reasons.append(f"has_{tool}")
-            
+
             # Check for pip/setuptools/wheel
             pip_exe = self.pip_path(venv_path)
             if os.path.isfile(pip_exe):
                 score += 30
                 reasons.append("has_pip")
-            
+
             return score, ", ".join(reasons)
         except Exception as e:
             return 0, f"Scoring error: {e}"
 
     def select_best_venv(self, workspace_dir: str) -> str | None:
         """Select the best venv from multiple candidates.
-        
+
         Strategy:
         1. Find all valid venvs in workspace
         2. Score each based on completeness and requirements satisfaction
@@ -874,34 +875,40 @@ class VenvManager:
         """
         try:
             venvs = self._find_all_venvs_in(workspace_dir)
-            
+
             if not venvs:
                 self._safe_log("ℹ️ Aucun venv valide trouvé dans le workspace.")
                 return None
-            
+
             if len(venvs) == 1:
                 self._safe_log(f"✅ Un seul venv trouvé: {venvs[0]}")
                 return venvs[0]
-            
+
             # Multiple venvs found - score and select the best
-            self._safe_log(f"ℹ️ {len(venvs)} venv(s) trouvé(s), sélection du meilleur...")
-            
+            self._safe_log(
+                f"ℹ️ {len(venvs)} venv(s) trouvé(s), sélection du meilleur..."
+            )
+
             scored_venvs = []
             for venv_path in venvs:
                 score, reason = self._score_venv(venv_path, workspace_dir)
                 scored_venvs.append((score, venv_path, reason))
-                self._safe_log(f"  - {os.path.basename(venv_path)}: score={score} ({reason})")
-            
+                self._safe_log(
+                    f"  - {os.path.basename(venv_path)}: score={score} ({reason})"
+                )
+
             # Sort by score (descending)
             scored_venvs.sort(key=lambda x: x[0], reverse=True)
-            
+
             best_score, best_venv, best_reason = scored_venvs[0]
-            
+
             if best_score == 0:
                 self._safe_log("❌ Aucun venv valide avec une bonne liaison.")
                 return None
-            
-            self._safe_log(f"✅ Meilleur venv sélectionné: {os.path.basename(best_venv)} (score={best_score})")
+
+            self._safe_log(
+                f"✅ Meilleur venv sélectionné: {os.path.basename(best_venv)} (score={best_score})"
+            )
             return best_venv
         except Exception as e:
             self._safe_log(f"⚠️ Erreur lors de la sélection du meilleur venv: {e}")
@@ -1073,39 +1080,45 @@ class VenvManager:
         QApplication.processEvents()
 
     # ---------- Requirements detection and generation ----------
-    def _find_requirements_files(self, path: str, workspace_dir: str | None = None) -> list[str]:
+    def _find_requirements_files(
+        self, path: str, workspace_dir: str | None = None
+    ) -> list[str]:
         """Find all potential requirements files in the project.
-        Supports: requirements.txt, requirements-*.txt, Pipfile, Pipfile.lock, 
+        Supports: requirements.txt, requirements-*.txt, Pipfile, Pipfile.lock,
                   pyproject.toml, setup.py, setup.cfg, poetry.lock, etc.
-        
+
         Uses ARK config to determine priority order if available.
         """
         try:
             path = os.path.abspath(path)
         except Exception:
             return []
-        
+
         requirements_files = []
-        
+
         # Load ARK config to get requirements file patterns
         try:
             from Core.ark_config_loader import load_ark_config, get_dependency_options
+
             if workspace_dir:
                 ark_config = load_ark_config(workspace_dir)
                 dep_opts = get_dependency_options(ark_config)
-                patterns = dep_opts.get("requirements_files", [
-                    "requirements.txt",
-                    "requirements-prod.txt",
-                    "requirements-dev.txt",
-                    "Pipfile",
-                    "Pipfile.lock",
-                    "pyproject.toml",
-                    "setup.py",
-                    "setup.cfg",
-                    "poetry.lock",
-                    "conda.yml",
-                    "environment.yml",
-                ])
+                patterns = dep_opts.get(
+                    "requirements_files",
+                    [
+                        "requirements.txt",
+                        "requirements-prod.txt",
+                        "requirements-dev.txt",
+                        "Pipfile",
+                        "Pipfile.lock",
+                        "pyproject.toml",
+                        "setup.py",
+                        "setup.cfg",
+                        "poetry.lock",
+                        "conda.yml",
+                        "environment.yml",
+                    ],
+                )
             else:
                 patterns = [
                     "requirements.txt",
@@ -1134,13 +1147,13 @@ class VenvManager:
                 "conda.yml",
                 "environment.yml",
             ]
-        
+
         try:
             for item in os.listdir(path):
                 item_path = os.path.join(path, item)
                 if not os.path.isfile(item_path):
                     continue
-                
+
                 # Check exact matches
                 if item in patterns:
                     requirements_files.append(item_path)
@@ -1149,7 +1162,7 @@ class VenvManager:
                     requirements_files.append(item_path)
         except Exception:
             pass
-        
+
         return requirements_files
 
     def _generate_requirements_from_imports(self, workspace_dir: str) -> str | None:
@@ -1159,27 +1172,33 @@ class VenvManager:
         try:
             import ast
             import re as _re
-            
-            self._safe_log("🔍 Génération de requirements.txt à partir des imports du projet...")
-            
+
+            self._safe_log(
+                "🔍 Génération de requirements.txt à partir des imports du projet..."
+            )
+
             modules = set()
             python_files = []
-            
+
             # Find all Python files
             for root, dirs, files in os.walk(workspace_dir):
                 # Skip venv directories
-                dirs[:] = [d for d in dirs if d not in (".venv", "venv", ".env", "env", "__pycache__")]
+                dirs[:] = [
+                    d
+                    for d in dirs
+                    if d not in (".venv", "venv", ".env", "env", "__pycache__")
+                ]
                 for file in files:
                     if file.endswith(".py"):
                         python_files.append(os.path.join(root, file))
-            
+
             # Analyze imports
             for py_file in python_files:
                 try:
                     with open(py_file, encoding="utf-8", errors="ignore") as f:
                         source = f.read()
                     tree = ast.parse(source, filename=py_file)
-                    
+
                     # Standard imports
                     for node in ast.walk(tree):
                         if isinstance(node, ast.Import):
@@ -1188,9 +1207,11 @@ class VenvManager:
                         elif isinstance(node, ast.ImportFrom):
                             if node.module:
                                 modules.add(node.module.split(".")[0])
-                    
+
                     # Dynamic imports
-                    dynamic_imports = _re.findall(r"__import__\(['\"]([\w\.]+)['\"]\)", source)
+                    dynamic_imports = _re.findall(
+                        r"__import__\(['\"]([\w\.]+)['\"]\)", source
+                    )
                     modules.update([mod.split(".")[0] for mod in dynamic_imports])
                     importlib_imports = _re.findall(
                         r"importlib\.import_module\(['\"]([\w\.]+)['\"]\)", source
@@ -1198,17 +1219,17 @@ class VenvManager:
                     modules.update([mod.split(".")[0] for mod in importlib_imports])
                 except Exception:
                     pass
-            
+
             # Filter out stdlib modules
             external_modules = []
             for mod in sorted(modules):
                 if not self._is_stdlib_module(mod):
                     external_modules.append(mod)
-            
+
             if not external_modules:
                 self._safe_log("ℹ️ Aucun module externe détecté dans le projet.")
                 return None
-            
+
             # Generate requirements.txt
             req_path = os.path.join(workspace_dir, "requirements.txt")
             try:
@@ -1217,11 +1238,15 @@ class VenvManager:
                     f.write("# Generated from project imports\n\n")
                     for mod in external_modules:
                         f.write(f"{mod}\n")
-                
-                self._safe_log(f"✅ requirements.txt généré avec {len(external_modules)} dépendances")
+
+                self._safe_log(
+                    f"✅ requirements.txt généré avec {len(external_modules)} dépendances"
+                )
                 return req_path
             except Exception as e:
-                self._safe_log(f"❌ Erreur lors de la génération de requirements.txt: {e}")
+                self._safe_log(
+                    f"❌ Erreur lors de la génération de requirements.txt: {e}"
+                )
                 return None
         except Exception as e:
             self._safe_log(f"⚠️ Erreur lors de l'analyse des imports: {e}")
@@ -1231,40 +1256,45 @@ class VenvManager:
         """Extract dependencies from pyproject.toml (Poetry, Flit, etc.)"""
         try:
             import re as _re
+
             with open(pyproject_path, encoding="utf-8") as f:
                 content = f.read()
-            
+
             # Simple regex-based extraction (not a full TOML parser)
             # Look for dependencies sections
             deps = []
-            
+
             # Poetry format: [tool.poetry.dependencies]
-            poetry_match = _re.search(r'\[tool\.poetry\.dependencies\](.*?)(?=\[|$)', content, _re.DOTALL)
+            poetry_match = _re.search(
+                r"\[tool\.poetry\.dependencies\](.*?)(?=\[|$)", content, _re.DOTALL
+            )
             if poetry_match:
                 section = poetry_match.group(1)
                 # Extract package names (simple format: package = "version")
-                for line in section.split('\n'):
+                for line in section.split("\n"):
                     line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        pkg_name = line.split('=')[0].strip().strip('"\'')
-                        if pkg_name and pkg_name != 'python':
+                    if line and not line.startswith("#") and "=" in line:
+                        pkg_name = line.split("=")[0].strip().strip("\"'")
+                        if pkg_name and pkg_name != "python":
                             deps.append(pkg_name)
-            
+
             # Flit format: [project] dependencies
-            flit_match = _re.search(r'\[project\](.*?)(?=\[|$)', content, _re.DOTALL)
+            flit_match = _re.search(r"\[project\](.*?)(?=\[|$)", content, _re.DOTALL)
             if flit_match:
                 section = flit_match.group(1)
-                deps_match = _re.search(r'dependencies\s*=\s*\[(.*?)\]', section, _re.DOTALL)
+                deps_match = _re.search(
+                    r"dependencies\s*=\s*\[(.*?)\]", section, _re.DOTALL
+                )
                 if deps_match:
                     deps_str = deps_match.group(1)
-                    for line in deps_str.split(','):
-                        line = line.strip().strip('"\'')
+                    for line in deps_str.split(","):
+                        line = line.strip().strip("\"'")
                         if line:
                             # Extract package name from "package>=1.0" format
-                            pkg_name = _re.split(r'[<>=!]', line)[0].strip()
+                            pkg_name = _re.split(r"[<>=!]", line)[0].strip()
                             if pkg_name:
                                 deps.append(pkg_name)
-            
+
             return list(set(deps))
         except Exception:
             return []
@@ -1273,22 +1303,23 @@ class VenvManager:
         """Extract dependencies from setup.py or setup.cfg"""
         try:
             import re as _re
+
             with open(setup_path, encoding="utf-8") as f:
                 content = f.read()
-            
+
             deps = []
-            
+
             # Look for install_requires
-            match = _re.search(r'install_requires\s*=\s*\[(.*?)\]', content, _re.DOTALL)
+            match = _re.search(r"install_requires\s*=\s*\[(.*?)\]", content, _re.DOTALL)
             if match:
                 deps_str = match.group(1)
-                for line in deps_str.split(','):
-                    line = line.strip().strip('"\'')
+                for line in deps_str.split(","):
+                    line = line.strip().strip("\"'")
                     if line:
-                        pkg_name = _re.split(r'[<>=!]', line)[0].strip()
+                        pkg_name = _re.split(r"[<>=!]", line)[0].strip()
                         if pkg_name:
                             deps.append(pkg_name)
-            
+
             return list(set(deps))
         except Exception:
             return []
@@ -1297,29 +1328,30 @@ class VenvManager:
         """Extract dependencies from Pipfile"""
         try:
             import re as _re
+
             with open(pipfile_path, encoding="utf-8") as f:
                 content = f.read()
-            
+
             deps = []
-            
+
             # Look for [packages] section
-            match = _re.search(r'\[packages\](.*?)(?=\[|$)', content, _re.DOTALL)
+            match = _re.search(r"\[packages\](.*?)(?=\[|$)", content, _re.DOTALL)
             if match:
                 section = match.group(1)
-                for line in section.split('\n'):
+                for line in section.split("\n"):
                     line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        pkg_name = line.split('=')[0].strip().strip('"\'')
+                    if line and not line.startswith("#") and "=" in line:
+                        pkg_name = line.split("=")[0].strip().strip("\"'")
                         if pkg_name:
                             deps.append(pkg_name)
-            
+
             return list(set(deps))
         except Exception:
             return []
 
     def _get_requirements_file(self, workspace_dir: str) -> str | None:
         """Get or generate a requirements file for the project.
-        
+
         Strategy:
         1. Load ARK config to get requirements file preferences
         2. Look for existing requirements files (requirements.txt, Pipfile, pyproject.toml, etc.)
@@ -1329,10 +1361,14 @@ class VenvManager:
         """
         try:
             workspace_dir = os.path.abspath(workspace_dir)
-            
+
             # Load ARK config to get requirements file preferences
             try:
-                from Core.ark_config_loader import load_ark_config, get_dependency_options
+                from Core.ark_config_loader import (
+                    load_ark_config,
+                    get_dependency_options,
+                )
+
                 ark_config = load_ark_config(workspace_dir)
                 dep_opts = get_dependency_options(ark_config)
                 auto_generate = dep_opts.get("auto_generate_from_imports", True)
@@ -1340,23 +1376,25 @@ class VenvManager:
             except Exception:
                 auto_generate = True
                 output_file = "requirements.txt"
-            
+
             # Check for existing requirements files
             req_files = self._find_requirements_files(workspace_dir, workspace_dir)
-            
+
             if req_files:
-                self._safe_log(f"ℹ️ Fichiers de dépendances trouvés: {[os.path.basename(f) for f in req_files]}")
-                
+                self._safe_log(
+                    f"ℹ️ Fichiers de dépendances trouvés: {[os.path.basename(f) for f in req_files]}"
+                )
+
                 # If requirements.txt exists, use it
                 req_txt = os.path.join(workspace_dir, output_file)
                 if os.path.isfile(req_txt):
                     return req_txt
-                
+
                 # Try to convert other formats to requirements.txt
                 for req_file in req_files:
                     basename = os.path.basename(req_file)
                     deps = []
-                    
+
                     if basename == "Pipfile":
                         deps = self._extract_requirements_from_pipfile(req_file)
                     elif basename == "pyproject.toml":
@@ -1367,28 +1405,40 @@ class VenvManager:
                         # Use requirements-*.txt files
                         try:
                             with open(req_file, encoding="utf-8") as f:
-                                deps = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                                deps = [
+                                    line.strip()
+                                    for line in f
+                                    if line.strip() and not line.startswith("#")
+                                ]
                         except Exception:
                             pass
-                    
+
                     if deps:
                         # Generate requirements.txt from extracted deps
                         try:
                             with open(req_txt, "w", encoding="utf-8") as f:
                                 f.write(f"# Converted from {basename}\n")
-                                f.write(f"# ARK Config: generate_output_file = {output_file}\n\n")
+                                f.write(
+                                    f"# ARK Config: generate_output_file = {output_file}\n\n"
+                                )
                                 for dep in deps:
                                     f.write(f"{dep}\n")
-                            self._safe_log(f"✅ {output_file} généré à partir de {basename}")
+                            self._safe_log(
+                                f"✅ {output_file} généré à partir de {basename}"
+                            )
                             return req_txt
                         except Exception as e:
-                            self._safe_log(f"⚠️ Erreur lors de la conversion de {basename}: {e}")
-            
+                            self._safe_log(
+                                f"⚠️ Erreur lors de la conversion de {basename}: {e}"
+                            )
+
             # No requirements file found
             if not auto_generate:
-                self._safe_log("ℹ️ Auto-génération des requirements désactivée dans ARK config")
+                self._safe_log(
+                    "ℹ️ Auto-génération des requirements désactivée dans ARK config"
+                )
                 return None
-            
+
             # Generate from imports
             return self._generate_requirements_from_imports(workspace_dir)
         except Exception as e:
@@ -1402,7 +1452,7 @@ class VenvManager:
         if not req_path:
             self._safe_log("ℹ️ Aucun fichier de dépendances trouvé ou généré.")
             return
-        
+
         existing, default_path = self._detect_venv_in(path)
         venv_root = existing or default_path
         if not existing:
@@ -1703,10 +1753,10 @@ class VenvManager:
     # ---------- Environment Manager Detection & Handling ----------
     def _detect_environment_manager(self, workspace_dir: str) -> str:
         """Detect which environment manager is used in the project.
-        
+
         Uses ARK configuration to determine priority order if available.
         Falls back to default priority if not configured.
-        
+
         Default priority order:
         1. Poetry (pyproject.toml with [tool.poetry])
         2. Pipenv (Pipfile)
@@ -1717,13 +1767,19 @@ class VenvManager:
         """
         try:
             workspace_dir = os.path.abspath(workspace_dir)
-            
+
             # Load ARK configuration to get manager priorities
             try:
-                from Core.ark_config_loader import load_ark_config, get_environment_manager_options
+                from Core.ark_config_loader import (
+                    load_ark_config,
+                    get_environment_manager_options,
+                )
+
                 ark_config = load_ark_config(workspace_dir)
                 env_manager_opts = get_environment_manager_options(ark_config)
-                priority_list = env_manager_opts.get("priority", ["poetry", "pipenv", "conda", "pdm", "uv", "pip"])
+                priority_list = env_manager_opts.get(
+                    "priority", ["poetry", "pipenv", "conda", "pdm", "uv", "pip"]
+                )
                 auto_detect = env_manager_opts.get("auto_detect", True)
                 fallback_to_pip = env_manager_opts.get("fallback_to_pip", True)
                 self._safe_log(f"📋 Priorités des gestionnaires (ARK): {priority_list}")
@@ -1731,15 +1787,17 @@ class VenvManager:
                 priority_list = ["poetry", "pipenv", "conda", "pdm", "uv", "pip"]
                 auto_detect = True
                 fallback_to_pip = True
-            
+
             if not auto_detect:
-                self._safe_log("ℹ️ Auto-détection des gestionnaires désactivée dans ARK config")
+                self._safe_log(
+                    "ℹ️ Auto-détection des gestionnaires désactivée dans ARK config"
+                )
                 self._detected_manager = "pip"
                 return "pip"
-            
+
             # Detect available managers
             detected_managers = {}
-            
+
             # Check for Poetry
             pyproject = os.path.join(workspace_dir, "pyproject.toml")
             if os.path.isfile(pyproject):
@@ -1754,23 +1812,25 @@ class VenvManager:
                         detected_managers["uv"] = "⚡"
                 except Exception:
                     pass
-            
+
             # Check for Pipenv
             if os.path.isfile(os.path.join(workspace_dir, "Pipfile")):
                 detected_managers["pipenv"] = "🔧"
-            
+
             # Check for Conda
             for conda_file in ["environment.yml", "conda.yml", "environment.yaml"]:
                 if os.path.isfile(os.path.join(workspace_dir, conda_file)):
                     detected_managers["conda"] = "🐍"
                     break
-            
+
             # Always consider pip as available
             detected_managers["pip"] = "📝"
-            
+
             if detected_managers:
-                self._safe_log(f"ℹ️ Gestionnaires détectés: {', '.join(detected_managers.keys())}")
-            
+                self._safe_log(
+                    f"ℹ️ Gestionnaires détectés: {', '.join(detected_managers.keys())}"
+                )
+
             # Select the first available manager from the priority list
             for manager in priority_list:
                 if manager in detected_managers:
@@ -1778,13 +1838,13 @@ class VenvManager:
                     emoji = detected_managers[manager]
                     self._safe_log(f"{emoji} Gestionnaire sélectionné: {manager}")
                     return manager
-            
+
             # Fallback to pip if no preferred manager found
             if fallback_to_pip:
                 self._detected_manager = "pip"
                 self._safe_log("📝 Fallback vers Pip")
                 return "pip"
-            
+
             # If fallback disabled and no manager found, still use pip
             self._detected_manager = "pip"
             return "pip"
@@ -1810,29 +1870,33 @@ class VenvManager:
             pass
         return None
 
-    def create_venv_with_manager(self, workspace_dir: str, venv_path: str | None = None):
+    def create_venv_with_manager(
+        self, workspace_dir: str, venv_path: str | None = None
+    ):
         """Create venv using the detected environment manager."""
         try:
             manager = self._detect_environment_manager(workspace_dir)
-            
+
             if not venv_path:
                 venv_path = os.path.join(workspace_dir, ".venv")
-            
+
             self._safe_log(f"🔨 Création du venv avec {manager}...")
-            
+
             # Check if manager is available
             if not self._is_tool_available(manager):
-                self._safe_log(f"⚠️ {manager} n'est pas disponible, utilisation de pip...")
+                self._safe_log(
+                    f"⚠️ {manager} n'est pas disponible, utilisation de pip..."
+                )
                 self.create_venv_if_needed(workspace_dir)
                 return
-            
+
             # Get the appropriate command
             cmd = self._get_manager_command(manager, "create_venv")
             if not cmd:
                 self._safe_log(f"⚠️ Commande de création non disponible pour {manager}")
                 self.create_venv_if_needed(workspace_dir)
                 return
-            
+
             # Build full command
             if manager == "poetry":
                 full_cmd = cmd + [sys.executable]
@@ -1846,15 +1910,15 @@ class VenvManager:
                 full_cmd = cmd + [venv_path]
             else:
                 full_cmd = cmd + [venv_path]
-            
+
             self._safe_log(f"📋 Commande: {' '.join(full_cmd)}")
-            
+
             # Execute command
             self.venv_progress_dialog = ProgressDialog(
                 f"Création du venv avec {manager}", self.parent
             )
             self.venv_progress_dialog.set_message(f"Création du venv avec {manager}...")
-            
+
             process = QProcess(self.parent)
             self._venv_create_process = process
             process.setProgram(full_cmd[0])
@@ -1880,29 +1944,35 @@ class VenvManager:
             self._safe_log(f"❌ Erreur création venv avec manager: {e}")
             self.create_venv_if_needed(workspace_dir)
 
-    def install_dependencies_with_manager(self, workspace_dir: str, venv_path: str | None = None):
+    def install_dependencies_with_manager(
+        self, workspace_dir: str, venv_path: str | None = None
+    ):
         """Install dependencies using the detected environment manager."""
         try:
             manager = self._detect_environment_manager(workspace_dir)
-            
+
             if not venv_path:
                 venv_path = os.path.join(workspace_dir, ".venv")
-            
+
             self._safe_log(f"📦 Installation des dépendances avec {manager}...")
-            
+
             # Check if manager is available
             if not self._is_tool_available(manager):
-                self._safe_log(f"⚠️ {manager} n'est pas disponible, utilisation de pip...")
+                self._safe_log(
+                    f"⚠️ {manager} n'est pas disponible, utilisation de pip..."
+                )
                 self.install_requirements_if_needed(workspace_dir)
                 return
-            
+
             # Get the appropriate command
             cmd = self._get_manager_command(manager, "install")
             if not cmd:
-                self._safe_log(f"⚠️ Commande d'installation non disponible pour {manager}")
+                self._safe_log(
+                    f"⚠️ Commande d'installation non disponible pour {manager}"
+                )
                 self.install_requirements_if_needed(workspace_dir)
                 return
-            
+
             # Build full command
             if manager == "poetry":
                 full_cmd = cmd  # poetry install
@@ -1919,15 +1989,17 @@ class VenvManager:
             else:
                 req_file = os.path.join(workspace_dir, "requirements.txt")
                 full_cmd = cmd + [req_file]
-            
+
             self._safe_log(f"📋 Commande: {' '.join(full_cmd)}")
-            
+
             # Execute command
             self.progress_dialog = ProgressDialog(
                 f"Installation avec {manager}", self.parent
             )
-            self.progress_dialog.set_message(f"Installation des dépendances avec {manager}...")
-            
+            self.progress_dialog.set_message(
+                f"Installation des dépendances avec {manager}..."
+            )
+
             process = QProcess(self.parent)
             self._req_install_process = process
             process.setProgram(full_cmd[0])
@@ -1940,7 +2012,9 @@ class VenvManager:
                 lambda: self._on_pip_output(process, error=True)
             )
             process.finished.connect(
-                lambda code, status: self._on_manager_install_finished(process, code, status, manager)
+                lambda code, status: self._on_manager_install_finished(
+                    process, code, status, manager
+                )
             )
             self._pip_progress_lines = 0
             self.progress_dialog.show()
@@ -1955,32 +2029,32 @@ class VenvManager:
         """Callback after manager-based installation."""
         if getattr(self.parent, "_closing", False):
             return
-        
+
         if code == 0:
             self._safe_log(f"✅ Installation avec {manager} réussie.")
         else:
             self._safe_log(f"❌ Erreur installation avec {manager} (code {code})")
-        
+
         try:
             if self.progress_dialog:
                 self.progress_dialog.set_message("Installation terminée.")
                 self.progress_dialog.close()
         except Exception:
             pass
-        
+
         QApplication.processEvents()
 
     def get_manager_info(self, workspace_dir: str) -> dict:
         """Get detailed information about the detected environment manager."""
         try:
             manager = self._detect_environment_manager(workspace_dir)
-            
+
             info = {
                 "manager": manager,
                 "available": self._is_tool_available(manager),
                 "commands": self._manager_commands.get(manager, {}),
             }
-            
+
             # Add manager-specific info
             if manager == "poetry":
                 info["config_file"] = "pyproject.toml"
@@ -2000,7 +2074,7 @@ class VenvManager:
             else:
                 info["config_file"] = "requirements.txt"
                 info["lock_file"] = None
-            
+
             return info
         except Exception as e:
             self._safe_log(f"⚠️ Erreur récupération info manager: {e}")

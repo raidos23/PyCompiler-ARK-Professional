@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-
-
 import asyncio
 import os
 import sys
@@ -176,6 +174,7 @@ def init_ui(self):
     # Connecter les dialogs à l'application pour synchronisation du thème
     try:
         from Core.dialogs import connect_to_app
+
         connect_to_app(self)
     except Exception:
         pass

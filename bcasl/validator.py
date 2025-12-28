@@ -44,7 +44,7 @@ class CompatibilityCheckResult:
 def parse_version(version_string: str) -> Tuple[int, int, int]:
     """
     Parse a version string into (major, minor, patch).
-    
+
     Supports formats:
     - "1.0.0" -> (1, 0, 0)
     - "1.0.0+" -> (1, 0, 0) [+ means "or higher"]
@@ -54,15 +54,15 @@ def parse_version(version_string: str) -> Tuple[int, int, int]:
     try:
         # Remove leading/trailing whitespace
         s = version_string.strip()
-        
+
         # Handle "1.0.0+" format (+ at the end means "or higher")
         # We just strip it since our comparison logic already uses >= semantics
         if s.endswith("+"):
             s = s[:-1].strip()
-        
+
         # Remove build metadata and pre-release identifiers
         s = s.split("+")[0].split("-")[0]
-        
+
         # Parse major.minor.patch
         parts = s.split(".")
         major = int(parts[0]) if len(parts) > 0 else 0
@@ -188,7 +188,9 @@ def validate_plugins_compatibility(
                         plugin_id=plugin.meta.id,
                         plugin_name=plugin.meta.name,
                         is_compatible=False,
-                        missing_requirements=["No explicit version requirements specified"],
+                        missing_requirements=[
+                            "No explicit version requirements specified"
+                        ],
                         error_message=f"Plugin '{plugin.meta.name}' ({plugin.meta.id}) does not specify version requirements. "
                         f"Please add required_*_version fields to PluginMeta.",
                     )
@@ -212,8 +214,16 @@ def validate_plugins_compatibility(
 
         except Exception as e:
             result = CompatibilityCheckResult(
-                plugin_id=getattr(plugin, "meta", {}).id if hasattr(plugin, "meta") else "unknown",
-                plugin_name=getattr(plugin, "meta", {}).name if hasattr(plugin, "meta") else "Unknown",
+                plugin_id=(
+                    getattr(plugin, "meta", {}).id
+                    if hasattr(plugin, "meta")
+                    else "unknown"
+                ),
+                plugin_name=(
+                    getattr(plugin, "meta", {}).name
+                    if hasattr(plugin, "meta")
+                    else "Unknown"
+                ),
                 is_compatible=False,
                 missing_requirements=[],
                 error_message=f"Error validating plugin: {str(e)}",

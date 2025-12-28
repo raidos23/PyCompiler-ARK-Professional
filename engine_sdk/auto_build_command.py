@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 # Pass-through to host auto_plugins helpers

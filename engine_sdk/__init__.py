@@ -54,6 +54,7 @@ try:
 except Exception:  # pragma: no cover
     host_resolve_executable_path = None  # type: ignore
 
+
 # Simple wrapper to persist engine UI state via host registry
 def save_engine_ui(gui, engine_id: str, updates: dict) -> bool:
     try:
@@ -62,6 +63,7 @@ def save_engine_ui(gui, engine_id: str, updates: dict) -> bool:
         return registry.save_engine_ui(gui, engine_id, updates)  # type: ignore[attr-defined]
     except Exception:
         return False
+
 
 # Re-export system dependency helpers
 # Re-export i18n helpers
@@ -161,17 +163,19 @@ def sdk_info() -> dict:
 
 def check_engine_compatibility(engine_class, required_sdk_version: str = None) -> bool:
     """Check if an engine is compatible with the current SDK version.
-    
+
     Args:
         engine_class: The engine class to check
         required_sdk_version: Minimum required SDK version (defaults to engine's requirement)
-    
+
     Returns:
         True if compatible, False otherwise
     """
     try:
         if required_sdk_version is None:
-            required_sdk_version = getattr(engine_class, "required_sdk_version", "1.0.0")
+            required_sdk_version = getattr(
+                engine_class, "required_sdk_version", "1.0.0"
+            )
         return ensure_min_sdk(required_sdk_version)
     except Exception:
         return False

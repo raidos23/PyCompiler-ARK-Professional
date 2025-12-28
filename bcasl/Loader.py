@@ -98,26 +98,38 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
                         try:
                             meta_tags = getattr(plg.meta, "tags", ())
                             if isinstance(meta_tags, (list, tuple)):
-                                tags = [str(x).strip().lower() for x in meta_tags if str(x).strip()]
+                                tags = [
+                                    str(x).strip().lower()
+                                    for x in meta_tags
+                                    if str(x).strip()
+                                ]
                         except Exception:
                             tags = []
-                        
+
                         # Récupérer les requirements
                         reqs: list[str] = []
                         try:
                             if plg.meta.required_bcasl_version != "1.0.0":
-                                reqs.append(f"BCASL >= {plg.meta.required_bcasl_version}")
+                                reqs.append(
+                                    f"BCASL >= {plg.meta.required_bcasl_version}"
+                                )
                             if plg.meta.required_core_version != "1.0.0":
                                 reqs.append(f"Core >= {plg.meta.required_core_version}")
                             if plg.meta.required_plugins_sdk_version != "1.0.0":
-                                reqs.append(f"Plugins SDK >= {plg.meta.required_plugins_sdk_version}")
+                                reqs.append(
+                                    f"Plugins SDK >= {plg.meta.required_plugins_sdk_version}"
+                                )
                             if plg.meta.required_bc_plugin_context_version != "1.0.0":
-                                reqs.append(f"BcPluginContext >= {plg.meta.required_bc_plugin_context_version}")
+                                reqs.append(
+                                    f"BcPluginContext >= {plg.meta.required_bc_plugin_context_version}"
+                                )
                             if plg.meta.required_general_context_version != "1.0.0":
-                                reqs.append(f"GeneralContext >= {plg.meta.required_general_context_version}")
+                                reqs.append(
+                                    f"GeneralContext >= {plg.meta.required_general_context_version}"
+                                )
                         except Exception:
                             pass
-                        
+
                         m = {
                             "id": plg.meta.id,
                             "name": plg.meta.name,
@@ -142,7 +154,7 @@ def _discover_bcasl_meta(api_dir: Path) -> dict[str, dict[str, Any]]:
 
 def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
     """Charge bcasl.yml si présent, sinon génère une config par défaut minimale et l'écrit.
-    
+
     Fusionne aussi avec ARK_Main_Config.yml si disponible pour les patterns et options plugins.
     YML ONLY - YAML and JSON files are NOT supported.
     """
@@ -159,26 +171,27 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         p = workspace_root / name
         if p.exists() and p.is_file():
             data = _read_yml(p)
-            
+
             if isinstance(data, dict) and data:
                 # Fusionner avec ARK_Main_Config.yml si disponible
                 # IMPORTANT: bcasl config takes priority over ARK config
                 # ARK config only fills in missing values
                 try:
                     from Core.ark_config_loader import load_ark_config
+
                     ark_config = load_ark_config(str(workspace_root))
-                    
+
                     # Fusionner les patterns d'exclusion (additive merge)
                     if "exclusion_patterns" in ark_config:
                         existing_excludes = data.get("exclude_patterns", [])
-                        data["exclude_patterns"] = list(set(
-                            existing_excludes + ark_config["exclusion_patterns"]
-                        ))
-                    
+                        data["exclude_patterns"] = list(
+                            set(existing_excludes + ark_config["exclusion_patterns"])
+                        )
+
                     # ARK inclusion patterns always override bcasl file_patterns
                     if "inclusion_patterns" in ark_config:
                         data["file_patterns"] = ark_config["inclusion_patterns"]
-                    
+
                     # Merge plugin options from ARK only if not explicitly set in bcasl config
                     plugin_opts = ark_config.get("plugins", {})
                     if plugin_opts:
@@ -187,12 +200,17 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
                         if "enabled" not in opts and "bcasl_enabled" in plugin_opts:
                             opts["enabled"] = plugin_opts["bcasl_enabled"]
                         # Only use ARK's plugin_timeout if not explicitly set in bcasl config
-                        if "plugin_timeout_s" not in opts and "plugin_timeout" in plugin_opts:
-                            opts["plugin_timeout_s"] = float(plugin_opts["plugin_timeout"])
+                        if (
+                            "plugin_timeout_s" not in opts
+                            and "plugin_timeout" in plugin_opts
+                        ):
+                            opts["plugin_timeout_s"] = float(
+                                plugin_opts["plugin_timeout"]
+                            )
                         data["options"] = opts
                 except Exception:
                     pass
-                
+
                 return data
 
     # 2) Génération défaut avec fusion ARK
@@ -240,17 +258,18 @@ def _load_workspace_config(workspace_root: Path) -> dict[str, Any]:
         ]
         bcasl_enabled = True
         plugin_timeout = 0.0
-        
+
         try:
             from Core.ark_config_loader import load_ark_config
+
             ark_config = load_ark_config(str(workspace_root))
-            
+
             if "inclusion_patterns" in ark_config:
                 file_patterns = ark_config["inclusion_patterns"]
-            
+
             if "exclusion_patterns" in ark_config:
                 exclude_patterns = ark_config["exclusion_patterns"]
-            
+
             plugin_opts = ark_config.get("plugins", {})
             if "bcasl_enabled" in plugin_opts:
                 bcasl_enabled = plugin_opts["bcasl_enabled"]
@@ -365,8 +384,20 @@ if QObject is not None and Signal is not None:  # pragma: no cover
                             manager.set_priority(pid, int(idx))
                         except Exception:
                             pass
+                # Préparer les métadonnées du workspace
+                workspace_meta = {
+                    "workspace_name": self.workspace_root.name,
+                    "workspace_path": str(self.workspace_root),
+                    "file_patterns": self.cfg.get("file_patterns", []),
+                    "exclude_patterns": self.cfg.get("exclude_patterns", []),
+                    "required_files": self.cfg.get("required_files", []),
+                }
                 report = manager.run_pre_compile(
-                    PreCompileContext(self.workspace_root, config=self.cfg)
+                    PreCompileContext(
+                        self.workspace_root, 
+                        config=self.cfg,
+                        workspace_metadata=workspace_meta
+                    )
                 )
                 self.finished.emit(report)
             except Exception as e:
@@ -600,27 +631,27 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
 
         remaining = [pid for pid in plugin_ids if pid not in order]
         ordered_ids = order + remaining
-        
+
         # Importer les fonctions de tagging pour afficher les phases
         from .tagging import get_tag_phase_name
-        
+
         for pid in ordered_ids:
             meta = meta_map.get(pid, {})
             label = meta.get("name") or pid
             ver = meta.get("version") or ""
             tags = meta.get("tags") or []
-            
+
             # Déterminer la phase d'exécution
             phase_name = ""
             if tags:
                 # Utiliser le premier tag pour déterminer la phase
                 phase_name = get_tag_phase_name(tags[0])
-            
+
             # Construire le texte avec la phase
             text = f"{label} ({pid})" + (f" v{ver}" if ver else "")
             if phase_name:
                 text += f" [Phase: {phase_name}]"
-            
+
             item = QListWidgetItem(text)
             # Tooltip avec description, tags et requirements
             try:
@@ -628,12 +659,14 @@ def open_bc_loader_dialog(self) -> None:  # UI minimale
                 tooltip = desc
                 if tags:
                     tooltip += f"\n\nTags: {', '.join(tags)}"
-                
+
                 # Ajouter les requirements du plugin depuis meta_map
                 reqs = meta.get("requirements", [])
                 if reqs:
-                    tooltip += f"\n\nRequirements:\n" + "\n".join(f"  • {req}" for req in reqs)
-                
+                    tooltip += f"\n\nRequirements:\n" + "\n".join(
+                        f"  • {req}" for req in reqs
+                    )
+
                 if tooltip:
                     item.setToolTip(tooltip)
             except Exception:
@@ -867,8 +900,7 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
             worker.finished.connect(bridge.on_finished)
             worker.finished.connect(worker.deleteLater)
             thread.finished.connect(thread.deleteLater)
-            
-                        
+
             worker.moveToThread(thread)
             thread.started.connect(worker.run)
             thread.start()
@@ -920,8 +952,20 @@ def run_pre_compile_async(self, on_done: Optional[callable] = None) -> None:
                         manager.set_priority(pid, int(idx))
                     except Exception:
                         pass
+            # Préparer les métadonnées du workspace
+            workspace_meta = {
+                "workspace_name": workspace_root.name,
+                "workspace_path": str(workspace_root),
+                "file_patterns": cfg.get("file_patterns", []),
+                "exclude_patterns": cfg.get("exclude_patterns", []),
+                "required_files": cfg.get("required_files", []),
+            }
             report = manager.run_pre_compile(
-                PreCompileContext(workspace_root, config=cfg)
+                PreCompileContext(
+                    workspace_root, 
+                    config=cfg,
+                    workspace_metadata=workspace_meta
+                )
             )
         except Exception as _e:
             report = None
@@ -1047,7 +1091,21 @@ def run_pre_compile(self) -> Optional[object]:
         except Exception:
             pass
 
-        report = manager.run_pre_compile(PreCompileContext(workspace_root, config=cfg))
+        # Préparer les métadonnées du workspace
+        workspace_meta = {
+            "workspace_name": workspace_root.name,
+            "workspace_path": str(workspace_root),
+            "file_patterns": cfg.get("file_patterns", []),
+            "exclude_patterns": cfg.get("exclude_patterns", []),
+            "required_files": cfg.get("required_files", []),
+        }
+        report = manager.run_pre_compile(
+            PreCompileContext(
+                workspace_root, 
+                config=cfg,
+                workspace_metadata=workspace_meta
+            )
+        )
         if hasattr(self, "log") and self.log is not None:
             self.log.append("BCASL - Rapport:\n")
             for item in report:

@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-
 """
 BCASL - Before-Compilation Actions System Loader
 
@@ -62,20 +61,24 @@ from .validator import (
 __version__ = "2.0.0"
 
 
-def check_plugin_compatibility(plugin_class, required_bcasl_version: str = None) -> bool:
+def check_plugin_compatibility(
+    plugin_class, required_bcasl_version: str = None
+) -> bool:
     """Check if a plugin is compatible with the current BCASL version.
-    
+
     Args:
         plugin_class: The plugin class to check
         required_bcasl_version: Minimum required BCASL version (defaults to plugin's requirement)
-    
+
     Returns:
         True if compatible, False otherwise
     """
     try:
         if required_bcasl_version is None:
-            required_bcasl_version = getattr(plugin_class, "required_bcasl_version", "1.0.0")
-        
+            required_bcasl_version = getattr(
+                plugin_class, "required_bcasl_version", "1.0.0"
+            )
+
         # Parse versions
         def parse_version(v: str) -> tuple:
             try:
@@ -86,7 +89,7 @@ def check_plugin_compatibility(plugin_class, required_bcasl_version: str = None)
                 return (major, minor, patch)
             except Exception:
                 return (0, 0, 0)
-        
+
         current = parse_version(__version__)
         required = parse_version(required_bcasl_version)
         return current >= required
